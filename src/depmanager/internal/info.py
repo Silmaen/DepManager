@@ -11,6 +11,7 @@ def info(args):
     getattr(Info(), args.what)()
 
 
+
 def info_arguments(sub_parsers):
     search_parser = sub_parsers.add_parser("info")
     search_parser.description = "Tool to search for dependency in the library"

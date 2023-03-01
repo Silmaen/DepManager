@@ -20,6 +20,17 @@ def main():
         dest="command",
         required=True
     )
+    # ============================= INFO ==============================================
+    from depmanager.command.info import add_info_parameters
+    add_info_parameters(sub_parsers)
+    # ============================ REMOTE =============================================
+    from depmanager.command.remote import add_remote_parameters
+    add_remote_parameters(sub_parsers)
+    # ============================ SERVER =============================================
+    from depmanager.command.server import add_server_parameters
+    add_server_parameters(sub_parsers)
+
+
     # ===========================================================================
     from depmanager.internal.search import search_arguments
     search_arguments(sub_parsers)

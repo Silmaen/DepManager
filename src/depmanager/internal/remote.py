@@ -87,18 +87,29 @@ class Remotes:
     Class managing remotes
     """
 
-    def __init__(self):
+    def __init__(self, database=None):
         from depmanager.internal.database import DataBase
-        self.__db = DataBase()
+        if database is None or type(database) != DataBase:
+            self.__db = DataBase()
+        else:
+            self.__db = database
+
+    def get_remotes(self):
+        """
+        Gives the list of remotes.
+        :return: List of remotes.
+        """
+        remotes = {}
+        if "remotes" in self.__db.config.config:
+            remotes = self.__db.config.config["remotes"]
+        return remotes
 
     def list(self, verbosity: int = 0):
         """
         List the defined remotes
         :param verbosity: Verbosity level
         """
-        remotes = {}
-        if "remotes" in self.__db.config.config:
-            remotes = self.__db.config.config["remotes"]
+        remotes = self.get_remotes()
         for key, value in remotes.items():
             default = [' ', '*'][value['default']]
             if verbosity == 0:

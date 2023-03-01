@@ -59,7 +59,7 @@ function(edm_find_package PACKAGE)
     endif ()
     set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -c ${TRUE_COMPILER}")
 
-    set(CMD "${EDM_INTERNAL_COMMAND} search -r -b -p ${PREDICATE} ${SEARCH_OPTIONS}")
+    set(CMD "${EDM_INTERNAL_COMMAND} get -p ${PREDICATE} ${SEARCH_OPTIONS}")
     if (FP_TRACE)
         message(STATUS "QUERY: ${CMD}")
     endif()
