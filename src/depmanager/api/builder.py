@@ -6,6 +6,7 @@ from shutil import rmtree
 from pathlib import Path
 from sys import stderr
 from depmanager.api.internal.system import LocalSystem, Props
+from depmanager.api.local import LocalManager
 
 
 def try_run(cmd):
@@ -37,10 +38,12 @@ class Builder:
         from inspect import getmembers, isclass
         from depmanager.api.recipe import Recipe
         self.generator = ""
-        if local is None:
-            self.local = LocalSystem()
-        else:
+        if isinstance(local, LocalSystem):
             self.local = local
+        elif isinstance(local, LocalManager):
+            self.local = local.get_sys()
+        else:
+            self.local = LocalSystem()
         self.source_path = source
         if temp is None:
             self.temp = self.local.temp_path / "builder"
@@ -95,31 +98,21 @@ class Builder:
             out += F" -D{key}={val}"
         return out
 
-    def build_all(self):
+    def build_all(self, forced:bool = False):
         """
         Do the build of recipes.
         """
         for rec in self.recipes:
+            #
+            #
             arch = platform.machine().replace("AMD", "x86_")
             os = platform.system()
             compiler = "gnu"
-            rec.source()
+            rec.define(os, arch, compiler)
+
             #
             #
-            # configure
-            rec.configure()
-            cmd = F"cmake -S {self._get_source_dir(rec)} -B {self.temp / 'build'} -G \"{self._get_generator(rec)}\" {self._get_options_str(rec)}"
-            try_run(cmd)
-            #
-            #
-            # build & install
-            for conf in rec.config:
-                cmd = F"cmake --build {self.temp / 'build'} --target install --config {conf}"
-                try_run(cmd)
-            #
-            #
-            # create the info file
-            rec.install()
+            # Check for existing
             p = Props({
                 "name"    : rec.name,
                 "version" : rec.version,
@@ -128,6 +121,63 @@ class Builder:
                 "kind"    : rec.kind,
                 "compiler": compiler
             })
+            search = self.local.local_database.query(p)
+            if len(search) > 0:
+                if forced:
+                    print(f"REMARK: library {p.get_as_str()} already exists, overriding it.")
+                else:
+                    print(f"REMARK: library {p.get_as_str()} already exists, skipping it.")
+                    continue
+            rec.source()
+
+            #
+            #
+            # check dependencies
+            if type(rec.dependencies) != list:
+                print(f"ERROR: dependencies of {rec.to_str()} must be a list.", file=stderr)
+                continue
+            ok = True
+            dep_list = []
+            for dep in rec.dependencies:
+                if type(dep) != dict:
+                    ok = False
+                    print(f"ERROR: dependencies of {rec.to_str()} must be a list of dict.", file=stderr)
+                    break
+                if "name" not in dep:
+                    print(f"ERROR: dependencies of {rec.to_str()}\n{dep} must be a contain a name.", file=stderr)
+                    ok = False
+                    break
+                result = self.local.local_database.query(dep)
+                if len(result) == 0:
+                    print(f"ERROR: dependencies of {rec.to_str()}, {dep['name']} Not found.", file=stderr)
+                    ok = False
+                    break
+                dep_list.append(str(result[0].get_cmake_config_dir()).replace("\\", "/"))
+            if not ok:
+                continue
+
+            #
+            #
+            # configure
+            rec.configure()
+            cmd = F'cmake -S {self._get_source_dir(rec)} -B {self.temp / "build"}'
+            cmd += F' -G "{self._get_generator(rec)}"'
+            if len(dep_list) != 0:
+                cmd += ' -DCMAKE_PREFIX_PATH="' + ";".join(dep_list) + '"'
+            cmd += F' {self._get_options_str(rec)}'
+            try_run(cmd)
+
+            #
+            #
+            # build & install
+            for conf in rec.config:
+                cmd = F"cmake --build {self.temp / 'build'} --target install --config {conf}"
+                try_run(cmd)
+
+            #
+            #
+            # create the info file
+            rec.install()
             p.to_edp_file(self.temp / 'install' / "edp.info")
             # copy to repository
             self.local.import_folder(self.temp / 'install')

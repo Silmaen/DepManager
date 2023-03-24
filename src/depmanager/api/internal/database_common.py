@@ -37,7 +37,7 @@ class __DataBase:
             return []
         return [dep.properties.get_as_str() for dep in self.dependencies]
 
-    def query(self, data: any([str, dict, Dependency])):
+    def query(self, data: any([str, dict, Dependency, Props])):
         """
         Get a list of dependencies matching data.
         :param data: The query data.
@@ -49,6 +49,8 @@ class __DataBase:
             return [dep for dep in self.dependencies if dep.match(Props(data))]
         elif type(data) == Dependency:
             return [dep for dep in self.dependencies if dep.match(data.properties)]
+        elif type(data) == Props:
+            return [dep for dep in self.dependencies if dep.match(data)]
         else:
             return []
 

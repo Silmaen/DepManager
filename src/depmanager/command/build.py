@@ -27,7 +27,7 @@ def build(args, system=None):
     print(f"found {len(builder.recipes)} in the given source folder")
     for rep in builder.recipes:
         print(f" - {rep.to_str()}")
-    builder.build_all()
+    builder.build_all(args.force)
 
 
 def add_build_parameters(sub_parsers):
@@ -41,4 +41,9 @@ def add_build_parameters(sub_parsers):
             "location",
             type=str,
             help="The location of sources. Must contain a pythonclass derived from Recipe.")
+    build_parser.add_argument(
+            "--force", "-f",
+            action="store_true",
+            help="Force build even if the dependency already exists in the database."
+    )
     build_parser.set_defaults(func=build)
