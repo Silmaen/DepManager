@@ -16,13 +16,32 @@ class Recipe:
     config = ["Debug", "Release"]
     kind = "shared"
     generator = ""
+    dependencies = []
+    settings = {"os":"", "arch":"", "compiler":""}
 
     def to_str(self):
         """
         Get string representing recipe.
         :return: String.
         """
-        return f"{self.name}/{self.version} on {self.os}/{self.arch} as {self.kind} from {self.source_dir}"
+        os = "any"
+        if len(self.os) > 0:
+            os = self.os
+        arch = "any"
+        if len(self.arch) > 0:
+            arch = self.arch
+        return f"{self.name}/{self.version} on {os}/{arch} as {self.kind} from {self.source_dir}"
+
+    def define(self,os, arch, compiler):
+        """
+        Actualize parameters
+        :param os:
+        :param arch:
+        :param compiler:
+        """
+        self.settings["os"] = os
+        self.settings["arch"] = arch
+        self.settings["compiler"] = compiler
 
     def source(self):
         """
