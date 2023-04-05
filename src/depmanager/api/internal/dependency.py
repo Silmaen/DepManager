@@ -3,7 +3,7 @@ Dependency object.
 """
 from pathlib import Path
 
-kinds = ["shared", "static", "header"]
+kinds = ["shared", "static", "header", "any"]
 compilers = ["gnu", "msvc"]
 oses = ["Windows", "Linux"]
 arches = ["x86_64", "aarch64"]
@@ -39,6 +39,50 @@ class Props:
             self.from_str(data)
         elif type(data) == dict:
             self.from_dict(data)
+
+    def __eq__(self, other):
+        if type(other) != Props:
+            return False
+        return self.name == other.name \
+            and self.version == other.version \
+            and self.os == other.os \
+            and self.arch == other.arch \
+            and self.kind == other.kind \
+            and self.compiler == other.compiler
+
+    def __lt__(self, other):
+        if type(other) != Props:
+            return False
+        if self.name != other.name:
+            return self.name < other.name
+        if self.version != other.version:
+            self_version_item = self.version.split(".")
+            other_version_item = other.version.split(".")
+            for i in range(min(len(self_version_item), len(other_version_item))):
+                if self_version_item[i] != other_version_item[i]:
+                    try:
+                        return int(self_version_item[i]) > int(other_version_item[i])
+                    except:
+                        return self_version_item[i] > other_version_item[i]
+            return len(self_version_item) > len(other_version_item)
+        if self.os != other.os:
+            return self.os < other.os
+        if self.arch != other.arch:
+            return self.arch < other.arch
+        if self.kind != other.kind:
+            return self.kind < other.kind
+        if self.compiler != other.compiler:
+            return self.compiler < other.compiler
+        return False
+
+    def __le__(self, other):
+        return self == other or self < other
+
+    def __gt__(self, other):
+        return other < self
+
+    def __ge__(self, other):
+        return self == other or self > other
 
     def from_dict(self, data: dict):
         """
@@ -93,6 +137,8 @@ class Props:
         from fnmatch import translate
         from re import compile
         for attr in ["name", "version", "os", "arch", "kind", "compiler"]:
+            if attr == "kind" and (getattr(other, attr) == "any" or getattr(self, attr) == "any"):
+                continue
             if not compile(translate(getattr(other, attr))).match(getattr(self, attr)):
                 return False
         return True
@@ -204,10 +250,22 @@ class Dependency:
             self.read_edp_file()
             search = list(self.base_path.rglob("*config.cmake"))
             if len(search) > 0:
-                self.cmake_config_path = search[0].parent
+                self.cmake_config_path = ";".join([str(s.parent) for s in search])
         elif type(data) in [str, dict]:
             self.properties = Props(data)
         self.valid = True
+
+    def __lt__(self, other):
+        return self.properties < other.properties
+
+    def __le__(self, other):
+        return self.properties <= other.properties
+
+    def __gt__(self, other):
+        return self.properties > other.properties
+
+    def __ge__(self, other):
+        return self.properties >= other.properties
 
     def write_edp_info(self):
         """

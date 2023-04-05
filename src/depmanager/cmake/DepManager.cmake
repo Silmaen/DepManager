@@ -30,8 +30,8 @@ function(dm_get_data_path OUTPUT)
     set(${OUTPUT} ${RESULT} PARENT_SCOPE)
 endfunction()
 
-function(dm_find_package PACKAGE)
-    cmake_parse_arguments(FP "QUIET;TRACE;REQUIRED" "VERSION;KIND;ARCH;OS;COMPILER" "" ${ARGN})
+function(dm_load_package PACKAGE)
+    cmake_parse_arguments(FP "QUIET;TRACE" "VERSION;KIND;ARCH;OS;COMPILER" "" ${ARGN})
     if (FP_VERSION)
         set(PREDICATE "${PACKAGE}/${FP_VERSION}")
     else ()
@@ -78,6 +78,11 @@ function(dm_find_package PACKAGE)
         message(STATUS "RESULT: ${TMP}")
     endif()
     list(PREPEND CMAKE_PREFIX_PATH ${TMP})
+endfunction()
+
+function(dm_find_package PACKAGE)
+    cmake_parse_arguments(FP "QUIET;REQUIRED" "" "" ${ARGN})
+    dm_load_package(${ARGN})
     if (FP_QUIET)
         set(FIND_OPTIONS ${FIND_OPTION} QUIET)
     endif()
@@ -85,8 +90,4 @@ function(dm_find_package PACKAGE)
         set(FIND_OPTIONS ${FIND_OPTION} REQUIRED)
     endif()
     find_package(${PACKAGE} ${FIND_OPTIONS})
-
 endfunction()
-
-
-

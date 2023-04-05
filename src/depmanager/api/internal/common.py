@@ -130,7 +130,7 @@ def add_query_arguments(parser: ArgumentParser):
     parser.add_argument(
             "--kind", "-k",
             type=str,
-            choices=["static", "shared", "header", "*"],
+            choices=["static", "shared", "header", "any", "*"],
             help="Library's kind to search (* for any)",
             default="*"
     )
