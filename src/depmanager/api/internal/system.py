@@ -2,6 +2,8 @@
 Everything needed for database.
 """
 from pathlib import Path
+from shutil import rmtree
+
 from depmanager.api.internal.dependency import Props
 from depmanager.api.internal.database_local import LocalDatabase
 from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
@@ -63,6 +65,7 @@ class LocalSystem:
                 self.remote_database[name] = RemoteDatabaseFtp(url, port, default, login, passwd)
             elif kind == "folder":
                 self.remote_database[name] = RemoteDatabaseFolder(url, default)
+        self.write_config_file()
 
     def read_config_file(self):
         """
@@ -198,6 +201,7 @@ class LocalSystem:
         p = Props()
         p.from_edp_file(source / "edp.info")
         destination_folder = self.local_database.base_path / f"{p.name}{p.hash()}"
+        rmtree(destination_folder, ignore_errors=True)
         copytree(source, destination_folder)
 
     def remove_local(self, pack):
