@@ -46,11 +46,11 @@ class __DataBase:
         if not self.valid_shape:
             return []
         if type(data) in [str, dict]:
-            return [dep for dep in self.dependencies if dep.match(Props(data))]
+            return sorted([dep for dep in self.dependencies if dep.match(Props(data))])
         elif type(data) == Dependency:
-            return [dep for dep in self.dependencies if dep.match(data.properties)]
+            return sorted([dep for dep in self.dependencies if dep.match(data.properties)])
         elif type(data) == Props:
-            return [dep for dep in self.dependencies if dep.match(data)]
+            return sorted([dep for dep in self.dependencies if dep.match(data)])
         else:
             return []
 

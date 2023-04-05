@@ -16,7 +16,7 @@ def try_run(cmd):
     """
     from subprocess import run
     try:
-        ret = run(cmd, shell=True)
+        ret = run(cmd, shell=True, bufsize=0)
         if ret.returncode != 0:
             print(F"ERROR '{cmd}' \n bad exit code ({ret.returncode})", file=stderr)
             exit(-666)
@@ -50,7 +50,7 @@ class Builder:
         else:
             self.temp = temp
         rmtree(self.temp, ignore_errors=True)
-        self.temp.mkdir(parents=True)
+        self.temp.mkdir(parents=True, exist_ok=True)
         self.recipes = []
         for file in self.source_path.iterdir():
             if not file.is_file():
