@@ -3,7 +3,7 @@ Manage the remotes
 """
 from sys import stderr
 
-possible_remote = ["list", "add", "del"]
+possible_remote = ["list", "add", "del", "sync"]
 
 
 class RemoteCommand:
@@ -69,6 +69,40 @@ class RemoteCommand:
             exit(-666)
         self.remote_instance.remove_remote(name)
 
+    def sync(self, name: str, default: bool = False):
+        """
+        Synchronize local with given remote (push to server all unexisting package).
+        :param name: Remote's name.
+        :param default: If using default remote
+        """
+        if default:
+            remote_db = self.remote_instance.get_default_remote()
+        else:
+            if type(name) != str or name in ["", None]:
+                print(f"ERROR please give a name for syncing a remote.", file=stderr)
+                exit(-666)
+            remote_db = self.remote_instance.get_remote(name)
+        if remote_db is None:
+            print(f"ERROR remote {name} not found.", file=stderr)
+            exit(-666)
+        local_db = self.remote_instance.get_local()
+        all_local = local_db.query({
+            "name": "*",
+            "version": "*",
+            "os": "*",
+            "arch": "*",
+            "kind": "*",
+            "compiler": "*"
+        })
+        for single_local in all_local:
+            if len(remote_db.query(single_local)) > 0:
+                print(f"Package {single_local.properties.get_as_str()} Already on server.")
+                continue
+            print(f"==> Push Package {single_local.properties.get_as_str()} to server.")
+            local_db.pack(single_local, self.remote_instance.get_temp_dir(), "tgz")
+            dep_path = self.remote_instance.get_temp_dir() / (single_local.get_path().name + ".tgz")
+            remote_db.push(single_local, dep_path)
+
 
 def remote(args, system=None):
     """
@@ -85,6 +119,8 @@ def remote(args, system=None):
         rem.add(args.name, args.url, args.default, args.login, args.passwd)
     elif args.what == "del":
         rem.delete(args.name)
+    elif args.what == "sync":
+        rem.sync(args.name, args.default)
 
 
 def add_remote_parameters(sub_parsers):
