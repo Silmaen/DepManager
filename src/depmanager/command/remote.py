@@ -82,7 +82,7 @@ def remote(args, system=None):
     if args.what == "list":
         rem.list()
     elif args.what == "add":
-        rem.add(args.name, args.url, args.default)
+        rem.add(args.name, args.url, args.default, args.login, args.passwd)
     elif args.what == "del":
         rem.delete(args.name)
 
