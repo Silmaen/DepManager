@@ -42,6 +42,20 @@ class RemotesManager:
             return None
         return self.__sys.remote_database[name]
 
+    def get_local(self):
+        """
+        Access to local base.
+        :return: The local base.
+        """
+        return self.__sys.local_database
+
+    def get_temp_dir(self):
+        """
+        Get temp path
+        :return:
+        """
+        return self.__sys.temp_path
+
     def get_default_remote(self):
         """
         Access to the default remote.

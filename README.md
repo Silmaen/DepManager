@@ -124,6 +124,7 @@ subcommands:
      * `folder` a folder of your computer (mostly for debug or testing)
    * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
  * `del <remote>` remove the designated remote if exists.
+ * `sync <remote>` push to remote all local package that does not already exist on remote.
 
 ### build
 
@@ -184,6 +185,27 @@ if `TRACE` set, many more debug message displayed.
 
 `target_arch`, `target_os`, `target_compiler` are used in the query. If not set, default
 values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER_ID`
+
+**LIMITATION:** it require the library name is the package name. So no multi lib or lib with different name.
+
+### Load package
+
+This command is similar to the previous one, but does not directly do a cmake's `find_package`. 
+It only adds to the `CMAKE_PREFIX_PATH` list the folders of given package.
+
+```cmake
+dm_load_package(
+   package
+   [QUIET] [TRACE]
+   [VERSION version]
+   [KIND kind]
+   [ARCH target_arch]
+   [OS target_os]
+   [COMPILER target_compiler]
+)
+```
+
+After call this command, the cmake user has to call for needed `find_package`.
 
 ## Create you own package
 
