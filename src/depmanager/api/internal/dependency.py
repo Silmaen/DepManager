@@ -1,6 +1,7 @@
 """
 Dependency object.
 """
+import platform
 from pathlib import Path
 
 kinds = ["shared", "static", "header", "any"]
@@ -11,8 +12,21 @@ arches = ["x86_64", "aarch64"]
 # TODO: system introspection
 default_kind = kinds[0]
 default_compiler = compilers[0]
-default_os = oses[0]
-default_arch = arches[0]
+
+def format_os(os_str:str):
+    if os_str not in oses:
+        exit(666)
+    return os_str
+
+def format_arch(arch_str:str):
+    if arch_str == "AMD64":
+        arch_str = "x86_64"
+    if arch_str not in arches:
+        exit(666)
+    return arch_str
+
+default_os = format_os(platform.system())
+default_arch = format_arch(platform.machine())
 
 
 class Props:
