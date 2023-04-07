@@ -78,6 +78,7 @@ function(dm_load_package PACKAGE)
         message(STATUS "RESULT: ${TMP}")
     endif()
     list(PREPEND CMAKE_PREFIX_PATH ${TMP})
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
 endfunction()
 
 function(dm_find_package PACKAGE)
