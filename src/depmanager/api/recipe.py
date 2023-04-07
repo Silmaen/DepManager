@@ -60,3 +60,8 @@ class Recipe:
         Method executed during installation.
         """
         pass
+    def clean(self):
+        """
+        Method executed at the end.
+        """
+        pass

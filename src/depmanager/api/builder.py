@@ -19,10 +19,11 @@ def try_run(cmd):
         ret = run(cmd, shell=True, bufsize=0)
         if ret.returncode != 0:
             print(F"ERROR '{cmd}' \n bad exit code ({ret.returncode})", file=stderr)
-            exit(-666)
+            return False
     except Exception as err:
         print(F"ERROR '{cmd}' \n exception during run {err}", file=stderr)
-        exit(-666)
+        return False
+    return True
 
 
 class Builder:
@@ -94,6 +95,8 @@ class Builder:
     def _get_options_str(self, rec):
         out = F"-DCMAKE_INSTALL_PREFIX={self.temp / 'install'}"
         out += F" -DBUILD_SHARED_LIBS={['OFF', 'ON'][rec.kind.lower() == 'shared']}"
+        if rec.settings["os"].lower() in ["linux"]:
+            out += " -DCMAKE_SKIP_INSTALL_RPATH=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
         for key, val in rec.cache_variables.items():
             out += F" -D{key}={val}"
         return out
@@ -165,21 +168,28 @@ class Builder:
             if len(dep_list) != 0:
                 cmd += ' -DCMAKE_PREFIX_PATH="' + ";".join(dep_list) + '"'
             cmd += F' {self._get_options_str(rec)}'
-            try_run(cmd)
+            cont = try_run(cmd)
 
             #
             #
             # build & install
-            for conf in rec.config:
-                cmd = F"cmake --build {self.temp / 'build'} --target install --config {conf}"
-                try_run(cmd)
+            if cont:
+                for conf in rec.config:
+                    cmd = F"cmake --build {self.temp / 'build'} --target install --config {conf}"
+                    cont = try_run(cmd)
+                    if not cont:
+                        break
 
             #
             #
             # create the info file
-            rec.install()
-            p.to_edp_file(self.temp / 'install' / "edp.info")
-            # copy to repository
-            self.local.import_folder(self.temp / 'install')
+            if cont:
+                rec.install()
+                p.to_edp_file(self.temp / 'install' / "edp.info")
+                # copy to repository
+                self.local.import_folder(self.temp / 'install')
             # clean Temp
+            rec.clean()
             rmtree(self.temp)
+            if not cont:
+                exit(-666)
