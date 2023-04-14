@@ -3,6 +3,7 @@ Everything needed for database.
 """
 from pathlib import Path
 from shutil import rmtree
+from time import sleep
 
 from depmanager.api.internal.dependency import Props
 from depmanager.api.internal.database_local import LocalDatabase
@@ -74,6 +75,10 @@ class LocalSystem:
         import json
         if not self.file.exists():
             return
+        lockfile = Path(self.file.parent / (self.file.name+".lock"))
+        while lockfile.exists():
+            sleep(0.5)
+        lockfile.touch()
         with open(self.file, "r") as fp:
             self.config = json.load(fp)
         if "base_path" in self.config.keys():
@@ -84,6 +89,7 @@ class LocalSystem:
             self.base_path = Path(self.config["data_path"]).resolve()
         if "temp_path" in self.config.keys():
             self.base_path = Path(self.config["temp_path"]).resolve()
+        lockfile.unlink()
 
     def write_config_file(self):
         """
@@ -94,8 +100,14 @@ class LocalSystem:
         self.file.parent.mkdir(parents=True, exist_ok=True)
         self.data_path.mkdir(parents=True, exist_ok=True)
         self.temp_path.mkdir(parents=True, exist_ok=True)
+
+        lockfile = Path(self.file.parent / (self.file.name+".lock"))
+        while lockfile.exists():
+            sleep(0.5)
+        lockfile.touch()
         with open(self.file, "w") as fp:
             fp.write(json.dumps(self.config, indent=2))
+        lockfile.unlink()
 
     def clear_tmp(self):
         """
