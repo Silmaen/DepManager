@@ -111,7 +111,7 @@ class Builder:
             arch = platform.machine().replace("AMD", "x86_")
             os = platform.system()
             compiler = "gnu"
-            rec.define(os, arch, compiler)
+            rec.define(os, arch, compiler, self.temp / 'install')
 
             #
             #

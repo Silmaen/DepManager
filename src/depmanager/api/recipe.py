@@ -1,6 +1,7 @@
 """
 Base recipe for building package.
 """
+from pathlib import Path
 
 
 class Recipe:
@@ -17,7 +18,7 @@ class Recipe:
     kind = "shared"
     generator = ""
     dependencies = []
-    settings = {"os":"", "arch":"", "compiler":""}
+    settings = {"os":"", "arch":"", "compiler":"", "install_path":Path()}
 
     def to_str(self):
         """
@@ -32,16 +33,18 @@ class Recipe:
             arch = self.arch
         return f"{self.name}/{self.version} on {os}/{arch} as {self.kind} from {self.source_dir}"
 
-    def define(self,os, arch, compiler):
+    def define(self,os, arch, compiler, install_path):
         """
         Actualize parameters
         :param os:
         :param arch:
         :param compiler:
+        :param install_path:
         """
         self.settings["os"] = os
         self.settings["arch"] = arch
         self.settings["compiler"] = compiler
+        self.settings["install_path"] = install_path
 
     def source(self):
         """
