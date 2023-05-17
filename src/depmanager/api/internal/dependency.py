@@ -3,6 +3,7 @@ Dependency object.
 """
 import platform
 from pathlib import Path
+from sys import stderr
 
 kinds = ["shared", "static", "header", "any"]
 compilers = ["gnu", "msvc"]
@@ -13,17 +14,20 @@ arches = ["x86_64", "aarch64"]
 default_kind = kinds[0]
 default_compiler = compilers[0]
 
-def format_os(os_str:str):
+
+def format_os(os_str: str):
     if os_str not in oses:
         exit(666)
     return os_str
 
-def format_arch(arch_str:str):
+
+def format_arch(arch_str: str):
     if arch_str == "AMD64":
         arch_str = "x86_64"
     if arch_str not in arches:
         exit(666)
     return arch_str
+
 
 default_os = format_os(platform.system())
 default_arch = format_arch(platform.machine())
@@ -187,13 +191,14 @@ class Props:
         idata = idata.replace("/", " ")
         items = idata.split()
         if len(items) != 6:
+            print(f"WARNING: Bad Line format: '{data}': {items}", file = stderr)
             return
         self.name = items[0]
         self.version = items[1]
         self.arch = items[2]
         self.kind = items[3]
         self.os = items[4]
-        self.compiler = items[5]
+        self.compiler = items[5].split("-", 1)[0]
 
     def from_edp_file(self, file: Path):
         """
