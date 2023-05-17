@@ -70,7 +70,7 @@ class __RemoteDatabase(__DataBase):
         self.cred = cred
         self.__initialize()
 
-    def __get_dep_list(self):
+    def get_dep_list(self):
         """
         Get a list of string describing dependency from the server.
         """
@@ -120,7 +120,7 @@ class __RemoteDatabase(__DataBase):
 
     def __initialize(self):
         self.connect()
-        self.__get_dep_list()
+        self.get_dep_list()
 
     def push(self, dep: Dependency, file: Path, force: bool = False):
         """

@@ -2,6 +2,7 @@
 Remote FTP database
 """
 import ftplib
+from sys import stderr
 
 from depmanager.api.internal.database_common import __RemoteDatabase
 from pathlib import Path
@@ -35,7 +36,7 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             self.valid_shape = True
         except Exception as err:
             self.valid_shape = False
-            print(f"ERROR while connecting to ftp server {self.destination}: {err}.")
+            print(f"ERROR while connecting to ftp server {self.destination}: {err}.", file=stderr)
 
     def get_file(self, distant_name: str, destination: Path):
         """

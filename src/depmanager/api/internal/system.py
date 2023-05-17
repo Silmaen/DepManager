@@ -9,13 +9,14 @@ from depmanager.api.internal.dependency import Props
 from depmanager.api.internal.database_local import LocalDatabase
 from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
 from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
+from depmanager.api.internal.database_remote_server import RemoteDatabaseServer
 
 
 class LocalSystem:
     """
     System manager.
     """
-    supported_remote = ["ftp", "folder"]
+    supported_remote = ["server", "ftp", "folder"]
 
     def __init__(self, config_file: Path = None):
         self.config = {}
@@ -58,7 +59,13 @@ class LocalSystem:
                 default = infos["default"]
             if default:
                 self.default_remote = name
-            if kind == "ftp":
+            if kind == "server":
+                if "port" in infos:
+                    port = infos["port"]
+                else:
+                    port = 80
+                self.remote_database[name] = RemoteDatabaseServer(url, port, default, login, passwd)
+            elif kind == "ftp":
                 if "port" in infos:
                     port = infos["port"]
                 else:
@@ -146,6 +153,34 @@ class LocalSystem:
             default = True
         if default:
             self.default_remote = name
+        if kind == "server":
+            if "port" in data:
+                port = data["port"]
+            else:
+                port = 80
+            if "login" in data:
+                login = data["login"]
+            else:
+                login = ""
+            if "passwd" in data:
+                passwd = data["passwd"]
+            else:
+                passwd = ""
+            self.remote_database[name] = RemoteDatabaseServer(url, port, default, login, passwd)
+            self.config["remotes"][name] = {
+                "url"    : url,
+                "port"   : port,
+                "default": default,
+                "kind"   : kind
+            }
+            if "port" != 80:
+                self.config["remotes"][name]["port"] = port
+            if "login" != "":
+                self.config["remotes"][name]["login"] = login
+            if "passwd" != "":
+                self.config["remotes"][name]["passwd"] = passwd
+            self.write_config_file()
+            return True
         if kind == "ftp":
             if "port" in data:
                 port = data["port"]
