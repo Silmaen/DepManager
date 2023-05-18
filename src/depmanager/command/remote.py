@@ -26,7 +26,7 @@ class RemoteCommand:
             if self.verbosity == 0:
                 print(F" {default} {key}")
             else:
-                print(F" {default} [ {['OFFLINE', 'ONLINE '][value.valid_shape]} ] {key} - {value.destination}")
+                print(F" {default} [ {['OFFLINE', 'ONLINE '][value.valid_shape]} ] {key} - {value.kind}, {value.destination}")
 
     def add(self, name: str, url: str, default: bool = False, login: str = "", passwd: str = ""):
         """

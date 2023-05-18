@@ -122,7 +122,8 @@ subcommands:
    * Allowed proto are:
      * `ftp` supports login
      * `folder` a folder of your computer (mostly for debug or testing)
-     * `server` a dedicated server see [github](https://github.com/Silmaen/DepManagerServer)
+     * `srv` a dedicated server see [github](https://github.com/Silmaen/DepManagerServer)
+     * `srvs` a dedicated server with secure connexion see [github](https://github.com/Silmaen/DepManagerServer)
    * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
  * `del <remote>` remove the designated remote if exists.
  * `sync <remote>` push to remote all local package that does not already exist on remote.
@@ -268,7 +269,8 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 Among things:
 
 * version 0.1.1
-  * [X] Add remte Type of 'server': a dedicated dependency server
+  * [X] Add remote Type of 'srv': a dedicated dependency server
+  * [X] Add remote Type of 'srvs': a dedicated dependency server with secure connexion
 * version 0.2.0
   * [ ] Do query across multiple source (local then remote)
   * [ ] Add a sorting order for remotes

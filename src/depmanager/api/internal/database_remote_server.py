@@ -14,14 +14,20 @@ from depmanager.api.internal.dependency import Dependency
 
 class RemoteDatabaseServer(__RemoteDatabase):
     """
-    Remote database using ftp protocol.
+    Remote database using server protocol.
     """
 
-    def __init__(self, destination: str, port: int = 21, default: bool = False, user: str = "", cred: str = ""):
+    def __init__(self, destination: str, port: int = -1, secure: bool = False, default: bool = False, user: str = "", cred: str = ""):
         self.port = port
+        if self.port == -1:
+            if secure:
+                self.port = 443
+            else:
+                self.port = 80
         self.http = None
+        self.secure = secure
+        self.kind = ["srv","srvs"][secure]
         super().__init__(destination, default, user, cred)
-        self.kind = "server"
 
     def connect(self):
         """
@@ -29,7 +35,10 @@ class RemoteDatabaseServer(__RemoteDatabase):
         TO IMPLEMENT IN DERIVED CLASS.
         """
         try:
-            self.http = http.client.HTTPConnection(self.destination, self.port)
+            if self.secure:
+                self.http = http.client.HTTPSConnection(self.destination, self.port)
+            else:
+                self.http = http.client.HTTPConnection(self.destination, self.port)
         except Exception as err:
             self.valid_shape = False
             print(f"ERROR while connecting to depmanager server {self.destination}: {err}.", file=stderr)
