@@ -16,7 +16,7 @@ class LocalSystem:
     """
     System manager.
     """
-    supported_remote = ["server", "ftp", "folder"]
+    supported_remote = ["srv", "srvs", "ftp", "folder"]
 
     def __init__(self, config_file: Path = None):
         self.config = {}
@@ -59,12 +59,18 @@ class LocalSystem:
                 default = infos["default"]
             if default:
                 self.default_remote = name
-            if kind == "server":
+            if kind == "srv":
                 if "port" in infos:
                     port = infos["port"]
                 else:
-                    port = 80
-                self.remote_database[name] = RemoteDatabaseServer(url, port, default, login, passwd)
+                    port = -1
+                self.remote_database[name] = RemoteDatabaseServer(url, port, False, default, login, passwd)
+            if kind == "srvs":
+                if "port" in infos:
+                    port = infos["port"]
+                else:
+                    port = -1
+                self.remote_database[name] = RemoteDatabaseServer(url, port, True, default, login, passwd)
             elif kind == "ftp":
                 if "port" in infos:
                     port = infos["port"]
