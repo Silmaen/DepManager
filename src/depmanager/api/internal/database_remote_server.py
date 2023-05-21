@@ -1,14 +1,13 @@
 """
 Remote FTP database
 """
-import http.client
-from base64 import b64encode
 from datetime import datetime
 from sys import stderr
+from pathlib import Path
+from requests.auth import HTTPBasicAuth
+from requests import get as httpget, post as httppost
 
 from depmanager.api.internal.database_common import __RemoteDatabase
-from pathlib import Path
-
 from depmanager.api.internal.dependency import Dependency
 
 
@@ -24,46 +23,36 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 self.port = 443
             else:
                 self.port = 80
-        self.http = None
         self.secure = secure
         self.kind = ["srv","srvs"][secure]
-        super().__init__(destination, default, user, cred)
+        true_destination = f"http{['','s'][secure]}://{destination}"
+        if secure:
+            if self.port != 443:
+                true_destination += f":{self.port}"
+        else:
+            if self.port != 80:
+                true_destination += f":{self.port}"
+        super().__init__(destination=true_destination, default=default, user=user, cred=cred, kind = self.kind)
 
     def connect(self):
         """
         Initialize the connection to remote host.
         TO IMPLEMENT IN DERIVED CLASS.
         """
-        try:
-            if self.secure:
-                self.http = http.client.HTTPSConnection(self.destination, self.port)
-            else:
-                self.http = http.client.HTTPConnection(self.destination, self.port)
-        except Exception as err:
-            self.valid_shape = False
-            print(f"ERROR while connecting to depmanager server {self.destination}: {err}.", file=stderr)
-
-    def basic_auth(self):
-        """
-        Generate basic auth chain
-        :return: Basic auth token
-        """
-        token = b64encode(f"{self.user}:{self.cred}".encode('utf-8')).decode("ascii")
-        return f'Basic {token}'
+        pass
 
     def get_dep_list(self):
         """
         Get a list of string describing dependency from the server.
         """
         try:
-            headers = {'Authorization': self.basic_auth()}
-            self.http.request("GET", "/api", headers=headers)
-            resp = self.http.getresponse()
-            if resp.status != 200:
+            basic = HTTPBasicAuth(self.user, self.cred)
+            resp = httpget(f"{self.destination}/api", auth=basic)
+            if resp.status_code != 200:
                 self.valid_shape = False
-                print(f"ERROR connecting to server: {self.destination}: {resp.status}: {resp.reason}")
+                print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}")
                 return
-            data = resp.read().decode("utf8").splitlines(keepends=False)
+            data = resp.text.splitlines(keepends=False)
             self.deps_from_strings(data)
         except Exception as err:
             print(f"ERROR Exception during server connexion: {self.destination}: {err}")
@@ -128,33 +117,33 @@ class RemoteDatabaseServer(__RemoteDatabase):
             return
         # get the download url:
         try:
-            key = "###"
-            headers = {'Authorization': self.basic_auth(), 'Content-Type': f'multipart/form-data;boundary={key}'}
+            basic = HTTPBasicAuth(self.user, self.cred)
             post_data = {"action": "pull"} | self.dep_to_code(dep)
-            self.http.request("POST", "/api", self.encode_request(post_data, key), headers=headers)
-            resp = self.http.getresponse()
-            if resp.status != 200:
+            resp = httppost(f"{self.destination}/api", auth=basic, data=post_data)
+
+            if resp.status_code != 200:
                 self.valid_shape = False
-                print(f"ERROR connecting to server: {self.destination}: {resp.status}: {resp.reason}", file=stderr)
-                print(f"      Server Data: {resp.read()}", file=stderr)
+                print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}", file=stderr)
+                print(f"      Server Data: {resp.text}", file=stderr)
                 return
-            data = resp.read().decode("utf8").strip()
-            fname = destination / data.rsplit("/",1)[-1]
-            self.http.request("GET", data)
-            resp = self.http.getresponse()
-            if resp.status != 200:
+            data = resp.text.strip()
+            filename = data.rsplit("/",1)[-1]
+            if filename.startswith(dep.properties.name):
+                filename = filename.replace(dep.properties.name, "")
+            fname = destination / filename
+            resp = httpget(f"{self.destination}{data}", auth=basic)
+            if resp.status_code != 200:
                 self.valid_shape = False
-                print(f"ERROR retrieving file {data} from server {self.destination}: {resp.status}: {resp.reason}, see error.log", file=stderr)
+                print(f"ERROR retrieving file {data} from server {self.destination}: {resp.status_code}: {resp.reason}, see error.log", file=stderr)
                 with open("error.log", "ab") as fp:
                     fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
-                    fp.write(resp.read())
+                    fp.write(resp.content)
                 return
             with open(fname, "wb") as fp:
-                fp.write(resp.read())
+                fp.write(resp.content)
         except Exception as err:
-            print(f"ERROR Exception during server connexion: {self.destination}: {err}")
+            print(f"ERROR Exception during server pull: {self.destination}: {err}")
             return
-
 
     def push(self, dep: Dependency, file: Path, force: bool = False):
         """
@@ -171,26 +160,21 @@ class RemoteDatabaseServer(__RemoteDatabase):
         if len(result) != 0 and not force:
             print(f"WARNING: Cannot push dependency {dep.properties.name}: already on server.", file=stderr)
             return
+        #
         try:
-            key = "###"
-            headers = {'Authorization': self.basic_auth(), 'Content-Type': f'multipart/form-data;boundary={key}'}
+            basic = HTTPBasicAuth(self.user, self.cred)
             post_data = {"action": "push"} | self.dep_to_code(dep)
-            request = self.encode_request(post_data, key).encode()
-            request += f'Content-Disposition: form-data; name="package"; filename="{file.name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode()
-            with open(file, "rb") as fp:
-                request += fp.read()
-            request += f'--{key}--\r\n'.encode()
-            self.http.request("POST", "/api", request, headers=headers)
-            resp = self.http.getresponse()
-            if resp.status != 200:
+            files = [ ("package", (file.name, open(file, "rb"), "application/octet-stream"))]
+            resp = httppost(f"{self.destination}/api", auth=basic, data=post_data, files=files, timeout=1200)
+            if resp.status_code != 200:
                 self.valid_shape = False
-                print(f"ERROR connecting to server: {self.destination}: {resp.status}: {resp.reason}, see error.log", file=stderr)
+                print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log", file=stderr)
                 with open("error.log", "ab") as fp:
                     fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
-                    fp.write(resp.read())
+                    fp.write(resp.content)
                 return
         except Exception as err:
-            print(f"ERROR Exception during server connexion: {self.destination}: {err}")
+            print(f"ERROR Exception during server push: {self.destination}: {err}")
             return
 
     def get_file(self, distant_name: str, destination: Path):

@@ -61,11 +61,12 @@ class __RemoteDatabase(__DataBase):
     """
     destination = ""
 
-    def __init__(self, destination: any([str, Path]), default: bool = False, user: str = "", cred: str = ""):
+    def __init__(self, destination: any([str, Path]), default: bool = False, user: str = "", cred: str = "",
+                 kind: str = "invalid"):
         super().__init__()
         self.destination = destination
         self.default = default
-        self.kind = "invalid"
+        self.kind = kind
         self.user = user
         self.cred = cred
         self.__initialize()

@@ -13,8 +13,8 @@ class RemoteDatabaseFolder(__RemoteDatabase):
     """
 
     def __init__(self, destination: str, default: bool = False):
-        super().__init__(Path(destination).resolve(), default)
-        self.kind = "folder"
+        super().__init__(destination=Path(destination).resolve(), default=default, kind="folder")
+
 
     def connect(self):
         """

@@ -35,6 +35,9 @@ keywords = ["dependency", "setuptools", "development"]  # Optional
 [project.scripts]  # Optional
 depmanager = "depmanager:main"
 
+[tool.poetry.dependencies]
+requests = "^2.29.0"
+
 [tool.setuptools]
 package-data = { "depmanager" = ["cmake/*.cmake"] }
 

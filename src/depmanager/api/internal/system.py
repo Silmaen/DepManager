@@ -3,6 +3,7 @@ Everything needed for database.
 """
 from pathlib import Path
 from shutil import rmtree
+from sys import stderr
 from time import sleep
 
 from depmanager.api.internal.dependency import Props
@@ -38,6 +39,7 @@ class LocalSystem:
             self.config["remotes"] = {}
         for name, infos in self.config["remotes"].items():
             if "url" not in infos:
+                print(f"Missing urls in remote.", file=stderr)
                 continue
             url = infos["url"]
             if "kind" in infos:
@@ -45,6 +47,7 @@ class LocalSystem:
             else:
                 kind = self.supported_remote[0]
             if kind not in self.supported_remote:
+                print(f"Unsupported kind: {kind}.", file=stderr)
                 continue
             if "login" in infos:
                 login = infos["login"]
@@ -88,7 +91,7 @@ class LocalSystem:
         import json
         if not self.file.exists():
             return
-        lockfile = Path(self.file.parent / (self.file.name+".lock"))
+        lockfile = Path(self.file.parent / (self.file.name + ".lock"))
         while lockfile.exists():
             sleep(0.5)
         lockfile.touch()
@@ -114,7 +117,7 @@ class LocalSystem:
         self.data_path.mkdir(parents=True, exist_ok=True)
         self.temp_path.mkdir(parents=True, exist_ok=True)
 
-        lockfile = Path(self.file.parent / (self.file.name+".lock"))
+        lockfile = Path(self.file.parent / (self.file.name + ".lock"))
         while lockfile.exists():
             sleep(0.5)
         lockfile.touch()
