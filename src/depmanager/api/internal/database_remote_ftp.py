@@ -16,8 +16,7 @@ class RemoteDatabaseFtp(__RemoteDatabase):
     def __init__(self, destination: str, port: int = 21, default: bool = False, user: str = "", cred: str = ""):
         self.port = port
         self.ftp = ftplib.FTP()
-        super().__init__(destination, default, user, cred)
-        self.kind = "ftp"
+        super().__init__(destination=destination, default=default, user=user, cred=cred, kind="ftp")
 
     def connect(self):
         """
