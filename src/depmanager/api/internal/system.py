@@ -19,8 +19,9 @@ class LocalSystem:
     """
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(self, config_file: Path = None):
+    def __init__(self, config_file: Path = None, verbosity:int = 0):
         self.config = {}
+        self.verbosity = verbosity
         if config_file is None:
             self.base_path = Path.home() / ".edm"
             self.file = self.base_path / "config.ini"

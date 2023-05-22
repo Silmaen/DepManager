@@ -10,15 +10,16 @@ class PackageManager:
     Manager fo package.
     """
 
-    def __init__(self, system=None):
+    def __init__(self, system=None, verbosity:int = 0):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
+        self.verbosity = verbosity
         if isinstance(system, LocalSystem):
             self.__sys = system
         elif isinstance(system, LocalManager):
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem()
+            self.__sys = LocalSystem(verbosity=verbosity)
 
     def query(self, query, remote_name):
         """
@@ -129,6 +130,8 @@ class PackageManager:
         if remote_name not in self.__sys.remote_database:
             print(f"ERROR: no remote named {remote_name} found.", file=stderr)
             return
+        if self.verbosity > 1:
+            print(f"Using remote named {remote_name}.")
         remote = self.__sys.remote_database[remote_name]
         finds = self.__sys.local_database.query(dep)
         if len(finds) > 1:
@@ -140,6 +143,11 @@ class PackageManager:
         if len(finds) == 0:
             print("ERROR: no package matches the request.", file=stderr)
             return
-        self.__sys.local_database.pack(finds[0], self.__sys.temp_path, "tgz")
+
         dep_path = self.__sys.temp_path / (Path(dep.get_path()).name + ".tgz")
+        if self.verbosity > 0:
+            print(f"Compressing library to file {dep_path}.")
+        self.__sys.local_database.pack(finds[0], self.__sys.temp_path, "tgz")
+        if self.verbosity > 0:
+            print(f"Starting upload.")
         remote.push(finds[0], dep_path)

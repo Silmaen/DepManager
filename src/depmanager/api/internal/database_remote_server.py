@@ -6,6 +6,7 @@ from sys import stderr
 from pathlib import Path
 from requests.auth import HTTPBasicAuth
 from requests import get as httpget, post as httppost
+from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from depmanager.api.internal.database_common import __RemoteDatabase
 from depmanager.api.internal.dependency import Dependency
@@ -162,17 +163,39 @@ class RemoteDatabaseServer(__RemoteDatabase):
             return
         #
         try:
-            basic = HTTPBasicAuth(self.user, self.cred)
-            post_data = {"action": "push"} | self.dep_to_code(dep)
-            files = [ ("package", (file.name, open(file, "rb"), "application/octet-stream"))]
-            resp = httppost(f"{self.destination}/api", auth=basic, data=post_data, files=files, timeout=1200)
-            if resp.status_code != 200:
-                self.valid_shape = False
-                print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log", file=stderr)
-                with open("error.log", "ab") as fp:
-                    fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
-                    fp.write(resp.content)
-                return
+            if file.stat().st_size < 1024 * 1024 * 50:
+                basic = HTTPBasicAuth(self.user, self.cred)
+                post_data = {"action": "push"} | self.dep_to_code(dep)
+                post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
+                encoder = MultipartEncoder(fields=post_data)
+                monitor = MultipartEncoderMonitor(encoder)
+                headers = {"Content-Type": monitor.content_type}
+                resp = httppost(f"{self.destination}/api", auth=basic, data=monitor, headers=headers)
+                if resp.status_code != 200:
+                    self.valid_shape = False
+                    print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log", file=stderr)
+                    with open("error.log", "ab") as fp:
+                        fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
+                        fp.write(resp.content)
+                    return
+            else:
+                print("Large file upload detected")
+                basic = HTTPBasicAuth(self.user, self.cred)
+                post_data = {"action": "push"} | self.dep_to_code(dep)
+                post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
+                encoder = MultipartEncoder(fields=post_data)
+                monitor = MultipartEncoderMonitor(encoder)
+                headers = {"Content-Type": monitor.content_type}
+                resp = httppost(f"{self.destination}/upload", auth=basic, data=monitor, headers=headers)
+                if resp.status_code != 200:
+                    self.valid_shape = False
+                    print(
+                        f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
+                        file=stderr)
+                    with open("error.log", "ab") as fp:
+                        fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
+                        fp.write(resp.content)
+                    return
         except Exception as err:
             print(f"ERROR Exception during server push: {self.destination}: {err}")
             return
