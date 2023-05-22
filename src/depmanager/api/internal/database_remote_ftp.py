@@ -13,10 +13,10 @@ class RemoteDatabaseFtp(__RemoteDatabase):
     Remote database using ftp protocol.
     """
 
-    def __init__(self, destination: str, port: int = 21, default: bool = False, user: str = "", cred: str = ""):
+    def __init__(self, destination: str, port: int = 21, default: bool = False, user: str = "", cred: str = "", verbosity:int  = 0):
         self.port = port
         self.ftp = ftplib.FTP()
-        super().__init__(destination=destination, default=default, user=user, cred=cred, kind="ftp")
+        super().__init__(destination=destination, default=default, user=user, cred=cred, kind="ftp", verbosity=verbosity)
 
     def connect(self):
         """

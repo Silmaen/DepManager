@@ -2,7 +2,7 @@
 Remote FTP database
 """
 from datetime import datetime
-from sys import stderr
+from sys import stderr, stdout
 from pathlib import Path
 from requests.auth import HTTPBasicAuth
 from requests import get as httpget, post as httppost
@@ -17,7 +17,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
     Remote database using server protocol.
     """
 
-    def __init__(self, destination: str, port: int = -1, secure: bool = False, default: bool = False, user: str = "", cred: str = ""):
+    def __init__(self, destination: str, port: int = -1, secure: bool = False, default: bool = False, user: str = "", cred: str = "", verbosity:int  = 0):
         self.port = port
         if self.port == -1:
             if secure:
@@ -33,7 +33,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
         else:
             if self.port != 80:
                 true_destination += f":{self.port}"
-        super().__init__(destination=true_destination, default=default, user=user, cred=cred, kind = self.kind)
+        super().__init__(destination=true_destination, default=default, user=user, cred=cred, kind = self.kind, verbosity=verbosity)
 
     def connect(self):
         """
@@ -58,20 +58,6 @@ class RemoteDatabaseServer(__RemoteDatabase):
         except Exception as err:
             print(f"ERROR Exception during server connexion: {self.destination}: {err}")
             return
-
-    def encode_request(self, req: dict, key):
-        """
-        encode the post request
-        :param req:
-        :param key:
-        :return:
-        """
-        data = ""
-        for r, q in req.items():
-            data += f'--{key}\r\nContent-Disposition: form-data; name="{r}"\r\n\r\n{q}\r\n'
-        # end of data body
-        data += f'--{key}--\r\n'
-        return data
 
     def dep_to_code(self, dep: Dependency):
         data = {}
@@ -146,6 +132,30 @@ class RemoteDatabaseServer(__RemoteDatabase):
             print(f"ERROR Exception during server pull: {self.destination}: {err}")
             return
 
+    def create_callback(self, encoder):
+        """
+        Create a callback for the given encoder.
+        :param encoder: The encoder.
+        :return: A monitor call back.
+        """
+        encoder_len = int(encoder.len / (1024 * 1024.0))
+        if self.verbosity > 0:
+            stdout.write(f"[0 of {encoder_len} MB]")
+            stdout.flush()
+
+        def callback(monitor):
+            """
+            The callback function.
+            :param monitor: The monitor
+            """
+            if self.verbosity > 0:
+                stdout.write("\r")
+                bytes_read = int(monitor.bytes_read / (1024 * 1024.0))
+                stdout.write(f"[{bytes_read} of {encoder_len} MB]")
+                stdout.flush()
+
+        return callback
+
     def push(self, dep: Dependency, file: Path, force: bool = False):
         """
         Push a dependency to the remote.
@@ -163,7 +173,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
             return
         #
         try:
-            if file.stat().st_size < 1024 * 1024 * 50:
+            if file.stat().st_size < 1:
                 basic = HTTPBasicAuth(self.user, self.cred)
                 post_data = {"action": "push"} | self.dep_to_code(dep)
                 post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
@@ -179,12 +189,11 @@ class RemoteDatabaseServer(__RemoteDatabase):
                         fp.write(resp.content)
                     return
             else:
-                print("Large file upload detected")
                 basic = HTTPBasicAuth(self.user, self.cred)
                 post_data = {"action": "push"} | self.dep_to_code(dep)
                 post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
                 encoder = MultipartEncoder(fields=post_data)
-                monitor = MultipartEncoderMonitor(encoder)
+                monitor = MultipartEncoderMonitor(encoder, callback=self.create_callback(encoder))
                 headers = {"Content-Type": monitor.content_type}
                 resp = httppost(f"{self.destination}/upload", auth=basic, data=monitor, headers=headers)
                 if resp.status_code != 200:
