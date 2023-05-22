@@ -10,15 +10,15 @@ class Recipe:
     """
     name = ""
     version = ""
-    os = []
-    arch = []
     source_dir = ""
     cache_variables = {}
     config = ["Debug", "Release"]
     kind = "shared"
-    generator = ""
     dependencies = []
     settings = {"os":"", "arch":"", "compiler":"", "install_path":Path()}
+
+    def __init__(self, possible: bool=True):
+        self.possible = possible
 
     def to_str(self):
         """
@@ -26,11 +26,11 @@ class Recipe:
         :return: String.
         """
         os = "any"
-        if len(self.os) > 0:
-            os = self.os
+        if len(self.settings["os"]) > 0:
+            os =self.settings["os"]
         arch = "any"
-        if len(self.arch) > 0:
-            arch = self.arch
+        if len(self.settings["arch"]) > 0:
+            arch = self.settings["arch"]
         return f"{self.name}/{self.version} on {os}/{arch} as {self.kind} from {self.source_dir}"
 
     def define(self,os, arch, compiler, install_path):

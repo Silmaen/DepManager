@@ -34,10 +34,14 @@ class Builder:
     def __init__(self,
                  source: Path,
                  temp: Path = None,
-                 local: LocalSystem = None):
+                 local: LocalSystem = None,
+                 cross_info=None):
+        if cross_info is None:
+            cross_info = {}
         from importlib.util import spec_from_file_location, module_from_spec
         from inspect import getmembers, isclass
         from depmanager.api.recipe import Recipe
+        self.cross_info = cross_info
         self.generator = ""
         if isinstance(local, LocalSystem):
             self.local = local
@@ -95,6 +99,10 @@ class Builder:
     def _get_options_str(self, rec):
         out = F"-DCMAKE_INSTALL_PREFIX={self.temp / 'install'}"
         out += F" -DBUILD_SHARED_LIBS={['OFF', 'ON'][rec.kind.lower() == 'shared']}"
+        if "C_COMPILER" in self.cross_info:
+            out += F" -DCMAKE_C_COMPILER={self.cross_info['C_COMPILER']}"
+        if "CXX_COMPILER" in self.cross_info:
+            out += F" -DCMAKE_CXX_COMPILER={self.cross_info['CXX_COMPILER']}"
         if rec.settings["os"].lower() in ["linux"]:
             out += " -DCMAKE_SKIP_INSTALL_RPATH=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
         for key, val in rec.cache_variables.items():
@@ -108,9 +116,21 @@ class Builder:
         for rec in self.recipes:
             #
             #
-            arch = platform.machine().replace("AMD", "x86_")
-            os = platform.system()
-            compiler = "gnu"
+            if rec.kind == "header":
+                arch = "any"
+                os = "any"
+                compiler = "any"
+            else:
+                if "CROSS_ARCH" in self.cross_info:
+                    arch = self.cross_info["CROSS_ARCH"]
+                else:
+                    arch = platform.machine().replace("AMD", "x86_")
+                if "CROSS_OS" in self.cross_info:
+                    os = self.cross_info["CROSS_OS"]
+                else:
+                    os = platform.system()
+                compiler = "gnu"
+
             rec.define(os, arch, compiler, self.temp / 'install')
 
             #
