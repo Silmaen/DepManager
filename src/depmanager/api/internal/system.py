@@ -171,11 +171,14 @@ class LocalSystem:
             default = True
         if default:
             self.default_remote = name
-        if kind == "server":
+        if kind in ["srv", "srvs"]:
             if "port" in data:
                 port = data["port"]
             else:
-                port = 80
+                if kind == "srvs":
+                    port = 443
+                else:
+                    port = 80
             if "login" in data:
                 login = data["login"]
             else:
@@ -191,7 +194,7 @@ class LocalSystem:
                 "default": default,
                 "kind"   : kind
             }
-            if "port" != 80:
+            if ("port" != 80 and kind == "srv") or ("port" != 443 and kind == "srvs"):
                 self.config["remotes"][name]["port"] = port
             if "login" != "":
                 self.config["remotes"][name]["login"] = login
