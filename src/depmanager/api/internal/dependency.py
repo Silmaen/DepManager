@@ -155,7 +155,7 @@ class Props:
         from fnmatch import translate
         from re import compile
         for attr in ["name", "version", "os", "arch", "kind", "compiler"]:
-            if attr == "kind" and (getattr(other, attr) == "any" or getattr(self, attr) == "any"):
+            if attr not in ["name", "version"] and (getattr(other, attr) == "any" or getattr(self, attr) == "any"):
                 continue
             if not compile(translate(getattr(other, attr))).match(getattr(self, attr)):
                 return False

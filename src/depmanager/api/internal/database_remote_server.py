@@ -70,11 +70,15 @@ class RemoteDatabaseServer(__RemoteDatabase):
             data["os"] = "w"
         if dep.properties.os.lower() == "linux":
             data["os"] = "l"
+        if dep.properties.os.lower() == "any":
+            data["os"] = "a"
         # arch
         if dep.properties.arch.lower() == "x86_64":
             data["arch"] = "x"
         if dep.properties.arch.lower() == "aarch64":
             data["arch"] = "a"
+        if dep.properties.arch.lower() == "any":
+            data["arch"] = "y"
         # kind
         if dep.properties.kind.lower() == "shared":
             data["kind"] = "r"
@@ -89,6 +93,8 @@ class RemoteDatabaseServer(__RemoteDatabase):
             data["compiler"] = "g"
         if dep.properties.compiler.lower() == "msvc":
             data["compiler"] = "m"
+        if dep.properties.compiler.lower() == "any":
+            data["compiler"] = "a"
         return data
 
     def pull(self, dep: Dependency, destination: Path):
