@@ -15,7 +15,7 @@ def pack(args, system=None):
     """
     from depmanager.api.internal.common import query_argument_to_dict
     from depmanager.api.package import PackageManager
-    pacman = PackageManager(system)
+    pacman = PackageManager(system, args.verbose)
     if args.what not in possible_info:
         return
     remote_name = pacman.remote_name(args)
@@ -91,7 +91,7 @@ def add_pack_parameters(sub_parsers):
     Definition of pack parameters.
     :param sub_parsers: The parent parser.
     """
-    from depmanager.api.internal.common import add_query_arguments, add_remote_selection_arguments
+    from depmanager.api.internal.common import add_query_arguments, add_remote_selection_arguments, add_common_arguments
     pack_parser = sub_parsers.add_parser("pack")
     pack_parser.description = "Tool to search for dependency in the library"
     pack_parser.add_argument(
@@ -99,6 +99,7 @@ def add_pack_parameters(sub_parsers):
             type=str,
             choices=possible_info,
             help="The information you want about the program")
+    add_common_arguments(pack_parser)  # add -v
     add_query_arguments(pack_parser)  # add -p -k -o -a -c
     add_remote_selection_arguments(pack_parser)  # add -n, -d
     pack_parser.add_argument(

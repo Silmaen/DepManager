@@ -37,6 +37,7 @@ depmanager = "depmanager:main"
 
 [tool.poetry.dependencies]
 requests = "^2.29.0"
+requests-toolbelt = "^1.0.0"
 
 [tool.setuptools]
 package-data = { "depmanager" = ["cmake/*.cmake"] }
