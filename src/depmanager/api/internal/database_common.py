@@ -11,7 +11,8 @@ class __DataBase:
     Abstract class describing database.
     """
 
-    def __init__(self):
+    def __init__(self, verbosity:int  = 0):
+        self.verbosity = verbosity
         self.valid_shape = True
         self.dependencies = []
 
@@ -62,8 +63,8 @@ class __RemoteDatabase(__DataBase):
     destination = ""
 
     def __init__(self, destination: any([str, Path]), default: bool = False, user: str = "", cred: str = "",
-                 kind: str = "invalid"):
-        super().__init__()
+                 kind: str = "invalid", verbosity:int  = 0):
+        super().__init__(verbosity)
         self.destination = destination
         self.default = default
         self.kind = kind

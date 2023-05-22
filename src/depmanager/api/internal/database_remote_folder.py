@@ -12,8 +12,8 @@ class RemoteDatabaseFolder(__RemoteDatabase):
     Remote database using ftp protocol.
     """
 
-    def __init__(self, destination: str, default: bool = False):
-        super().__init__(destination=Path(destination).resolve(), default=default, kind="folder")
+    def __init__(self, destination: str, default: bool = False, verbosity:int  = 0):
+        super().__init__(destination=Path(destination).resolve(), default=default, kind="folder", verbosity=verbosity)
 
 
     def connect(self):

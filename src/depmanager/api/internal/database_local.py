@@ -12,8 +12,8 @@ class LocalDatabase(__DataBase):
     Database stored in the local machine.
     """
 
-    def __init__(self, base_path: Path):
-        super().__init__()
+    def __init__(self, base_path: Path, verbosity:int  = 0):
+        super().__init__(verbosity)
         self.base_path = Path()
         if not base_path.exists():
             self.valid_shape = False

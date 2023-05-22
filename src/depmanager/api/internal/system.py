@@ -19,7 +19,7 @@ class LocalSystem:
     """
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(self, config_file: Path = None, verbosity:int = 0):
+    def __init__(self, config_file: Path = None, verbosity: int = 0):
         self.config = {}
         self.verbosity = verbosity
         if config_file is None:
@@ -33,7 +33,7 @@ class LocalSystem:
             self.data_path = self.base_path / "data"
             self.temp_path = self.base_path / "tmp"
         self.read_config_file()
-        self.local_database = LocalDatabase(self.data_path)
+        self.local_database = LocalDatabase(self.data_path, verbosity=self.verbosity)
         self.remote_database = {}
         self.default_remote = ""
         if "remotes" not in self.config.keys():
@@ -68,21 +68,24 @@ class LocalSystem:
                     port = infos["port"]
                 else:
                     port = -1
-                self.remote_database[name] = RemoteDatabaseServer(url, port, False, default, login, passwd)
+                self.remote_database[name] = RemoteDatabaseServer(url, port, False, default, login, passwd,
+                                                                  verbosity=self.verbosity)
             if kind == "srvs":
                 if "port" in infos:
                     port = infos["port"]
                 else:
                     port = -1
-                self.remote_database[name] = RemoteDatabaseServer(url, port, True, default, login, passwd)
+                self.remote_database[name] = RemoteDatabaseServer(url, port, True, default, login, passwd,
+                                                                  verbosity=self.verbosity)
             elif kind == "ftp":
                 if "port" in infos:
                     port = infos["port"]
                 else:
                     port = 21
-                self.remote_database[name] = RemoteDatabaseFtp(url, port, default, login, passwd)
+                self.remote_database[name] = RemoteDatabaseFtp(url, port, default, login, passwd,
+                                                               verbosity=self.verbosity)
             elif kind == "folder":
-                self.remote_database[name] = RemoteDatabaseFolder(url, default)
+                self.remote_database[name] = RemoteDatabaseFolder(url, default, verbosity=self.verbosity)
         self.write_config_file()
 
     def read_config_file(self):
