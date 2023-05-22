@@ -96,8 +96,13 @@ class LocalSystem:
         if not self.file.exists():
             return
         lockfile = Path(self.file.parent / (self.file.name + ".lock"))
+        counter = 0
         while lockfile.exists():
             sleep(0.5)
+            counter += 0.5
+            if counter > 5:
+                print(f"ERROR: config file locked. Wait for unfinished tasks or delete the file {lockfile}.")
+                exit(-1)
         lockfile.touch()
         with open(self.file, "r") as fp:
             self.config = json.load(fp)
