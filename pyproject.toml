@@ -1,6 +1,6 @@
 [project]
 name = "depmanager"  # Required
-version = "0.1.1"  # Required
+version = "0.1.2"  # Required
 authors = [
     { name = "Silmaen", email = "silmaen@silmaen.com" } # Optional
 ]
@@ -28,16 +28,16 @@ classifiers = [# Optional
 ]
 license = { file = "LICENSE" }
 keywords = ["dependency", "setuptools", "development"]  # Optional
+dependencies = [
+    "requests",
+    "requests-toolbelt",
+]
 
 [project.urls]  # Optional
 "Homepage" = "https://github.com/Silmaen/DepManager"
 
 [project.scripts]  # Optional
 depmanager = "depmanager:main"
-
-[tool.poetry.dependencies]
-requests = "^2.29.0"
-requests-toolbelt = "^1.0.0"
 
 [tool.setuptools]
 package-data = { "depmanager" = ["cmake/*.cmake"] }

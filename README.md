@@ -268,11 +268,14 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 
 Among things:
 
-* version 0.1.1
-  * [X] Add remote Type of 'srv': a dedicated dependency server
-  * [X] Add remote Type of 'srvs': a dedicated dependency server with secure connexion
 * version 0.2.0
   * [ ] Do query across multiple source (local then remote)
   * [ ] Add a sorting order for remotes
   * [ ] Auto-pull if not in local
     * [ ] Auto build recipe if neither local or remote found
+* version 0.1.2
+  * [X] Add possibility to force os, arch and compiler for cross compiling
+  * [X] Adapt build system to search dependency in the forced environment.
+* version 0.1.1
+  * [X] Add remote Type of 'srv': a dedicated dependency server
+  * [X] Add remote Type of 'srvs': a dedicated dependency server with secure connexion

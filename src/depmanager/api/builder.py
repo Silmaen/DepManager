@@ -170,9 +170,13 @@ class Builder:
                     print(f"ERROR: dependencies of {rec.to_str()}\n{dep} must be a contain a name.", file=stderr)
                     ok = False
                     break
+                if "os" not in dep:
+                    dep["os"] = os
+                if "arch" not in dep:
+                    dep["arch"] = arch
                 result = self.local.local_database.query(dep)
                 if len(result) == 0:
-                    print(f"ERROR: dependencies of {rec.to_str()}, {dep['name']} Not found.", file=stderr)
+                    print(f"ERROR: dependencies of {rec.to_str()}, {dep['name']} Not found:\n{dep}", file=stderr)
                     ok = False
                     break
                 dep_list.append(str(result[0].get_cmake_config_dir()).replace("\\", "/"))
