@@ -114,7 +114,7 @@ class LocalSystem:
             self.base_path = Path(self.config["data_path"]).resolve()
         if "temp_path" in self.config.keys():
             self.base_path = Path(self.config["temp_path"]).resolve()
-        lockfile.unlink()
+        lockfile.unlink(missing_ok=True)
 
     def write_config_file(self):
         """
@@ -132,7 +132,7 @@ class LocalSystem:
         lockfile.touch()
         with open(self.file, "w") as fp:
             fp.write(json.dumps(self.config, indent=2))
-        lockfile.unlink()
+        lockfile.unlink(missing_ok=True)
 
     def clear_tmp(self):
         """
