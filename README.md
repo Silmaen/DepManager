@@ -273,6 +273,18 @@ Among things:
   * [ ] Add a sorting order for remotes
   * [ ] Auto-pull if not in local
     * [ ] Auto build recipe if neither local or remote found
+  * [ ] Add concept of toolset
+    * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one
+    * [ ] Use toolset in build
+    * [ ] use toolset in queries
+* version 0.1.3
+  * [ ] omit -d in push/pull command
+  * [ ] add progressbass in push/pull command
+  * [ ] Add build Date in package properties
+  * [ ] Allow to force push/pull
+  * [ ] Allow to sync with remote
+    * [ ] Allow to pull local package that have newer version
+    * [ ] Allow to push local package newer than remote or not existing in remote
 * version 0.1.2
   * [X] Add possibility to force os, arch and compiler for cross compiling
   * [X] Adapt build system to search dependency in the forced environment.
