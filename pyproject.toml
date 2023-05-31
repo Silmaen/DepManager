@@ -1,43 +1,36 @@
 [project]
-name = "depmanager"  # Required
-version = "0.1.2"  # Required
+name = "depmanager"
+version = "0.1.2"
 authors = [
-    { name = "Silmaen", email = "silmaen@silmaen.com" } # Optional
+    {name = "Silmaen", email = "genteur.slayer@laposte.net"}
 ]
-description = "Simple Dependency manager"  # Optional
-readme = "README.md" # Optional
-requires-python = ">=3.10"
-classifiers = [# Optional
+description = "Simple Dependency manager"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+classifiers = [
     # How mature is this project? Common values are
     #   3 - Alpha
     #   4 - Beta
     #   5 - Production/Stable
-    "Development Status :: 3 - Alpha",
-    # Indicate who your project is intended for
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Build Tools",
-    # Pick your license as you wish
     "License :: OSI Approved :: MIT License",
-    # Specify the Python versions you support here. In particular, ensure
-    # that you indicate you support Python 3. These classifiers are *not*
-    # checked by "pip install". See instead "python_requires" below.
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3 :: Only",
 ]
-license = { file = "LICENSE" }
-keywords = ["dependency", "setuptools", "development"]  # Optional
+keywords = ["dependency", "setuptools", "development"]
 dependencies = [
     "requests",
     "requests-toolbelt",
 ]
 
-[project.urls]  # Optional
+[project.urls]
 "Homepage" = "https://github.com/Silmaen/DepManager"
 
-[project.scripts]  # Optional
+[project.scripts]
 depmanager = "depmanager:main"
+dmgr = "depmanager:main"
 
 [tool.setuptools]
 package-data = { "depmanager" = ["cmake/*.cmake"] }
