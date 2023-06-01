@@ -31,8 +31,11 @@ def pack(args, system=None):
         print(f"ERROR: {args.what} command only work on local database. please do not defined remote.", file=stderr)
         exit(-666)
     if args.what in ["push", "pull"] and remote_name == "":
-        print(f"ERROR: {args.what} command work by linking to a remote, please define a remote.", file=stderr)
-        exit(-666)
+        args.default = True
+        remote_name = pacman.remote_name(args)
+        if remote_name == "":
+            print(f"ERROR: {args.what} command work by linking to a remote, please define a remote.", file=stderr)
+            exit(-666)
     if args.what == "add":
         if args.source in [None, ""]:
             print(f"ERROR: please provide a source for package adding.", file=stderr)

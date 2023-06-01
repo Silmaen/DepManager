@@ -75,13 +75,7 @@ class RemoteCommand:
         :param name: Remote's name.
         :param default: If using default remote
         """
-        if default:
-            remote_db = self.remote_instance.get_default_remote()
-        else:
-            if type(name) != str or name in ["", None]:
-                print(f"ERROR please give a name for syncing a remote.", file=stderr)
-                exit(-666)
-            remote_db = self.remote_instance.get_remote(name)
+        remote_db = self.remote_instance.get_safe_remote(name, default)
         if remote_db is None:
             print(f"ERROR remote {name} not found.", file=stderr)
             exit(-666)

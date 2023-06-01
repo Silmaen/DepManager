@@ -32,6 +32,21 @@ class RemotesManager:
         """
         return self.__sys.supported_remote
 
+    def get_safe_remote(self, name, default:bool = False):
+        """
+        Get remote or default or None (only if no default exists)
+        :param name: Remote name
+        :param default: to force using default
+        :return: the remote
+        """
+        if default or type(name) != str or name in ["", None]:
+            remote =  None
+        else:
+            remote = self.get_remote(name)
+        if remote is None:
+            return self.get_default_remote()
+        return remote
+
     def get_remote(self, name: str):
         """
         Access to remote with given name.
