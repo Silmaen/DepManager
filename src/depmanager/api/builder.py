@@ -103,6 +103,8 @@ class Builder:
             out += F" -DCMAKE_C_COMPILER={self.cross_info['C_COMPILER']}"
         if "CXX_COMPILER" in self.cross_info:
             out += F" -DCMAKE_CXX_COMPILER={self.cross_info['CXX_COMPILER']}"
+        if self.cross_info["SINGLE_THREAD"]:
+            out += F" -j 1"
         if rec.settings["os"].lower() in ["linux"]:
             out += " -DCMAKE_SKIP_INSTALL_RPATH=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
         for key, val in rec.cache_variables.items():

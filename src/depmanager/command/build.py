@@ -29,6 +29,7 @@ def build(args, system=None):
         cross_info["CROSS_ARCH"] = args.cross_arch
     if args.cross_os not in ["", None]:
         cross_info["CROSS_OS"] = args.cross_os
+    cross_info["SINGLE_THREAD"] = args.single_thread
     builder = Builder(location, local=system, cross_info =cross_info)
     if not builder.has_recipes():
         print(f"ERROR: no recipe found in {location}", file=stderr)
@@ -76,5 +77,11 @@ def add_build_parameters(sub_parsers):
             type=str,
             default="",
             help="Define the cross OS."
+    )
+    build_parser.add_argument(
+            "--single-thread", "-s",
+            action="store_true",
+            default="",
+            help="Force the use of single thread."
     )
     build_parser.set_defaults(func=build)
