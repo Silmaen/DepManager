@@ -1,8 +1,8 @@
 """
 Pack command
 """
-from sys import stderr
 from pathlib import Path
+from sys import stderr
 
 possible_info = ["pull", "push", "add", "del", "query"]
 
@@ -71,10 +71,10 @@ def pack(args, system=None):
         return
     if args.what in ["del", "pull", "push"]:
         if len(deps) == 0:
-            print("WARNING: No package mathing the query.", file=stderr)
+            print("WARNING: No package matching the query.", file=stderr)
             return
         if len(deps) > 1:
-            print("WARNING: More than one package math the query, please precise:", file=stderr)
+            print("WARNING: More than one package match the query, please precise:", file=stderr)
             for dep in deps:
                 print(f"{dep.properties.get_as_str()}")
             return

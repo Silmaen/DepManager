@@ -6,11 +6,11 @@ from shutil import rmtree
 from sys import stderr
 from time import sleep
 
-from depmanager.api.internal.dependency import Props
 from depmanager.api.internal.database_local import LocalDatabase
-from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
 from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
+from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
 from depmanager.api.internal.database_remote_server import RemoteDatabaseServer
+from depmanager.api.internal.dependency import Props
 
 
 class LocalSystem:
@@ -187,7 +187,11 @@ class LocalSystem:
                 passwd = data["passwd"]
             else:
                 passwd = ""
-            self.remote_database[name] = RemoteDatabaseServer(url, port, default, login, passwd)
+            self.remote_database[name] = RemoteDatabaseServer(destination=url, port=port, secure=kind == "srvs",
+                                                              default=default, user=login, cred=passwd)
+            if not self.remote_database[name].valid_shape:
+                print("Error: cannot add the remote!", file=stderr)
+                return False
             self.config["remotes"][name] = {
                 "url"    : url,
                 "port"   : port,
@@ -271,6 +275,8 @@ class LocalSystem:
         destination_folder = self.local_database.base_path / f"{p.name}{p.hash()}"
         rmtree(destination_folder, ignore_errors=True)
         copytree(source, destination_folder)
+        self.clear_tmp()
+        self.local_database.reload()
 
     def remove_local(self, pack):
         """

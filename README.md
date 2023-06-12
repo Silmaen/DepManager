@@ -1,6 +1,6 @@
 # DepManager
 
-Depmanager is a minimalistic tool to manage dependencies (also known as third-party 
+Depmanager is a minimalistic tool to manage dependencies (also known as third-party
 libraries) of a C++ Project. It works closely with cmake tool.
 
 It allow to store dependencies in a distant repository to share builds with other and
@@ -8,12 +8,14 @@ have a local cache project-independent.
 
 ## Installation
 
-Depmanager is written in python so in the following we assume you have a 
+Depmanager is written in python so in the following we assume you have a
 working python installation designated as `<python>` with `pip` installed.
 
 ### pip
 
 To install dep manager simply use `<python> -m pip  install depmanager`
+
+See the page on Pypi: [depmanager](https://pypi.org/project/depmanager/).
 
 ### From source
 
@@ -22,6 +24,7 @@ Prerequisite: python module 'build' install it with `<python> -m pip install bui
 Clone the github repository.
 
 In the source root do:
+
 ```powershell
 <python> -m build
 <python> -m pip install dist/depmanager-x.y.z-py3-none-any.whl
@@ -31,7 +34,7 @@ In the source root do:
 
 ### Get help
 
-For any command or sub-command adding `--help` or `-h` to get help 
+For any command or sub-command adding `--help` or `-h` to get help
 on parameters or usage.
 
 ### Generalities
@@ -48,7 +51,7 @@ In the base commande you can find:
 
 In the following we will desigate `<query>` as something representing the description
 of a dependency. The syntax reads:  `--predicate(-p) <name>:<version> --type(-t)
- <type> --os(-o) <os> --arch(-a) <arch> --compiler(-c) <compiler>`
+<type> --os(-o) <os> --arch(-a) <arch> --compiler(-c) <compiler>`
 
 Valid values for `type`: `shared`, `static`, `header`.
 
@@ -70,9 +73,10 @@ If the name does not exist, it will fall back to default then to local.
 ### info
 
 subcommands:
- * `version` gives the version of the local manager.
- * `basedir` gives the path to the local data of the manager
- * `cmakedir` gives the path to add to `CMAKE_MODULE_PATH` before include `ExternalDependencyManager`
+
+* `version` gives the version of the local manager.
+* `basedir` gives the path to the local data of the manager
+* `cmakedir` gives the path to add to `CMAKE_MODULE_PATH` before include `ExternalDependencyManager`
 
 ### get
 
@@ -89,7 +93,7 @@ Actions on packages.
 
 #### query
 
-`depmanager pack query <query> <remote>` Simply do a search in the given remote (in local if 
+`depmanager pack query <query> <remote>` Simply do a search in the given remote (in local if
 nothing given) and print the result.
 
 #### add, del
@@ -115,22 +119,32 @@ If `--force` is given, The transfert occurs even if the package already exists i
 
 Manage the list of remote servers
 subcommands:
- * `list` lists the defined remote server.
- * `add` adds a new remote to the list.
-   * `--name(-n) <name> --url(-u) <proto>://<url[:port]> [--default(-d)]`.
-   * Name is mandatory. if the name already exist it will modify the existing one.
-   * Allowed proto are:
-     * `ftp` supports login
-     * `folder` a folder of your computer (mostly for debug or testing)
-     * `srv` a dedicated server see [github](https://github.com/Silmaen/DepManagerServer)
-     * `srvs` a dedicated server with secure connexion see [github](https://github.com/Silmaen/DepManagerServer)
-   * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
- * `del <remote>` remove the designated remote if exists.
- * `sync <remote>` push to remote all local package that does not already exist on remote.
+
+* `list` lists the defined remote server.
+* `add` adds a new remote to the list.
+    * `--name(-n) <name> --url(-u) <proto>://<url[:port]> [--default(-d)]`.
+    * Name is mandatory. if the name already exist it will modify the existing one.
+    * Allowed proto are:
+        * `ftp` supports login
+        * `folder` a folder of your computer (mostly for debug or testing)
+        * `srv` a dedicated server see [github](https://github.com/Silmaen/DepManagerServer)
+        * `srvs` a dedicated server with secure connexion see [github](https://github.com/Silmaen/DepManagerServer)
+    * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
+* `del <remote>` remove the designated remote if exists.
+* `sync <remote>` push to remote all local package that does not already exist on remote.
 
 ### build
 
-`depmanager build <location>` will search for recipe in the given location and build them.
+`depmanager build [OPTIONS] <location>` will search for recipe in the given location and build them.
+
+Some option can be passed to the build system:
+
+* `--single-thread`: on some low-end devices (such as RaspberryPi) single thread build is recommended.
+* `--force`, `-f`: Force the build even if the dependency already exists
+* `--cross-c`: redefine the C compiler
+* `--cross-cxx`: redefine the C++ compiler
+* `--cross-arch`: redefine the architecture
+* `--cross-os`: redefine the OS
 
 ## Using package with cmake
 
@@ -171,6 +185,7 @@ dm_find_package(
    [COMPILER target_compiler]
 )
 ```
+
 `package` is the package name to find.
 
 `version` is the exact version to match (wildcard are allowed). By default, find the
@@ -179,7 +194,7 @@ latest one.
 `kind` is used to force library kind (`shared`, `static`, `header`). By default it return
 the first found.
 
-If `REQUIRED` set, the function will give an error if no package found. 
+If `REQUIRED` set, the function will give an error if no package found.
 (same as original `find_package`)
 
 If `QUIET` set, only errors are written. (same as original `find_package`). In opposition,
@@ -192,7 +207,7 @@ values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER
 
 ### Load package
 
-This command is similar to the previous one, but does not directly do a cmake's `find_package`. 
+This command is similar to the previous one, but does not directly do a cmake's `find_package`.
 It only adds to the `CMAKE_PREFIX_PATH` list the folders of given package.
 
 ```cmake
@@ -211,7 +226,7 @@ After call this command, the cmake user has to call for needed `find_package`.
 
 ## Create you own package
 
-Depmanager allow you to create your own packages by defining recipes. Then run 
+Depmanager allow you to create your own packages by defining recipes. Then run
 `depmanager build <location of recipes>`
 The program will then build and add dependencies to the local cache.
 
@@ -226,17 +241,17 @@ As for dependency usage, build also rely on cmake for building.
 
 The builder will use the provided recipe in the following workflow:
 
- * Init recipe
- * Call `recipe.source()`
- * Call `recipe.configure()`
- * Initialize options based on recipe data
- * Run cmake configure
- * For all configuration (mostly 'Debug', 'Release')
-   * build target `install`
- * Call `recipe.install()`
- * Generate edp.info file
- * Import into local cache
- * Clean Temporary
+* Init recipe
+* Call `recipe.source()`
+* Call `recipe.configure()`
+* Initialize options based on recipe data
+* Run cmake configure
+* For all configuration (mostly 'Debug', 'Release')
+    * build target `install`
+* Call `recipe.install()`
+* Generate edp.info file
+* Import into local cache
+* Clean Temporary
 
 Here is a small example
 
@@ -246,14 +261,16 @@ Small recipe example
 """
 from depmanager.api.recipe import Recipe
 
+
 class MyAwesomeLib(Recipe):
     """
     Awesome lib
     """
     name = "awesome_lib"  # lib name
-    version = "0.0.1.foo" # lib version
-    source_dir = "src"    # where to fine the sources (especially) the CmakeList.txt
-    kind = "static"       # the lib's kind
+    version = "0.0.1.foo"  # lib version
+    source_dir = "src"  # where to fine the sources (especially) the CmakeList.txt
+    kind = "static"  # the lib's kind
+
 
 class AnotherAwesomeLib(MyAwesomeLib):
     """
@@ -269,25 +286,27 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 Among things:
 
 * version 0.2.0
-  * [ ] Do query across multiple source (local then remote)
-  * [ ] Add a sorting order for remotes
-  * [ ] Auto-pull if not in local
-    * [ ] Auto build recipe if neither local or remote found
-  * [ ] Add concept of toolset
-    * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one
-    * [ ] Use toolset in build
-    * [ ] use toolset in queries
+    * [ ] Do query across multiple source (local then remote)
+    * [ ] Add a sorting order for remotes
+    * [ ] Auto-pull if not in local
+        * [ ] Auto build recipe if neither local or remote found
+    * [ ] Add concept of toolset
+        * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one
+        * [ ] Use toolset in build
+        * [ ] use toolset in queries
+    * [ ] Add build Date in package properties
 * version 0.1.3
-  * [ ] omit -d in push/pull command
-  * [ ] add progressbass in push/pull command
-  * [ ] Add build Date in package properties
-  * [ ] Allow to force push/pull
-  * [ ] Allow to sync with remote
-    * [ ] Allow to pull local package that have newer version
-    * [ ] Allow to push local package newer than remote or not existing in remote
+    * [X] Update internal statuses when using API
+    * [X] omit -d in push/pull command
+    * [X] add progress bar in push/pull command
+    * [ ] Allow to force push/pull
+    * [X] Allow single thread in build
+    * [ ] Allow to sync with remote
+        * [ ] Allow to pull local package that have newer version
+        * [ ] Allow to push local package newer than remote or not existing in remote
 * version 0.1.2
-  * [X] Add possibility to force os, arch and compiler for cross compiling
-  * [X] Adapt build system to search dependency in the forced environment.
+    * [X] Add possibility to force os, arch and compiler for cross compiling
+    * [X] Adapt build system to search dependency in the forced environment.
 * version 0.1.1
-  * [X] Add remote Type of 'srv': a dedicated dependency server
-  * [X] Add remote Type of 'srvs': a dedicated dependency server with secure connexion
+    * [X] Add remote Type of 'srv': a dedicated dependency server
+    * [X] Add remote Type of 'srvs': a dedicated dependency server with secure connexion

@@ -10,7 +10,7 @@ class PackageManager:
     Manager fo package.
     """
 
-    def __init__(self, system=None, verbosity:int = 0):
+    def __init__(self, system=None, verbosity: int = 0):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
         self.verbosity = verbosity
@@ -69,12 +69,16 @@ class PackageManager:
                 from zipfile import ZipFile
                 destination_dir = self.__sys.temp_path / "pack"
                 destination_dir.mkdir(parents=True)
+                if self.verbosity > 2:
+                    print(f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}")
                 with ZipFile(source) as archive:
                     archive.extractall(destination_dir)
             elif suffixes in [[".tgz"], [".tar", ".gz"]]:
                 import tarfile
                 destination_dir = self.__sys.temp_path / "pack"
                 destination_dir.mkdir(parents=True)
+                if self.verbosity > 2:
+                    print(f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}")
                 with tarfile.open(str(source), "r|gz") as archive:
                     archive.extractall(destination_dir)
             else:
