@@ -21,7 +21,7 @@ See the page on Pypi: [depmanager](https://pypi.org/project/depmanager/).
 
 Prerequisite: python module 'build' install it with `<python> -m pip install build`
 
-Clone the github repository.
+Clone the gitHub repository.
 
 In the source root do:
 
@@ -49,8 +49,8 @@ In the base commande you can find:
 | remote  | list, add, del              | Manage the list of distant servers |
 | build   |                             | Build a new package                |
 
-In the following we will desigate `<query>` as something representing the description
-of a dependency. The syntax reads:  `--predicate(-p) <name>:<version> --type(-t)
+In the following, `<query>` designate something representing the dependency's description.
+The syntax reads:  `--predicate(-p) <name>:<version> --type(-t)
 <type> --os(-o) <os> --arch(-a) <arch> --compiler(-c) <compiler>`
 
 Valid values for `type`: `shared`, `static`, `header`.
@@ -82,7 +82,7 @@ subcommands:
 
 `depmanager get <query>`
 
-Get path to cmake config of the 'best' package given the query information.
+Get path to cmake config of the 'best' package given by the query information.
 
 The command will only search in the local cache. This does not intent for human use but more for
 cmake integration.
@@ -102,7 +102,7 @@ nothing given) and print the result.
 folder, then it must contain a properly formatted `edp.info` file. Or an archive (.zip, .tgz or .tar.gz
 file format allowed). The uncompressed archive must contain a properly formatted `edp.info` file.
 
-`depmanager pack del <query>` Will remove from local cache all package matching the query
+`depmanager pack del <query>` Will remove from local cache all package matching the query.
 
 #### push, pull
 
@@ -123,12 +123,12 @@ subcommands:
 * `list` lists the defined remote server.
 * `add` adds a new remote to the list.
     * `--name(-n) <name> --url(-u) <proto>://<url[:port]> [--default(-d)]`.
-    * Name is mandatory. if the name already exist it will modify the existing one.
+    * Mandatory. If name already exists it will modify the existing one.
     * Allowed proto are:
         * `ftp` supports login
         * `folder` a folder of your computer (mostly for debug or testing)
-        * `srv` a dedicated server see [github](https://github.com/Silmaen/DepManagerServer)
-        * `srvs` a dedicated server with secure connexion see [github](https://github.com/Silmaen/DepManagerServer)
+        * `srv` a dedicated server see [gitHub](https://github.com/Silmaen/DepManagerServer)
+        * `srvs` a dedicated server with secure connexion see [gitHub](https://github.com/Silmaen/DepManagerServer)
     * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
 * `del <remote>` remove the designated remote if exists.
 * `sync <remote>` push to remote all local package that does not already exist on remote.
@@ -171,7 +171,7 @@ endif()
 
 ### Find packages
 
-With depmanager initialized in cmake, it provide an alternative to classical `find_package`
+With depmanager initialized in cmake, it provides an alternative to classical `find_package`
 of cmake by `dm_find_package`
 
 ```cmake
@@ -203,7 +203,7 @@ if `TRACE` set, many more debug message displayed.
 `target_arch`, `target_os`, `target_compiler` are used in the query. If not set, default
 values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER_ID`
 
-**LIMITATION:** it require the library name is the package name. So no multi lib or lib with different name.
+**LIMITATION:** it requires the library name is the package name. So no multi lib or lib with different name.
 
 ### Load package
 
@@ -286,27 +286,28 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 Among things:
 
 * version 0.2.0
-    * [ ] Do query across multiple source (local then remote)
-    * [ ] Add a sorting order for remotes
-    * [ ] Auto-pull if not in local
-        * [ ] Auto build recipe if neither local or remote found
-    * [ ] Add concept of toolset
-        * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one
-        * [ ] Use toolset in build
-        * [ ] use toolset in queries
-    * [ ] Add build Date in package properties
+    * [ ] Do query across multiple source (local then remote).
+    * [ ] Add a sorting order for remotes.
+    * [ ] Auto-pull if not in local.
+        * [ ] Auto build recipe if neither local nor remote found.
+    * [ ] Add concept of toolset.
+        * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
+        * [ ] Use toolset in build.
+        * [ ] use toolset in queries.
+* version 0.1.4
+    * [ ] Add build Date in package properties.
+    * [ ] Allow to force push/pull.
+    * [ ] Allow to sync with remote.
+        * [ ] Allow to pull local package that have newer version.
+        * [ ] Allow to push local package newer than remote or not existing in remote.
 * version 0.1.3
-    * [X] Update internal statuses when using API
-    * [X] omit -d in push/pull command
-    * [X] add progress bar in push/pull command
-    * [ ] Allow to force push/pull
-    * [X] Allow single thread in build
-    * [ ] Allow to sync with remote
-        * [ ] Allow to pull local package that have newer version
-        * [ ] Allow to push local package newer than remote or not existing in remote
+    * [X] Update internal statuses when using API.
+    * [X] omit -d in push/pull command.
+    * [X] add progress bar in push/pull command.
+    * [X] Allow single thread in build.
 * version 0.1.2
-    * [X] Add possibility to force os, arch and compiler for cross compiling
+    * [X] Add possibility to force os, arch and compiler for cross compiling.
     * [X] Adapt build system to search dependency in the forced environment.
 * version 0.1.1
-    * [X] Add remote Type of 'srv': a dedicated dependency server
-    * [X] Add remote Type of 'srvs': a dedicated dependency server with secure connexion
+    * [X] Add remote 'srv' Type: a dedicated dependency server.
+    * [X] Add remote 'srvs' Type: a dedicated dependency server with secure connexion.
