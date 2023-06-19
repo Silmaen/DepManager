@@ -13,7 +13,7 @@ class RemoteCommand:
 
     def __init__(self, verbosity=0, system=None):
         from depmanager.api.remotes import RemotesManager
-        self.remote_instance = RemotesManager(system)
+        self.remote_instance = RemotesManager(system, verbosity)
         self.verbosity = verbosity
 
     def list(self):
@@ -26,7 +26,8 @@ class RemoteCommand:
             if self.verbosity == 0:
                 print(F" {default} {key}")
             else:
-                print(F" {default} [ {['OFFLINE', 'ONLINE '][value.valid_shape]} ] {key} - {value.kind}, {value.destination}")
+                print(
+                        F" {default} [ {['OFFLINE', 'ONLINE '][value.valid_shape]} ] {key} - {value.kind}, {value.destination}")
 
     def add(self, name: str, url: str, default: bool = False, login: str = "", passwd: str = ""):
         """
@@ -69,33 +70,15 @@ class RemoteCommand:
             exit(-666)
         self.remote_instance.remove_remote(name)
 
-    def sync(self, name: str, default: bool = False):
+    def sync(self, name: str, default: bool = False, pull_newer: bool = True, push_newer: bool = True):
         """
-        Synchronize local with given remote (push to server all unexisting package).
+        Synchronize local with given remote (push/pull with server all newer package).
         :param name: Remote's name.
         :param default: If using default remote
+        :param pull_newer: Pull images if newer version exists
+        :param push_newer: Push images if newer version exists
         """
-        remote_db = self.remote_instance.get_safe_remote(name, default)
-        if remote_db is None:
-            print(f"ERROR remote {name} not found.", file=stderr)
-            exit(-666)
-        local_db = self.remote_instance.get_local()
-        all_local = local_db.query({
-            "name": "*",
-            "version": "*",
-            "os": "*",
-            "arch": "*",
-            "kind": "*",
-            "compiler": "*"
-        })
-        for single_local in all_local:
-            if len(remote_db.query(single_local)) > 0:
-                print(f"Package {single_local.properties.get_as_str()} Already on server.")
-                continue
-            print(f"==> Push Package {single_local.properties.get_as_str()} to server.")
-            local_db.pack(single_local, self.remote_instance.get_temp_dir(), "tgz")
-            dep_path = self.remote_instance.get_temp_dir() / (single_local.get_path().name + ".tgz")
-            remote_db.push(single_local, dep_path)
+        self.remote_instance.sync_remote(name, default, pull_newer, push_newer)
 
 
 def remote(args, system=None):
@@ -114,7 +97,16 @@ def remote(args, system=None):
     elif args.what == "del":
         rem.delete(args.name)
     elif args.what == "sync":
-        rem.sync(args.name, args.default)
+        do_pull = True
+        do_push = True
+        if args.push_only:
+            do_pull = False
+        if args.pull_only:
+            do_push = False
+        if not (do_push or do_pull):
+            print("ERROR: push-only & pull-only are mutually exclusive.", file=stderr)
+            exit(1)
+        rem.sync(args.name, args.default, do_pull, do_push)
 
 
 def add_remote_parameters(sub_parsers):
@@ -148,5 +140,17 @@ def add_remote_parameters(sub_parsers):
             type=str,
             default="",
             help="Password."
+    )
+    info_parser.add_argument(
+            "--push-only",
+            action="store_true",
+            default=False,
+            help="Do only the push actions in sync."
+    )
+    info_parser.add_argument(
+            "--pull-only",
+            action="store_true",
+            default=False,
+            help="Do only the pull actions in sync."
     )
     info_parser.set_defaults(func=remote)
