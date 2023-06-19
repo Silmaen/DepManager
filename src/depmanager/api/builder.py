@@ -2,9 +2,10 @@
 Tools for building packages.
 """
 import platform
-from shutil import rmtree
 from pathlib import Path
+from shutil import rmtree
 from sys import stderr
+
 from depmanager.api.internal.system import LocalSystem, Props
 from depmanager.api.local import LocalManager
 
@@ -109,7 +110,7 @@ class Builder:
             out += F" -D{key}={val}"
         return out
 
-    def build_all(self, forced:bool = False):
+    def build_all(self, forced: bool = False):
         """
         Do the build of recipes.
         """
@@ -216,6 +217,6 @@ class Builder:
                 self.local.import_folder(self.temp / 'install')
             # clean Temp
             rec.clean()
-            rmtree(self.temp)
+            rmtree(self.temp, ignore_errors=True)
             if not cont:
                 exit(-666)
