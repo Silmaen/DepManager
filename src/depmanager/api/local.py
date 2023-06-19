@@ -8,7 +8,7 @@ class LocalManager:
     """
     Local manager.
     """
-    version = "0.1.3"
+    version = "0.1.4"
 
     def __init__(self, system=None, verbosity: int = 0):
         from depmanager.api.internal.system import LocalSystem
