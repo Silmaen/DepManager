@@ -1,6 +1,8 @@
 """
 Instance of remotes manager.
 """
+from copy import deepcopy
+from sys import stderr
 
 
 class RemotesManager:
@@ -8,15 +10,16 @@ class RemotesManager:
     Local manager.
     """
 
-    def __init__(self, system=None):
+    def __init__(self, system=None, verbosity: int = 0):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
+        self.verbosity = verbosity
         if isinstance(system, LocalSystem):
             self.__sys = system
         elif isinstance(system, LocalManager):
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem()
+            self.__sys = LocalSystem(verbosity=verbosity)
 
     def get_remote_list(self):
         """
@@ -32,7 +35,7 @@ class RemotesManager:
         """
         return self.__sys.supported_remote
 
-    def get_safe_remote(self, name, default:bool = False):
+    def get_safe_remote(self, name, default: bool = False):
         """
         Get remote or default or None (only if no default exists)
         :param name: Remote name
@@ -40,12 +43,26 @@ class RemotesManager:
         :return: the remote
         """
         if default or type(name) != str or name in ["", None]:
-            remote =  None
+            remote = None
         else:
             remote = self.get_remote(name)
         if remote is None:
             return self.get_default_remote()
         return remote
+
+    def get_safe_remote_name(self, name, default: bool = False):
+        """
+        Get remote or default or None (only if no default exists)
+        :param name: Remote name
+        :param default: to force using default
+        :return: the remote
+        """
+        r_name = name
+        if default:
+            self.__sys.default_remote
+        if r_name not in self.__sys.remote_database:
+            return ""
+        return r_name
 
     def get_remote(self, name: str):
         """
@@ -112,3 +129,48 @@ class RemotesManager:
         :param name: Remote's name.
         """
         self.__sys.del_remote(name)
+
+    def sync_remote(self, name: str, default: bool = False, pull_newer: bool = True, push_newer: bool = True):
+        """
+        Synchronize with given remote (push/pull with server all newer package).
+        :param name: Remote's name.
+        :param default: If using default remote
+        :param pull_newer: Pull images if newer version exists
+        :param push_newer: Push images if newer version exists
+        """
+        from depmanager.api.package import PackageManager
+        pkg_mgr = PackageManager(self.__sys, self.verbosity)
+        local_db = self.__sys.local_database
+        remote_db_name = self.get_safe_remote_name(name, default)
+        remote_db = self.get_safe_remote(name, default)
+        if remote_db is None:
+            print(f"ERROR remote {name} not found.", file=stderr)
+            exit(-666)
+        all_local = local_db.query({
+            "name"    : "*",
+            "version" : "*",
+            "os"      : "*",
+            "arch"    : "*",
+            "kind"    : "*",
+            "compiler": "*"
+        })
+        # Compare local and remote
+        for single_local in all_local:
+            props = deepcopy(single_local.properties)
+            props_versionless = deepcopy(props)
+            props_versionless.version = "*"
+            # pull newer version of packages
+            remote_list = remote_db.query(props_versionless)
+            if pull_newer and len(remote_list) > 0:
+                dep_first = remote_list[0]
+                if dep_first.properties.version_greater(props):
+                    # Check if new package already on local
+                    if len(local_db.query(dep_first)) == 0:
+                        print(f"==> Pull Package {dep_first.properties.get_as_str()} from server as newer version.")
+                        pkg_mgr.add_from_remote(dep_first, remote_db_name)
+            # push all not-existing package
+            if push_newer and len(remote_db.query(single_local)) > 0:
+                print(f"Package {single_local.properties.get_as_str()} Already on server.")
+                continue
+            print(f"==> Push Package {single_local.properties.get_as_str()} to server.")
+            pkg_mgr.add_to_remote(single_local, remote_db_name)

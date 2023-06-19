@@ -102,6 +102,24 @@ class Props:
     def __ge__(self, other):
         return self == other or self > other
 
+    def version_greater(self, other_version):
+        """
+        Compare Version number
+        :param other_version:
+        :return: True if self greater than other version
+        """
+        if self.version != other_version:
+            self_version_item = self.version.split(".")
+            other_version_item = other_version.split(".")
+            for i in range(min(len(self_version_item), len(other_version_item))):
+                if self_version_item[i] != other_version_item[i]:
+                    try:
+                        return int(self_version_item[i]) > int(other_version_item[i])
+                    except:
+                        return self_version_item[i] > other_version_item[i]
+            return len(self_version_item) > len(other_version_item)
+        return False
+
     def from_dict(self, data: dict):
         """
         Create props from a dictionary.
@@ -191,7 +209,7 @@ class Props:
         idata = idata.replace("/", " ")
         items = idata.split()
         if len(items) != 6:
-            print(f"WARNING: Bad Line format: '{data}': {items}", file = stderr)
+            print(f"WARNING: Bad Line format: '{data}': {items}", file=stderr)
             return
         self.name = items[0]
         self.version = items[1]

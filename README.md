@@ -131,7 +131,9 @@ subcommands:
         * `srvs` a dedicated server with secure connexion see [gitHub](https://github.com/Silmaen/DepManagerServer)
     * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
 * `del <remote>` remove the designated remote if exists.
-* `sync <remote>` push to remote all local package that does not already exist on remote.
+* `sync <remote> [--push-only|--pull-only]` push to remote all local package that does not already
+  exist on remote. Pull local package that have a newer version on the remote. If no remote given, it will use the
+  default one.
 
 ### build
 
@@ -294,12 +296,13 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] use toolset in queries.
-* version 0.1.4
     * [ ] Add build Date in package properties.
-    * [ ] Allow to force push/pull.
-    * [ ] Allow to sync with remote.
-        * [ ] Allow to pull local package that have newer version.
-        * [ ] Allow to push local package newer than remote or not existing in remote.
+* version 0.1.4
+    * [X] Allow to sync with remote.
+        * [X] Allow to pull local package that have newer version.
+        * [X] Allow to push local package newer than remote or not existing in remote.
+    * [X] Allow to force push/pull.
+    * [X] Bugfix: safe delete
 * version 0.1.3
     * [X] Update internal statuses when using API.
     * [X] omit -d in push/pull command.
