@@ -57,12 +57,13 @@ class RemotesManager:
         :param default: to force using default
         :return: the remote
         """
-        r_name = name
-        if default:
-            self.__sys.default_remote
-        if r_name not in self.__sys.remote_database:
-            return ""
-        return r_name
+        if default or type(name) != str or name in ["", None]:
+            remote = None
+        else:
+            remote = name
+        if remote is None:
+            return self.__sys.default_remote
+        return remote
 
     def get_remote(self, name: str):
         """
@@ -146,6 +147,9 @@ class RemotesManager:
         if remote_db is None:
             print(f"ERROR remote {name} not found.", file=stderr)
             exit(-666)
+        if remote_db_name in ["", None]:
+            print(f"ERROR remote {name}({default}) -> {remote_db_name} not found.", file=stderr)
+            exit(-666)
         all_local = local_db.query({
             "name"    : "*",
             "version" : "*",
@@ -159,18 +163,36 @@ class RemotesManager:
             props = deepcopy(single_local.properties)
             props_versionless = deepcopy(props)
             props_versionless.version = "*"
+            just_pulled = False
+            if self.verbosity > 0:
+                print(f"Package {single_local.properties.get_as_str()} :", end="")
             # pull newer version of packages
-            remote_list = remote_db.query(props_versionless)
-            if pull_newer and len(remote_list) > 0:
-                dep_first = remote_list[0]
-                if dep_first.properties.version_greater(props):
-                    # Check if new package already on local
-                    if len(local_db.query(dep_first)) == 0:
-                        print(f"==> Pull Package {dep_first.properties.get_as_str()} from server as newer version.")
-                        pkg_mgr.add_from_remote(dep_first, remote_db_name)
+            if pull_newer:
+                remote_list = remote_db.query(props_versionless)
+                if len(remote_list) > 0:
+                    dep_first = remote_list[0]
+                    if dep_first.properties.version_greater(props):
+                        # Check if new package already on local
+                        if len(local_db.query(dep_first)) == 0:
+                            if self.verbosity > 0:
+                                print(f"==> Pull newer version {dep_first.properties.version}.", end="")
+                            else:
+                                print(f"Package {dep_first.properties.get_as_str()} : ==> Pull newer version.")
+                            pkg_mgr.add_from_remote(dep_first, remote_db_name)
+                            just_pulled = True
+                    else:
+                        if self.verbosity > 0:
+                            print(f" No newer version on the server.", end="")
             # push all not-existing package
-            if push_newer and len(remote_db.query(single_local)) > 0:
-                print(f"Package {single_local.properties.get_as_str()} Already on server.")
-                continue
-            print(f"==> Push Package {single_local.properties.get_as_str()} to server.")
-            pkg_mgr.add_to_remote(single_local, remote_db_name)
+            if push_newer and not just_pulled:
+                if len(remote_db.query(single_local)) > 0:
+                    if self.verbosity > 0:
+                        print(f" Already on server.", end="")
+                else:
+                    if self.verbosity > 0:
+                        print(f" ==> Push to server.", end="")
+                    else:
+                        print(f"Package {single_local.properties.get_as_str()} : ==> Push to server.")
+                    pkg_mgr.add_to_remote(single_local, remote_db_name)
+            if self.verbosity > 0:
+                print()
