@@ -108,9 +108,17 @@ class Props:
         :param other_version:
         :return: True if self greater than other version
         """
-        if self.version != other_version:
+        if type(other_version) == str:
+            compare = other_version
+        elif isinstance(other_version, Props):
+            compare = other_version.version
+        elif isinstance(other_version, Dependency):
+            compare = other_version.properties.version
+        else:
+            compare = str(other_version)
+        if self.version != compare:
             self_version_item = self.version.split(".")
-            other_version_item = other_version.split(".")
+            other_version_item = compare.split(".")
             for i in range(min(len(self_version_item), len(other_version_item))):
                 if self_version_item[i] != other_version_item[i]:
                     try:
