@@ -12,7 +12,7 @@ class LocalDatabase(__DataBase):
     Database stored in the local machine.
     """
 
-    def __init__(self, base_path: Path, verbosity:int  = 0):
+    def __init__(self, base_path: Path, verbosity: int = 0):
         super().__init__(verbosity)
         self.base_path = Path()
         if not base_path.exists():
@@ -29,6 +29,8 @@ class LocalDatabase(__DataBase):
         Reload database by analysing the folder.
         """
         if self.valid_shape:
+            if self.verbosity > 3:
+                print("Reload local data base.")
             for depend in self.base_path.iterdir():
                 dep = Dependency(depend)
                 if not dep.valid:

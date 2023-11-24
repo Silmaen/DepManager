@@ -41,7 +41,7 @@ def main():
         parser.print_help()
     else:
         from depmanager.api.local import LocalManager
-        local = LocalManager()
+        local = LocalManager(verbosity=args.verbose)
         args.func(args, local)
         local.clean_tmp()
 

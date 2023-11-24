@@ -1,6 +1,6 @@
 [project]
 name = "depmanager"
-version = "0.1.4"
+version = "0.1.5"
 authors = [
     { name = "Silmaen", email = "genteur.slayer@laposte.net" }
 ]

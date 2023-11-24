@@ -49,6 +49,8 @@ class RemoteDatabaseServer(__RemoteDatabase):
         Get a list of string describing dependency from the server.
         """
         try:
+            if self.verbosity > 3:
+                print("Query dep list from remote.")
             basic = HTTPBasicAuth(self.user, self.cred)
             resp = httpget(f"{self.destination}/api", auth=basic)
             if resp.status_code != 200:

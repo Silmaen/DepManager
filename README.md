@@ -72,7 +72,7 @@ If the name does not exist, it will fall back to default then to local.
 
 ### info
 
-subcommands:
+Subcommands:
 
 * `version` gives the version of the local manager.
 * `basedir` gives the path to the local data of the manager
@@ -84,7 +84,7 @@ subcommands:
 
 Get path to cmake config of the 'best' package given by the query information.
 
-The command will only search in the local cache. This does not intent for human use but more for
+The command will first search in the local cache, if not found it will search in the default remote. This does not intent for human use but more for
 cmake integration.
 
 ### pack
@@ -288,15 +288,21 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 Among things:
 
 * version 0.2.0
-    * [ ] Do query across multiple source (local then remote).
     * [ ] Add a sorting order for remotes.
-    * [ ] Auto-pull if not in local.
-        * [ ] Auto build recipe if neither local nor remote found.
+    * [ ] Auto build recipe if neither local nor remote found.
     * [ ] Add concept of toolset.
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] use toolset in queries.
-    * [ ] Add build Date in package properties.
+* version 0.1.5
+    * [X] Faster commandline
+      * [X] Use remote connexion only if needed
+    * [ ] Transitive search
+      * [ ] Query: search in local then remote.
+      * [X] get: Auto-pull if not in local.
+    * [ ] Better Package properties
+      * [ ] Add build Date in package properties.
+      * [ ] Add build glibc version in package properties if applicable.
 * version 0.1.4
     * [X] Allow to sync with remote.
         * [X] Allow to pull local package that have newer version.
