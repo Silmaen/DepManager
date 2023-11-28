@@ -282,11 +282,12 @@ class Dependency:
     base_path = None
     valid = False
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, source=None):
         self.properties = Props()
         self.valid = False
         self.base_path = None
         self.cmake_config_path = None
+        self.source = source
         if isinstance(data, Path):
             self.base_path = Path(data)
             if not self.base_path.exists() or not (self.base_path / "edp.info").exists():
@@ -346,6 +347,15 @@ class Dependency:
         :return:
         """
         return self.cmake_config_path
+
+    def get_source(self):
+        """
+        Returns where this dependency has been found (local or remote name)
+        :return: Name of the source
+        """
+        if self.source is None:
+            return "local"
+        return self.source
 
     def match(self, other):
         """

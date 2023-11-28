@@ -93,8 +93,10 @@ Actions on packages.
 
 #### query
 
-`depmanager pack query <query> <remote>` Simply do a search in the given remote (in local if
+`depmanager pack query <query> [--transitive(-t)] <remote>` Simply do a search in the given remote (in local if
 nothing given) and print the result.
+
+The `--transitive(-t)` flag will allow to use transitive query, meaning to search for local then remote.
 
 #### add, del
 

@@ -21,16 +21,37 @@ class PackageManager:
         else:
             self.__sys = LocalSystem(verbosity=verbosity, fast=fast)
 
-    def query(self, query, remote_name: str = ""):
+    def query(self, query, remote_name: str = "", transitive: bool = False):
         """
         Do a query into database.
         :param query: Query's data.
         :param remote_name: Remote's name to search of empty for local.
+        :param transitive: Starting from remote_name unroll the lis of source local -> remote
         :return: List of packages matching the query.
         """
+        using_name = "local"
         if remote_name in self.__sys.remote_database:
-            return self.__sys.remote_database[remote_name].query(query)
-        return self.__sys.local_database.query(query)
+            using_name = remote_name
+
+        if transitive:
+            slist = self.__sys.get_source_list()
+        else:
+            slist = [using_name]
+        started = False
+        db = []
+        for s in slist:
+            if s == using_name:
+                started = True
+            if not started:
+                continue
+            if s == "local":
+                ldb = self.__sys.local_database.query(query)
+            else:
+                ldb = self.__sys.remote_database[s].query(query)
+            for dep in ldb:
+                dep.source = s
+            db += ldb
+        return db
 
     def remote_name(self, args):
         """

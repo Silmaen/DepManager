@@ -152,6 +152,12 @@ def add_query_arguments(parser: ArgumentParser):
             help="Compiler of the packet to search, use * as wildcard",
             default="*"
     )
+    parser.add_argument(
+            "--transitive", "-t",
+            action="store_true",
+            help="Transitive query",
+            default=False
+    )
 
 
 def query_argument_to_dict(args):
