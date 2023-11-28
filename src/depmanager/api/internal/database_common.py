@@ -3,6 +3,7 @@ Database Object.
 """
 from pathlib import Path
 from sys import stderr
+
 from depmanager.api.internal.dependency import Dependency, Props
 
 
@@ -11,7 +12,7 @@ class __DataBase:
     Abstract class describing database.
     """
 
-    def __init__(self, verbosity:int  = 0):
+    def __init__(self, verbosity: int = 0):
         self.verbosity = verbosity
         self.valid_shape = True
         self.dependencies = []
@@ -63,14 +64,14 @@ class __RemoteDatabase(__DataBase):
     destination = ""
 
     def __init__(self, destination: any([str, Path]), default: bool = False, user: str = "", cred: str = "",
-                 kind: str = "invalid", verbosity:int  = 0):
+                 kind: str = "invalid", verbosity: int = 0):
         super().__init__(verbosity)
         self.destination = destination
         self.default = default
         self.kind = kind
         self.user = user
         self.cred = cred
-        self.__initialize()
+        self.initiated = False
 
     def get_dep_list(self):
         """
@@ -123,6 +124,7 @@ class __RemoteDatabase(__DataBase):
     def __initialize(self):
         self.connect()
         self.get_dep_list()
+        self.initiated = True
 
     def push(self, dep: Dependency, file: Path, force: bool = False):
         """
@@ -160,6 +162,16 @@ class __RemoteDatabase(__DataBase):
         dep = deps[0]
         file = f"{dep.properties.name}/{dep.properties.hash()}.tgz"
         self.get_file(file, destination)
+
+    def query(self, data: any([str, dict, Dependency, Props])):
+        """
+        Get a list of dependencies matching data.
+        :param data: The query data.
+        :return: List of Dependencies.
+        """
+        if not self.initiated:
+            self.__initialize()
+        return super().query(data)
 
     def connect(self):
         """

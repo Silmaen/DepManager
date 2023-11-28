@@ -13,6 +13,7 @@ function(dm_to_std_arch INPUT OUTPUT)
     string(REPLACE "AMD" "x86_" TMP ${INPUT})
     set(${OUTPUT} ${TMP} PARENT_SCOPE)
 endfunction()
+
 function(dm_to_std_compiler INPUT OUTPUT)
     if (${INPUT} MATCHES "MSVC" OR ${INPUT} MATCHES "Clang-cl")
         set(${OUTPUT} "msvc" PARENT_SCOPE)
