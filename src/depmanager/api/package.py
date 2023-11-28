@@ -10,7 +10,7 @@ class PackageManager:
     Manager fo package.
     """
 
-    def __init__(self, system=None, verbosity: int = 0):
+    def __init__(self, system=None, verbosity: int = 0, fast: bool = False):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
         self.verbosity = verbosity
@@ -19,9 +19,9 @@ class PackageManager:
         elif isinstance(system, LocalManager):
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem(verbosity=verbosity)
+            self.__sys = LocalSystem(verbosity=verbosity, fast=fast)
 
-    def query(self, query, remote_name):
+    def query(self, query, remote_name: str = ""):
         """
         Do a query into database.
         :param query: Query's data.

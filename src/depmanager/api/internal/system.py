@@ -19,7 +19,7 @@ class LocalSystem:
     """
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(self, config_file: Path = None, verbosity: int = 0):
+    def __init__(self, config_file: Path = None, verbosity: int = 0, fast: bool = False):
         self.config = {}
         self.verbosity = verbosity
         if config_file is None:
@@ -103,7 +103,6 @@ class LocalSystem:
             if counter > 5:
                 print(f"ERROR: config file locked. Wait for unfinished tasks or delete the file {lockfile}.")
                 exit(-1)
-        lockfile.touch()
         with open(self.file, "r") as fp:
             self.config = json.load(fp)
         if "base_path" in self.config.keys():
@@ -114,7 +113,6 @@ class LocalSystem:
             self.base_path = Path(self.config["data_path"]).resolve()
         if "temp_path" in self.config.keys():
             self.base_path = Path(self.config["temp_path"]).resolve()
-        lockfile.unlink(missing_ok=True)
 
     def write_config_file(self):
         """
@@ -129,10 +127,15 @@ class LocalSystem:
         lockfile = Path(self.file.parent / (self.file.name + ".lock"))
         while lockfile.exists():
             sleep(0.5)
-        lockfile.touch()
-        with open(self.file, "w") as fp:
-            fp.write(json.dumps(self.config, indent=2))
-        lockfile.unlink(missing_ok=True)
+        try:
+            lockfile.touch()
+            with open(self.file, "w") as fp:
+                fp.write(json.dumps(self.config, indent=2))
+            lockfile.unlink(missing_ok=True)
+        except Exception as err:
+            print(f"Exception during config writing: {err}", file=stderr)
+            if (lockfile.exists()):
+                print("Lock file still exists...", file=stderr)
 
     def clear_tmp(self):
         """
