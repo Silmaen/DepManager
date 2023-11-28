@@ -36,6 +36,10 @@ def pack(args, system=None):
         if remote_name == "":
             print(f"ERROR: {args.what} command work by linking to a remote, please define a remote.", file=stderr)
             exit(-666)
+    transitivity = False
+    if args.what == "query":
+        if args.transitive:
+            transitivity = True
     if args.what == "add":
         if args.source in [None, ""]:
             print(f"ERROR: please provide a source for package adding.", file=stderr)
@@ -62,12 +66,12 @@ def pack(args, system=None):
         return
     query = query_argument_to_dict(args)
     if args.what == "push":
-        deps = pacman.query(query, "")
+        deps = pacman.query(query)
     else:
-        deps = pacman.query(query, remote_name)
+        deps = pacman.query(query, remote_name, transitivity)
     if args.what == "query":
         for dep in deps:
-            print(f"{dep.properties.get_as_str()}")
+            print(f"[{dep.get_source()}] {dep.properties.get_as_str()}")
         return
     if args.what in ["del", "pull", "push"]:
         if len(deps) == 0:

@@ -88,6 +88,20 @@ class LocalSystem:
                 self.remote_database[name] = RemoteDatabaseFolder(url, default, verbosity=self.verbosity)
         self.write_config_file()
 
+    def get_source_list(self):
+        """
+        Get the list of source starting from local, then default remote then other remotes
+        :return: List of sources
+        """
+        slist = ["local"]
+        if self.default_remote not in ["",None]:
+            slist.append(self.default_remote)
+        for rem in self.remote_database.keys():
+            if rem == self.default_remote:
+                continue
+            slist.append(rem)
+        return slist
+
     def read_config_file(self):
         """
         Read configuration file.
