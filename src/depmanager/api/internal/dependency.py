@@ -1,36 +1,38 @@
 """
 Dependency object.
 """
-import platform
+from datetime import datetime
 from pathlib import Path
 from sys import stderr
 
+from .machine import Machine
+
 kinds = ["shared", "static", "header", "any"]
-compilers = ["gnu", "msvc"]
-oses = ["Windows", "Linux"]
-arches = ["x86_64", "aarch64"]
 
-# TODO: system introspection
 default_kind = kinds[0]
-default_compiler = compilers[0]
+mac = Machine(True)
 
 
-def format_os(os_str: str):
-    if os_str not in oses:
-        exit(666)
-    return os_str
-
-
-def format_arch(arch_str: str):
-    if arch_str == "AMD64":
-        arch_str = "x86_64"
-    if arch_str not in arches:
-        exit(666)
-    return arch_str
-
-
-default_os = format_os(platform.system())
-default_arch = format_arch(platform.machine())
+def version_lt(vers_a: str, vers_b: str) -> bool:
+    """
+    Compare 2 string describing version number
+    :param vers_a:
+    :param vers_b:
+    :return: True if vers_a is lower than vers_b
+    """
+    if vers_a == vers_b:
+        return False
+    vers_aa = vers_a.split(".")
+    vers_bb = vers_b.split(".")
+    for i in range(min(len(vers_aa), len(vers_bb))):
+        if vers_aa[i] == vers_bb[i]:
+            continue
+        try:
+            compare = int(vers_aa[i]) < int(vers_bb[i])
+        except:
+            compare = vers_aa[i] < vers_bb[i]
+        return compare
+    return len(vers_aa) < len(vers_bb)
 
 
 class Props:
@@ -39,20 +41,24 @@ class Props:
     """
     name = "*"
     version = "*"
-    os = default_os
-    arch = default_arch
+    os = mac.os
+    arch = mac.arch
     kind = default_kind
-    compiler = default_compiler
+    compiler = mac.default_compiler
     query = False
+    build_date = datetime(2000, 1, 1)
+    glibc = ""
 
     def __init__(self, data=None, query: bool = False):
         self.name = "*"
         self.version = "*"
-        self.os = default_os
-        self.arch = default_arch
+        self.os = mac.os
+        self.arch = mac.arch
         self.kind = default_kind
-        self.compiler = default_compiler
+        self.compiler = mac.default_compiler
         self.query = query
+        self.build_date = datetime(2000, 1, 1)
+        self.glibc = ""
         if type(data) == str:
             self.from_str(data)
         elif type(data) == dict:
@@ -66,7 +72,9 @@ class Props:
             and self.os == other.os \
             and self.arch == other.arch \
             and self.kind == other.kind \
-            and self.compiler == other.compiler
+            and self.compiler == other.compiler \
+            and self.glibc == other.glibc \
+            and self.build_date == other.build_date
 
     def __lt__(self, other):
         if type(other) != Props:
@@ -74,15 +82,7 @@ class Props:
         if self.name != other.name:
             return self.name < other.name
         if self.version != other.version:
-            self_version_item = self.version.split(".")
-            other_version_item = other.version.split(".")
-            for i in range(min(len(self_version_item), len(other_version_item))):
-                if self_version_item[i] != other_version_item[i]:
-                    try:
-                        return int(self_version_item[i]) > int(other_version_item[i])
-                    except:
-                        return self_version_item[i] > other_version_item[i]
-            return len(self_version_item) > len(other_version_item)
+            return version_lt(self.version, other.version)
         if self.os != other.os:
             return self.os < other.os
         if self.arch != other.arch:
@@ -91,6 +91,10 @@ class Props:
             return self.kind < other.kind
         if self.compiler != other.compiler:
             return self.compiler < other.compiler
+        if self.glibc != other.glibc:
+            return version_lt(self.glibc, other.glibc)
+        if self.build_date != other.build_date:
+            return self.build_date < other.build_date
         return False
 
     def __le__(self, other):
@@ -128,6 +132,18 @@ class Props:
             return len(self_version_item) > len(other_version_item)
         return False
 
+    def libc_compatible(self, system_libc_version: str = ""):
+        """
+        Check the compatibility of this props with the given system libc version.
+        :param system_libc_version:
+        :return: True if compatible
+        """
+        if system_libc_version in ["", None]:
+            return True
+        if self.os != "Linux":
+            return True
+        return version_lt(self.version, system_libc_version)
+
     def from_dict(self, data: dict):
         """
         Create props from a dictionary.
@@ -144,11 +160,15 @@ class Props:
             self.arch = "*"
             self.kind = "*"
             self.compiler = "*"
+            self.glibc = "*"
+            self.build_date = "*"
         else:
-            self.os = default_os
-            self.arch = default_arch
+            self.os = mac.os
+            self.arch = mac.arch
             self.kind = default_kind
-            self.compiler = default_compiler
+            self.compiler = mac.default_compiler
+            self.glibc = mac.glibc
+            self.build_date = datetime(2000, 1, 1)
         if "os" in data:
             self.os = data["os"]
         if "arch" in data:
@@ -157,6 +177,10 @@ class Props:
             self.kind = data["kind"]
         if "compiler" in data:
             self.compiler = data["compiler"]
+        if "glibc" in data:
+            self.glibc = data["glibc"]
+        if "build_date" in data:
+            self.build_date = data["build_date"]
 
     def to_dict(self):
         """
@@ -164,12 +188,14 @@ class Props:
         :return: Dictionary.
         """
         return {
-            "name"    : self.name,
-            "version" : self.version,
-            "os"      : self.os,
-            "arch"    : self.arch,
-            "kind"    : self.kind,
-            "compiler": self.compiler
+            "name"      : self.name,
+            "version"   : self.version,
+            "os"        : self.os,
+            "arch"      : self.arch,
+            "kind"      : self.kind,
+            "compiler"  : self.compiler,
+            "glibc"     : self.glibc,
+            "build_date": self.build_date
         }
 
     def match(self, other):
@@ -180,10 +206,13 @@ class Props:
         """
         from fnmatch import translate
         from re import compile
-        for attr in ["name", "version", "os", "arch", "kind", "compiler"]:
-            if attr not in ["name", "version"] and (getattr(other, attr) == "any" or getattr(self, attr) == "any"):
+        for attr in ["name", "version", "os", "arch", "kind", "compiler", "glibc", "build_date"]:
+            str_other = f"{getattr(other, attr)}"
+            str_self = f"{getattr(self, attr)}"
+            if (attr not in ["name", "version"] and
+                    (str_other in ["any", "*", ""] or str_self in ["any", "*", ""])):
                 continue
-            if not compile(translate(getattr(other, attr))).match(getattr(self, attr)):
+            if not compile(translate(str_other)).match(str_self):
                 return False
         return True
 
@@ -194,7 +223,8 @@ class Props:
         """
         from hashlib import sha1
         hash_ = sha1()
-        glob = self.name + self.version + self.os + self.arch + self.kind + self.compiler
+        glob = self.name + self.version + self.os + self.arch + self.kind + self.compiler + self.glibc + str(
+                self.build_date)
         hash_.update(glob.encode())
         return str(hash_.hexdigest())
 
@@ -203,28 +233,47 @@ class Props:
         Get a human-readable string.
         :return: A string.
         """
-        return F"  {self.name}/{self.version} [{self.arch}, {self.kind}, {self.os}, {self.compiler}]"
+
+        output = F"{self.name}/{self.version} ({self.build_date.isoformat()}) [{self.arch}, {self.kind}, {self.os}, {self.compiler}"
+        if self.glibc not in ["", None]:
+            output += F", {self.glibc}"
+        output += "]"
+        return output
 
     def from_str(self, data: str):
         """
         Do the inverse of get_as_string.
         :param data: The string representing the dependency as in get_as_str.
         """
-        idata = data.replace("[", "")
-        idata = idata.replace("]", "")
-        idata = idata.replace(",", "")
-        idata = idata.replace("  ", "")
-        idata = idata.replace("/", " ")
-        items = idata.split()
-        if len(items) != 6:
-            print(f"WARNING: Bad Line format: '{data}': {items}", file=stderr)
+        try:
+            predicate, idata = data.strip().split(" ", 1)
+            predicate.strip()
+            idata.strip()
+            name, version = predicate.split("/", 1)
+            date = ""
+            if ")" in idata:
+                date, idata = idata.split(")")
+                date = date.replace("(", "").strip()
+                idata.strip()
+            items = idata.replace("[", "").replace("]", "").replace(",", "").split()
+            if len(items) not in [4, 5]:
+                print(f"WARNING: Bad Line format: '{data}': '{name}' '{version}' '{date}' {items}", file=stderr)
+                return
+        except Exception as err:
+            print(f"ERROR: bad line format '{data}' ({err})", file=stderr)
             return
-        self.name = items[0]
-        self.version = items[1]
-        self.arch = items[2]
-        self.kind = items[3]
-        self.os = items[4]
-        self.compiler = items[5].split("-", 1)[0]
+        self.name = name
+        self.version = version
+        if date not in [None, ""]:
+            self.build_date = datetime.fromisoformat(date)
+        self.arch = items[0]
+        self.kind = items[1]
+        self.os = items[2]
+        self.compiler = items[3].split("-", 1)[0]
+        if len(items) == 5:
+            self.glibc = items[4]
+        else:
+            self.glibc = ""
 
     def from_edp_file(self, file: Path):
         """
@@ -236,7 +285,7 @@ class Props:
             return
         if not file.is_file():
             return
-        with open(file, "r") as fp:
+        with open(file) as fp:
             lines = fp.readlines()
         for line in lines:
             items = [item.strip() for item in line.split("=", 1)]
@@ -244,7 +293,8 @@ class Props:
                 continue
             key = items[0]
             val = items[1]
-            if key not in ["name", "version", "os", "arch", "kind", "compiler"] or val in [None, ""]:
+            if (key not in ["name", "version", "os", "arch", "kind", "compiler", "glibc", "build_date"] or
+                    val in [None, ""]):
                 continue
             if key == "name":
                 self.name = val
@@ -258,6 +308,10 @@ class Props:
                 self.kind = val
             if key == "compiler":
                 self.compiler = val
+            if key == "glibc":
+                self.glibc = val
+            if key == "build_date":
+                self.build_date = datetime.fromisoformat(val)
 
     def to_edp_file(self, file: Path):
         """
@@ -272,6 +326,8 @@ class Props:
             fp.write(F"arch = {self.arch}\n")
             fp.write(F"kind = {self.kind}\n")
             fp.write(F"compiler = {self.compiler}\n")
+            fp.write(F"glibc = {self.glibc}\n")
+            fp.write(F"build_date = {self.build_date.isoformat()}\n")
 
 
 class Dependency:
@@ -372,3 +428,11 @@ class Dependency:
             return self.properties.match(q)
         else:
             return False
+
+    def libc_compatible(self, system_libc_version: str = ""):
+        """
+        Check the compatibility of this props with the given system libc version.
+        :param system_libc_version:
+        :return: True if compatible
+        """
+        return self.properties.libc_compatible(system_libc_version)

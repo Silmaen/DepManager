@@ -30,8 +30,9 @@ def add_get_parameters(sub_parsers):
     Defines the get arguments
     :param sub_parsers: the parser
     """
-    from depmanager.api.internal.common import add_query_arguments
+    from depmanager.api.internal.common import add_query_arguments, add_common_arguments
     get_parser = sub_parsers.add_parser("get")
     get_parser.description = "Tool to get cmake config path for dependency in the library"
+    add_common_arguments(get_parser)  # add -v
     add_query_arguments(get_parser)
     get_parser.set_defaults(func=get)
