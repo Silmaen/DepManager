@@ -140,8 +140,11 @@ class PackageManager:
         if len(finds) == 0:
             print("ERROR: no package matches the request.", file=stderr)
             return
-        remote.pull(finds[0], self.__sys.temp_path)
-        file = self.__sys.temp_path / f"{finds[0].properties.hash()}.tgz"
+        res = remote.pull(finds[0], self.__sys.temp_path)
+        if res is None:
+            file = self.__sys.temp_path / f"{finds[0].properties.hash()}.tgz"
+        else:
+            file = self.__sys.temp_path / f"{res}"
         self.add_from_location(file)
 
     def add_to_remote(self, dep, remote_name):
