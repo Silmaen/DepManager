@@ -1,13 +1,14 @@
 """
 Tools for building packages.
 """
-import platform
 from pathlib import Path
 from shutil import rmtree
 from sys import stderr
 
 from depmanager.api.internal.system import LocalSystem, Props
 from depmanager.api.local import LocalManager
+
+from .internal.machine import Machine
 
 
 def try_run(cmd):
@@ -114,6 +115,7 @@ class Builder:
         """
         Do the build of recipes.
         """
+        mac = Machine(True)
         for rec in self.recipes:
             #
             #
@@ -125,14 +127,15 @@ class Builder:
                 if "CROSS_ARCH" in self.cross_info:
                     arch = self.cross_info["CROSS_ARCH"]
                 else:
-                    arch = platform.machine().replace("AMD", "x86_")
+                    arch = mac.arch
                 if "CROSS_OS" in self.cross_info:
                     os = self.cross_info["CROSS_OS"]
                 else:
-                    os = platform.system()
-                compiler = "gnu"
+                    os = mac.os
+                compiler = mac.default_compiler
+                glibc = mac.glibc
 
-            rec.define(os, arch, compiler, self.temp / 'install')
+            rec.define(os, arch, compiler, self.temp / 'install', glibc)
 
             #
             #
@@ -143,7 +146,8 @@ class Builder:
                 "os"      : os,
                 "arch"    : arch,
                 "kind"    : rec.kind,
-                "compiler": compiler
+                "compiler": compiler,
+                "glibc"   : glibc
             })
             search = self.local.local_database.query(p)
             if len(search) > 0:

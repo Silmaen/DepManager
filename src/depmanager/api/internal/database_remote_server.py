@@ -57,7 +57,6 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 self.valid_shape = False
                 print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}", file=stderr)
                 print(f"  Response from server:\n{resp.text}", file=stderr)
-                print(f"--request--: {resp.request}")
                 return
             data = resp.text.splitlines(keepends=False)
             self.deps_from_strings(data)
@@ -71,6 +70,11 @@ class RemoteDatabaseServer(__RemoteDatabase):
             data["name"] = dep.properties.name
         if dep.properties.version not in ["", None]:
             data["version"] = dep.properties.version
+        data["glibc"] = ""
+        if dep.properties.glibc not in ["", None]:
+            data["glibc"] = dep.properties.glibc
+        if dep.properties.build_date not in ["", None]:
+            data["build_date"] = dep.properties.build_date.isoformat()
         # os
         if dep.properties.os.lower() == "windows":
             data["os"] = "w"
@@ -142,6 +146,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 return
             with open(fname, "wb") as fp:
                 fp.write(resp.content)
+            return filename
         except Exception as err:
             print(f"ERROR Exception during server pull: {self.destination}: {err}", file=stderr)
             return
@@ -187,40 +192,33 @@ class RemoteDatabaseServer(__RemoteDatabase):
             return
         #
         try:
+            basic = HTTPBasicAuth(self.user, self.cred)
+            post_data = {"action": "push"} | self.dep_to_code(dep)
+            post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
+            encoder = MultipartEncoder(fields=post_data)
             if file.stat().st_size < 1:
-                basic = HTTPBasicAuth(self.user, self.cred)
-                post_data = {"action": "push"} | self.dep_to_code(dep)
-                post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
-                encoder = MultipartEncoder(fields=post_data)
                 monitor = MultipartEncoderMonitor(encoder)
                 headers = {"Content-Type": monitor.content_type}
                 resp = httppost(f"{self.destination}/api", auth=basic, data=monitor, headers=headers)
-                if resp.status_code != 200:
-                    self.valid_shape = False
-                    print(
-                            f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
-                            file=stderr)
-                    with open("error.log", "ab") as fp:
-                        fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
-                        fp.write(resp.content)
-                    return
             else:
-                basic = HTTPBasicAuth(self.user, self.cred)
-                post_data = {"action": "push"} | self.dep_to_code(dep)
-                post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
-                encoder = MultipartEncoder(fields=post_data)
                 monitor = MultipartEncoderMonitor(encoder, callback=self.create_callback(encoder))
                 headers = {"Content-Type": monitor.content_type}
                 resp = httppost(f"{self.destination}/upload", auth=basic, data=monitor, headers=headers)
-                if resp.status_code != 200:
-                    self.valid_shape = False
-                    print(
-                            f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
-                            file=stderr)
-                    with open("error.log", "ab") as fp:
-                        fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
-                        fp.write(resp.content)
-                    return
+
+            if resp.status_code == 201:
+                print(f"WARNING coming from server: {self.destination}: {resp.status_code}: {resp.reason}",
+                      file=stderr)
+                print(f"response: {resp.content.decode('utf8')}", file=stderr)
+                return
+            if resp.status_code != 200:
+                self.valid_shape = False
+                print(
+                        f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
+                        file=stderr)
+                with open("error.log", "ab") as fp:
+                    fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
+                    fp.write(resp.content)
+                return
         except Exception as err:
             print(f"ERROR Exception during server push: {self.destination}: {err}", file=stderr)
             return

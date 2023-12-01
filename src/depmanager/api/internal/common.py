@@ -153,6 +153,18 @@ def add_query_arguments(parser: ArgumentParser):
             default="*"
     )
     parser.add_argument(
+            "--glibc", "-g",
+            type=str,
+            help="Minimal version of glibc, use * as wildcard",
+            default="*"
+    )
+    parser.add_argument(
+            "--build-date",
+            type=str,
+            help="Minimal build date, use * as wildcard",
+            default="*"
+    )
+    parser.add_argument(
             "--transitive", "-t",
             action="store_true",
             help="Transitive query",
@@ -172,10 +184,12 @@ def query_argument_to_dict(args):
     else:
         name, version = args.predicate.split("/", 1)
     return {
-        "name"    : name,
-        "version" : version,
-        "os"      : args.os,
-        "arch"    : args.arch,
-        "kind"    : args.kind,
-        "compiler": args.compiler
+        "name"      : name,
+        "version"   : version,
+        "os"        : args.os,
+        "arch"      : args.arch,
+        "kind"      : args.kind,
+        "compiler"  : args.compiler,
+        "glibc"     : args.glibc,
+        "build_date": args.build_date
     }

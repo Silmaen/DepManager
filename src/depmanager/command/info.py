@@ -48,8 +48,10 @@ def add_info_parameters(sub_parsers):
     Definition of info parameters.
     :param sub_parsers: The parent parser.
     """
+    from depmanager.api.internal.common import add_common_arguments
     info_parser = sub_parsers.add_parser("info")
     info_parser.description = "Tool to search for dependency in the library"
+    add_common_arguments(info_parser)  # add -v
     info_parser.add_argument(
             "what",
             type=str,

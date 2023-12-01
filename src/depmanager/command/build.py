@@ -2,8 +2,8 @@
 Build command.
 """
 
-from sys import stderr
 from pathlib import Path
+from sys import stderr
 
 
 def build(args, system=None):
@@ -30,7 +30,7 @@ def build(args, system=None):
     if args.cross_os not in ["", None]:
         cross_info["CROSS_OS"] = args.cross_os
     cross_info["SINGLE_THREAD"] = args.single_thread
-    builder = Builder(location, local=system, cross_info =cross_info)
+    builder = Builder(location, local=system, cross_info=cross_info)
     if not builder.has_recipes():
         print(f"ERROR: no recipe found in {location}", file=stderr)
         exit(-666)
@@ -45,8 +45,10 @@ def add_build_parameters(sub_parsers):
     Definition of build parameters.
     :param sub_parsers: The parent parser.
     """
+    from depmanager.api.internal.common import add_common_arguments
     build_parser = sub_parsers.add_parser("build")
     build_parser.description = "Tool to build a package from source"
+    add_common_arguments(build_parser)  # add -v
     build_parser.add_argument(
             "location",
             type=str,

@@ -1,6 +1,7 @@
 """
 Base recipe for building package.
 """
+from datetime import datetime
 from pathlib import Path
 
 
@@ -15,9 +16,9 @@ class Recipe:
     config = ["Debug", "Release"]
     kind = "shared"
     dependencies = []
-    settings = {"os":"", "arch":"", "compiler":"", "install_path":Path()}
+    settings = {"os": "", "arch": "", "compiler": "", "install_path": Path()}
 
-    def __init__(self, possible: bool=True):
+    def __init__(self, possible: bool = True):
         self.possible = possible
 
     def to_str(self):
@@ -27,24 +28,27 @@ class Recipe:
         """
         os = "any"
         if len(self.settings["os"]) > 0:
-            os =self.settings["os"]
+            os = self.settings["os"]
         arch = "any"
         if len(self.settings["arch"]) > 0:
             arch = self.settings["arch"]
         return f"{self.name}/{self.version} on {os}/{arch} as {self.kind} from {self.source_dir}"
 
-    def define(self,os, arch, compiler, install_path):
+    def define(self, os, arch, compiler, install_path, glibc=""):
         """
         Actualize parameters
         :param os:
         :param arch:
         :param compiler:
         :param install_path:
+        :param glibc:
         """
         self.settings["os"] = os
         self.settings["arch"] = arch
         self.settings["compiler"] = compiler
         self.settings["install_path"] = install_path
+        self.settings["glibc"] = glibc
+        self.settings["build_date"] = datetime.now()
 
     def source(self):
         """
@@ -63,6 +67,7 @@ class Recipe:
         Method executed during installation.
         """
         pass
+
     def clean(self):
         """
         Method executed at the end.
