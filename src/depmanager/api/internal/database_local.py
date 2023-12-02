@@ -2,6 +2,7 @@
 Local database object.
 """
 from pathlib import Path
+
 from depmanager.api.internal.database_common import __DataBase, Dependency
 
 packing_formats = ["tgz", "zip"]
@@ -43,6 +44,7 @@ class LocalDatabase(__DataBase):
         :param deps: Query for deletion.
         """
         from shutil import rmtree
+
         for dep in self.query(deps):
             path = self.base_path / dep.get_path()
             rmtree(path)
@@ -56,6 +58,7 @@ class LocalDatabase(__DataBase):
         """
         from zipfile import ZipFile, ZIP_DEFLATED
         import tarfile
+
         if archive_format not in packing_formats:
             archive_format = packing_formats[0]
         for dep in self.query(deps):

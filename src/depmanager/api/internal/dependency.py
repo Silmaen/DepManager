@@ -39,6 +39,7 @@ class Props:
     """
     Class for the details about items.
     """
+
     name = "*"
     version = "*"
     os = mac.os
@@ -67,14 +68,16 @@ class Props:
     def __eq__(self, other):
         if type(other) != Props:
             return False
-        return self.name == other.name \
-            and self.version == other.version \
-            and self.os == other.os \
-            and self.arch == other.arch \
-            and self.kind == other.kind \
-            and self.compiler == other.compiler \
-            and self.glibc == other.glibc \
+        return (
+            self.name == other.name
+            and self.version == other.version
+            and self.os == other.os
+            and self.arch == other.arch
+            and self.kind == other.kind
+            and self.compiler == other.compiler
+            and self.glibc == other.glibc
             and self.build_date == other.build_date
+        )
 
     def __lt__(self, other):
         if type(other) != Props:
@@ -188,14 +191,14 @@ class Props:
         :return: Dictionary.
         """
         return {
-            "name"      : self.name,
-            "version"   : self.version,
-            "os"        : self.os,
-            "arch"      : self.arch,
-            "kind"      : self.kind,
-            "compiler"  : self.compiler,
-            "glibc"     : self.glibc,
-            "build_date": self.build_date
+            "name": self.name,
+            "version": self.version,
+            "os": self.os,
+            "arch": self.arch,
+            "kind": self.kind,
+            "compiler": self.compiler,
+            "glibc": self.glibc,
+            "build_date": self.build_date,
         }
 
     def match(self, other):
@@ -206,11 +209,35 @@ class Props:
         """
         from fnmatch import translate
         from re import compile
-        for attr in ["name", "version", "os", "arch", "kind", "compiler", "glibc", "build_date"]:
+
+        for attr in [
+            "name",
+            "version",
+            "os",
+            "arch",
+            "kind",
+            "compiler",
+            "glibc",
+            "build_date",
+        ]:
             str_other = f"{getattr(other, attr)}"
             str_self = f"{getattr(self, attr)}"
-            if (attr not in ["name", "version"] and
-                    (str_other in ["any", "*", ""] or str_self in ["any", "*", ""])):
+            if attr == "glibc":
+                if str_other in ["any", "*", ""]:
+                    continue
+                if str_other.startswith("="):
+                    str_other = str_other.replace("=", "")
+                    if str_other != str_self:
+                        return False
+                    continue
+                else:
+                    if version_lt(str_other, str_self):
+                        return False
+                    continue
+
+            if attr not in ["name", "version", "glibc"] and (
+                str_other in ["any", "*", ""] or str_self in ["any", "*", ""]
+            ):
                 continue
             if not compile(translate(str_other)).match(str_self):
                 return False
@@ -222,9 +249,18 @@ class Props:
         :return: The hash as string.
         """
         from hashlib import sha1
+
         hash_ = sha1()
-        glob = self.name + self.version + self.os + self.arch + self.kind + self.compiler + self.glibc + str(
-                self.build_date)
+        glob = (
+            self.name
+            + self.version
+            + self.os
+            + self.arch
+            + self.kind
+            + self.compiler
+            + self.glibc
+            + str(self.build_date)
+        )
         hash_.update(glob.encode())
         return str(hash_.hexdigest())
 
@@ -234,9 +270,9 @@ class Props:
         :return: A string.
         """
 
-        output = F"{self.name}/{self.version} ({self.build_date.isoformat()}) [{self.arch}, {self.kind}, {self.os}, {self.compiler}"
+        output = f"{self.name}/{self.version} ({self.build_date.isoformat()}) [{self.arch}, {self.kind}, {self.os}, {self.compiler}"
         if self.glibc not in ["", None]:
-            output += F", {self.glibc}"
+            output += f", {self.glibc}"
         output += "]"
         return output
 
@@ -257,7 +293,10 @@ class Props:
                 idata.strip()
             items = idata.replace("[", "").replace("]", "").replace(",", "").split()
             if len(items) not in [4, 5]:
-                print(f"WARNING: Bad Line format: '{data}': '{name}' '{version}' '{date}' {items}", file=stderr)
+                print(
+                    f"WARNING: Bad Line format: '{data}': '{name}' '{version}' '{date}' {items}",
+                    file=stderr,
+                )
                 return
         except Exception as err:
             print(f"ERROR: bad line format '{data}' ({err})", file=stderr)
@@ -293,8 +332,16 @@ class Props:
                 continue
             key = items[0]
             val = items[1]
-            if (key not in ["name", "version", "os", "arch", "kind", "compiler", "glibc", "build_date"] or
-                    val in [None, ""]):
+            if key not in [
+                "name",
+                "version",
+                "os",
+                "arch",
+                "kind",
+                "compiler",
+                "glibc",
+                "build_date",
+            ] or val in [None, ""]:
                 continue
             if key == "name":
                 self.name = val
@@ -320,20 +367,21 @@ class Props:
         """
         file.parent.mkdir(parents=True, exist_ok=True)
         with open(file, "w") as fp:
-            fp.write(F"name = {self.name}\n")
-            fp.write(F"version = {self.version}\n")
-            fp.write(F"os = {self.os}\n")
-            fp.write(F"arch = {self.arch}\n")
-            fp.write(F"kind = {self.kind}\n")
-            fp.write(F"compiler = {self.compiler}\n")
-            fp.write(F"glibc = {self.glibc}\n")
-            fp.write(F"build_date = {self.build_date.isoformat()}\n")
+            fp.write(f"name = {self.name}\n")
+            fp.write(f"version = {self.version}\n")
+            fp.write(f"os = {self.os}\n")
+            fp.write(f"arch = {self.arch}\n")
+            fp.write(f"kind = {self.kind}\n")
+            fp.write(f"compiler = {self.compiler}\n")
+            fp.write(f"glibc = {self.glibc}\n")
+            fp.write(f"build_date = {self.build_date.isoformat()}\n")
 
 
 class Dependency:
     """
     Class describing an entry of the database.
     """
+
     properties = Props()
     base_path = None
     valid = False
@@ -346,7 +394,10 @@ class Dependency:
         self.source = source
         if isinstance(data, Path):
             self.base_path = Path(data)
-            if not self.base_path.exists() or not (self.base_path / "edp.info").exists():
+            if (
+                not self.base_path.exists()
+                or not (self.base_path / "edp.info").exists()
+            ):
                 self.base_path = None
                 return
             self.read_edp_file()

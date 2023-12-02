@@ -50,7 +50,9 @@ class __DataBase:
         if type(data) in [str, dict]:
             return sorted([dep for dep in self.dependencies if dep.match(Props(data))])
         elif type(data) == Dependency:
-            return sorted([dep for dep in self.dependencies if dep.match(data.properties)])
+            return sorted(
+                [dep for dep in self.dependencies if dep.match(data.properties)]
+            )
         elif type(data) == Props:
             return sorted([dep for dep in self.dependencies if dep.match(data)])
         else:
@@ -61,10 +63,18 @@ class __RemoteDatabase(__DataBase):
     """
     Abstract class describing database in a remote destination.
     """
+
     destination = ""
 
-    def __init__(self, destination: any([str, Path]), default: bool = False, user: str = "", cred: str = "",
-                 kind: str = "invalid", verbosity: int = 0):
+    def __init__(
+        self,
+        destination: any([str, Path]),
+        default: bool = False,
+        user: str = "",
+        cred: str = "",
+        kind: str = "invalid",
+        verbosity: int = 0,
+    ):
         super().__init__(verbosity)
         self.destination = destination
         self.default = default
@@ -81,6 +91,7 @@ class __RemoteDatabase(__DataBase):
             return
         from tempfile import mkdtemp
         from shutil import rmtree
+
         temp_dir = Path(mkdtemp())
         self.get_file("deplist.txt", temp_dir)
         if not self.valid_shape:
@@ -97,6 +108,7 @@ class __RemoteDatabase(__DataBase):
             return
         from tempfile import mkdtemp
         from shutil import rmtree
+
         temp_dir = Path(mkdtemp())
         self.__write_dep_list(temp_dir / "deplist.txt")
         if not self.valid_shape:
@@ -139,7 +151,10 @@ class __RemoteDatabase(__DataBase):
             return
         result = self.query(dep)
         if len(result) != 0 and not force:
-            print(f"WARNING: Cannot push dependency {dep.properties.name}: already on server.", file=stderr)
+            print(
+                f"WARNING: Cannot push dependency {dep.properties.name}: already on server.",
+                file=stderr,
+            )
             return
         destination = f"{dep.properties.name}/{dep.properties.hash()}.tgz"
         self.send_file(file, destination)
@@ -189,7 +204,10 @@ class __RemoteDatabase(__DataBase):
         :param destination: Destination path.
         """
         self.valid_shape = False
-        print(f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented.", file=stderr)
+        print(
+            f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented.",
+            file=stderr,
+        )
 
     def send_file(self, source: Path, distant_name: str):
         """
@@ -199,4 +217,7 @@ class __RemoteDatabase(__DataBase):
         :param distant_name: Name in the distant location.
         """
         self.valid_shape = False
-        print(f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.", file=stderr)
+        print(
+            f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.",
+            file=stderr,
+        )
