@@ -17,9 +17,12 @@ class LocalSystem:
     """
     System manager.
     """
+
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(self, config_file: Path = None, verbosity: int = 0, fast: bool = False):
+    def __init__(
+        self, config_file: Path = None, verbosity: int = 0, fast: bool = False
+    ):
         self.config = {}
         self.verbosity = verbosity
         if config_file is None:
@@ -68,24 +71,29 @@ class LocalSystem:
                     port = infos["port"]
                 else:
                     port = -1
-                self.remote_database[name] = RemoteDatabaseServer(url, port, False, default, login, passwd,
-                                                                  verbosity=self.verbosity)
+                self.remote_database[name] = RemoteDatabaseServer(
+                    url, port, False, default, login, passwd, verbosity=self.verbosity
+                )
             if kind == "srvs":
                 if "port" in infos:
                     port = infos["port"]
                 else:
                     port = -1
-                self.remote_database[name] = RemoteDatabaseServer(url, port, True, default, login, passwd,
-                                                                  verbosity=self.verbosity)
+                self.remote_database[name] = RemoteDatabaseServer(
+                    url, port, True, default, login, passwd, verbosity=self.verbosity
+                )
             elif kind == "ftp":
                 if "port" in infos:
                     port = infos["port"]
                 else:
                     port = 21
-                self.remote_database[name] = RemoteDatabaseFtp(url, port, default, login, passwd,
-                                                               verbosity=self.verbosity)
+                self.remote_database[name] = RemoteDatabaseFtp(
+                    url, port, default, login, passwd, verbosity=self.verbosity
+                )
             elif kind == "folder":
-                self.remote_database[name] = RemoteDatabaseFolder(url, default, verbosity=self.verbosity)
+                self.remote_database[name] = RemoteDatabaseFolder(
+                    url, default, verbosity=self.verbosity
+                )
         self.write_config_file()
 
     def get_source_list(self):
@@ -94,7 +102,7 @@ class LocalSystem:
         :return: List of sources
         """
         slist = ["local"]
-        if self.default_remote not in ["",None]:
+        if self.default_remote not in ["", None]:
             slist.append(self.default_remote)
         for rem in self.remote_database.keys():
             if rem == self.default_remote:
@@ -107,6 +115,7 @@ class LocalSystem:
         Read configuration file.
         """
         import json
+
         if not self.file.exists():
             return
         lockfile = Path(self.file.parent / (self.file.name + ".lock"))
@@ -115,7 +124,9 @@ class LocalSystem:
             sleep(0.5)
             counter += 0.5
             if counter > 5:
-                print(f"ERROR: config file locked. Wait for unfinished tasks or delete the file {lockfile}.")
+                print(
+                    f"ERROR: config file locked. Wait for unfinished tasks or delete the file {lockfile}."
+                )
                 exit(-1)
         with open(self.file, "r") as fp:
             self.config = json.load(fp)
@@ -133,6 +144,7 @@ class LocalSystem:
         Write actual configuration to file.
         """
         import json
+
         # create all directories if not exists
         self.file.parent.mkdir(parents=True, exist_ok=True)
         self.data_path.mkdir(parents=True, exist_ok=True)
@@ -148,7 +160,7 @@ class LocalSystem:
             lockfile.unlink(missing_ok=True)
         except Exception as err:
             print(f"Exception during config writing: {err}", file=stderr)
-            if (lockfile.exists()):
+            if lockfile.exists():
                 print("Lock file still exists...", file=stderr)
 
     def clear_tmp(self):
@@ -156,6 +168,7 @@ class LocalSystem:
         Empty the Temp dir.
         """
         from shutil import rmtree
+
         rmtree(self.temp_path, ignore_errors=True)
         self.temp_path.mkdir(parents=True, exist_ok=True)
 
@@ -166,14 +179,24 @@ class LocalSystem:
         :return: True if remote added.
         """
         # checking keys
-        if "name" not in data or "url" not in data or "default" not in data or "kind" not in data:
+        if (
+            "name" not in data
+            or "url" not in data
+            or "default" not in data
+            or "kind" not in data
+        ):
             return
         name = data["name"]
         url = data["url"]
         default = data["default"]
         kind = data["kind"]
         # checking type
-        if type(default) != bool or type(name) != str or type(url) != str or kind not in self.supported_remote:
+        if (
+            type(default) != bool
+            or type(name) != str
+            or type(url) != str
+            or kind not in self.supported_remote
+        ):
             return False
         if name in [None, ""]:
             return False
@@ -204,16 +227,22 @@ class LocalSystem:
                 passwd = data["passwd"]
             else:
                 passwd = ""
-            self.remote_database[name] = RemoteDatabaseServer(destination=url, port=port, secure=kind == "srvs",
-                                                              default=default, user=login, cred=passwd)
+            self.remote_database[name] = RemoteDatabaseServer(
+                destination=url,
+                port=port,
+                secure=kind == "srvs",
+                default=default,
+                user=login,
+                cred=passwd,
+            )
             if not self.remote_database[name].valid_shape:
                 print("Error: cannot add the remote!", file=stderr)
                 return False
             self.config["remotes"][name] = {
-                "url"    : url,
-                "port"   : port,
+                "url": url,
+                "port": port,
                 "default": default,
-                "kind"   : kind
+                "kind": kind,
             }
             if ("port" != 80 and kind == "srv") or ("port" != 443 and kind == "srvs"):
                 self.config["remotes"][name]["port"] = port
@@ -236,12 +265,14 @@ class LocalSystem:
                 passwd = data["passwd"]
             else:
                 passwd = ""
-            self.remote_database[name] = RemoteDatabaseFtp(url, port, default, login, passwd)
+            self.remote_database[name] = RemoteDatabaseFtp(
+                url, port, default, login, passwd
+            )
             self.config["remotes"][name] = {
-                "url"    : url,
-                "port"   : port,
+                "url": url,
+                "port": port,
                 "default": default,
-                "kind"   : kind
+                "kind": kind,
             }
             if "port" != 21:
                 self.config["remotes"][name]["port"] = port
@@ -254,9 +285,9 @@ class LocalSystem:
         if kind == "folder":
             self.remote_database[name] = RemoteDatabaseFolder(url, default)
             self.config["remotes"][name] = {
-                "url"    : url,
+                "url": url,
                 "default": default,
-                "kind"   : kind
+                "kind": kind,
             }
             self.write_config_file()
             return True
@@ -287,6 +318,7 @@ class LocalSystem:
         :param source: Package initial folder.
         """
         from shutil import copytree
+
         p = Props()
         p.from_edp_file(source / "edp.info")
         destination_folder = self.local_database.base_path / f"{p.name}{p.hash()}"

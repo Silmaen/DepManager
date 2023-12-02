@@ -2,10 +2,10 @@
 Remote FTP database
 """
 import ftplib
+from pathlib import Path
 from sys import stderr
 
 from depmanager.api.internal.database_common import __RemoteDatabase
-from pathlib import Path
 
 
 class RemoteDatabaseFtp(__RemoteDatabase):
@@ -13,10 +13,25 @@ class RemoteDatabaseFtp(__RemoteDatabase):
     Remote database using ftp protocol.
     """
 
-    def __init__(self, destination: str, port: int = 21, default: bool = False, user: str = "", cred: str = "", verbosity:int  = 0):
+    def __init__(
+        self,
+        destination: str,
+        port: int = 21,
+        default: bool = False,
+        user: str = "",
+        cred: str = "",
+        verbosity: int = 0,
+    ):
         self.port = port
         self.ftp = ftplib.FTP()
-        super().__init__(destination=destination, default=default, user=user, cred=cred, kind="ftp", verbosity=verbosity)
+        super().__init__(
+            destination=destination,
+            default=default,
+            user=user,
+            cred=cred,
+            kind="ftp",
+            verbosity=verbosity,
+        )
 
     def connect(self):
         """
@@ -35,7 +50,10 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             self.valid_shape = True
         except Exception as err:
             self.valid_shape = False
-            print(f"ERROR while connecting to ftp server {self.destination}: {err}.", file=stderr)
+            print(
+                f"ERROR while connecting to ftp server {self.destination}: {err}.",
+                file=stderr,
+            )
 
     def get_file(self, distant_name: str, destination: Path):
         """
@@ -49,7 +67,9 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             with open(destination / file_name, "wb") as handler:
                 self.ftp.retrbinary(f"RETR {distant_name}", handler.write)
         except Exception as err:
-            print(f"WARNING: error getting {distant_name} from FTP {self.destination}: {err}")
+            print(
+                f"WARNING: error getting {distant_name} from FTP {self.destination}: {err}"
+            )
 
     def send_file(self, source: Path, distant_name: str):
         """
@@ -73,4 +93,6 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             with open(source, "rb") as handler:
                 self.ftp.storbinary(f"STOR {distant_name}", handler)
         except Exception as err:
-            print(f"WARNING: error sending {distant_name} to FTP {self.destination}: {err}")
+            print(
+                f"WARNING: error sending {distant_name} to FTP {self.destination}: {err}"
+            )

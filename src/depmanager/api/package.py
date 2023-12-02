@@ -13,6 +13,7 @@ class PackageManager:
     def __init__(self, system=None, verbosity: int = 0, fast: bool = False):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
+
         self.verbosity = verbosity
         if isinstance(system, LocalSystem):
             self.__sys = system
@@ -76,7 +77,10 @@ class PackageManager:
             return
         if source.is_dir():
             if not (source / "edp.info").exists():
-                print(f"WARNING: Location {source} does not contains edp.info file.", file=stderr)
+                print(
+                    f"WARNING: Location {source} does not contains edp.info file.",
+                    file=stderr,
+                )
                 return
             self.__sys.import_folder(source)
             return
@@ -88,18 +92,24 @@ class PackageManager:
                     suffixes = [source.suffixes[-2], source.suffixes[-1]]
             if suffixes == ["zip"]:
                 from zipfile import ZipFile
+
                 destination_dir = self.__sys.temp_path / "pack"
                 destination_dir.mkdir(parents=True)
                 if self.verbosity > 2:
-                    print(f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}")
+                    print(
+                        f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}"
+                    )
                 with ZipFile(source) as archive:
                     archive.extractall(destination_dir)
             elif suffixes in [[".tgz"], [".tar", ".gz"]]:
                 import tarfile
+
                 destination_dir = self.__sys.temp_path / "pack"
                 destination_dir.mkdir(parents=True)
                 if self.verbosity > 2:
-                    print(f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}")
+                    print(
+                        f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}"
+                    )
                 with tarfile.open(str(source), "r|gz") as archive:
                     archive.extractall(destination_dir)
             else:
@@ -107,7 +117,9 @@ class PackageManager:
                 return
             if destination_dir is not None:
                 if not (destination_dir / "edp.info").exists():
-                    print(f"WARNING: Archive does not contains package info.", file=stderr)
+                    print(
+                        f"WARNING: Archive does not contains package info.", file=stderr
+                    )
                     return
                 self.__sys.import_folder(destination_dir)
 
@@ -135,7 +147,10 @@ class PackageManager:
             print("WARNING: more than 1 package matches the request:", file=stderr)
             for find in finds:
                 print(f"         {find.properties.get_as_str()}")
-            print("         Precise your request, only one package per pull allowed.", file=stderr)
+            print(
+                "         Precise your request, only one package per pull allowed.",
+                file=stderr,
+            )
             return
         if len(finds) == 0:
             print("ERROR: no package matches the request.", file=stderr)
@@ -166,7 +181,10 @@ class PackageManager:
             print("WARNING: more than 1 package matches the request:", file=stderr)
             for find in finds:
                 print(f"         {find.properties.get_as_str()}")
-            print("         Precise your request, only one package per push allowed.", file=stderr)
+            print(
+                "         Precise your request, only one package per push allowed.",
+                file=stderr,
+            )
             return
         if len(finds) == 0:
             print("ERROR: no package matches the request.", file=stderr)

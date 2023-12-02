@@ -1,5 +1,9 @@
 # DepManager
 
+[![PyPI](https://img.shields.io/pypi/v/depmanager)](https://pypi.org/project/depmanager)
+[![Download](https://static.pepy.tech/badge/depmanager)](https://pepy.tech/project/depmanager)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 Depmanager is a minimalistic tool to manage dependencies (also known as third-party
 libraries) of a C++ Project. It works closely with cmake tool.
 
@@ -51,7 +55,7 @@ In the base commande you can find:
 
 In the following, `<query>` designate something representing the dependency's description.
 The syntax reads:  `--predicate(-p) <name>:<version> --type(-t)
-<type> --os(-o) <os> --arch(-a) <arch> --compiler(-c) <compiler>`
+<type> --os(-o) <os> --arch(-a) <arch> --compiler(-c) <compiler> --glibc <glibc>`
 
 Valid values for `type`: `shared`, `static`, `header`.
 
@@ -59,8 +63,12 @@ Valid values for `os` : `Windows`, `Linux` (default: host os)
 
 Valid values for `arch` : `x86_64`, `aarch64` (default: host arch)
 
-Valid values for `comiler` : `gnu`, `msvc` (default: `gnu`)
+Valid values for `compiler` : `gnu`, `msvc` (default: `gnu`)
 Note: clang compiler stands for `gnu` while clang-cl stands for `msvc`.
+
+Valid values for `glibc` are only needed for linux. By giving, a value the system will look at
+package with compatible version will be search (ie. wit a version number lower or equal).
+It is still possible to do an exact search by using `=` as first character. (like `--glibc =2.36`)
 
 Also, we will designate `<remote>` as a description a remote server, syntax reads: `[-n <name>|-d]`.
 If nothing given, we assume 'local'. If `-d` given, use the default remote, else use the remote by
@@ -84,7 +92,8 @@ Subcommands:
 
 Get path to cmake config of the 'best' package given by the query information.
 
-The command will first search in the local cache, if not found it will search in the default remote. This does not intent for human use but more for
+The command will first search in the local cache, if not found it will search in the default remote. This does not
+intent for human use but more for
 cmake integration.
 
 ### pack
@@ -298,13 +307,15 @@ Among things:
         * [ ] use toolset in queries.
 * version 0.1.5
     * [X] Faster commandline
-      * [X] Use remote connexion only if needed
+        * [X] Use remote connexion only if needed
     * [ ] Transitive search
-      * [ ] Query: search in local then remote.
-      * [X] get: Auto-pull if not in local.
-    * [ ] Better Package properties
-      * [ ] Add build Date in package properties.
-      * [ ] Add build glibc version in package properties if applicable.
+        * [ ] Query: search in local then remote.
+        * [X] get: Auto-pull if not in local.
+    * [X] Better Package properties
+        * [X] Add build Date in package properties.
+        * [X] Add build glibc version in package properties if applicable.
+        * [X] Better queries on glibc compatible system
+        * [ ] Use system's glibc in get searches
 * version 0.1.4
     * [X] Allow to sync with remote.
         * [X] Allow to pull local package that have newer version.

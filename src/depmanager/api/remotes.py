@@ -13,6 +13,7 @@ class RemotesManager:
     def __init__(self, system=None, verbosity: int = 0):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
+
         self.verbosity = verbosity
         if isinstance(system, LocalSystem):
             self.__sys = system
@@ -98,8 +99,16 @@ class RemotesManager:
             return None
         return self.get_remote(self.__sys.default_remote)
 
-    def add_remote(self, name: str, url: str, port: int = -1, default: bool = False,
-                   kind: str = "ftp", login: str = "", passwd: str = ""):
+    def add_remote(
+        self,
+        name: str,
+        url: str,
+        port: int = -1,
+        default: bool = False,
+        kind: str = "ftp",
+        login: str = "",
+        passwd: str = "",
+    ):
         """
         Add a remote to the list.
         :param name: Remote's name.
@@ -110,12 +119,7 @@ class RemotesManager:
         :param login: Credential to use for connexion.
         :param passwd: Password for connexion.
         """
-        data = {
-            "name"   : name,
-            "url"    : url,
-            "default": default,
-            "kind"   : kind
-        }
+        data = {"name": name, "url": url, "default": default, "kind": kind}
         if port > 0:
             data["port"] = port
         if login != "":
@@ -131,7 +135,13 @@ class RemotesManager:
         """
         self.__sys.del_remote(name)
 
-    def sync_remote(self, name: str, default: bool = False, pull_newer: bool = True, push_newer: bool = True):
+    def sync_remote(
+        self,
+        name: str,
+        default: bool = False,
+        pull_newer: bool = True,
+        push_newer: bool = True,
+    ):
         """
         Synchronize with given remote (push/pull with server all newer package).
         :param name: Remote's name.
@@ -140,6 +150,7 @@ class RemotesManager:
         :param push_newer: Push images if newer version exists
         """
         from depmanager.api.package import PackageManager
+
         pkg_mgr = PackageManager(self.__sys, self.verbosity)
         local_db = self.__sys.local_database
         remote_db_name = self.get_safe_remote_name(name, default)
@@ -148,16 +159,21 @@ class RemotesManager:
             print(f"ERROR remote {name} not found.", file=stderr)
             exit(-666)
         if remote_db_name in ["", None]:
-            print(f"ERROR remote {name}({default}) -> {remote_db_name} not found.", file=stderr)
+            print(
+                f"ERROR remote {name}({default}) -> {remote_db_name} not found.",
+                file=stderr,
+            )
             exit(-666)
-        all_local = local_db.query({
-            "name"    : "*",
-            "version" : "*",
-            "os"      : "*",
-            "arch"    : "*",
-            "kind"    : "*",
-            "compiler": "*"
-        })
+        all_local = local_db.query(
+            {
+                "name": "*",
+                "version": "*",
+                "os": "*",
+                "arch": "*",
+                "kind": "*",
+                "compiler": "*",
+            }
+        )
         # Compare local and remote
         for single_local in all_local:
             props = deepcopy(single_local.properties)
@@ -175,9 +191,14 @@ class RemotesManager:
                         # Check if new package already on local
                         if len(local_db.query(dep_first)) == 0:
                             if self.verbosity > 0:
-                                print(f"==> Pull newer version {dep_first.properties.version}.", end="")
+                                print(
+                                    f"==> Pull newer version {dep_first.properties.version}.",
+                                    end="",
+                                )
                             else:
-                                print(f"Package {dep_first.properties.get_as_str()} : ==> Pull newer version.")
+                                print(
+                                    f"Package {dep_first.properties.get_as_str()} : ==> Pull newer version."
+                                )
                             pkg_mgr.add_from_remote(dep_first, remote_db_name)
                             just_pulled = True
                     else:
@@ -192,7 +213,9 @@ class RemotesManager:
                     if self.verbosity > 0:
                         print(f" ==> Push to server.", end="")
                     else:
-                        print(f"Package {single_local.properties.get_as_str()} : ==> Push to server.")
+                        print(
+                            f"Package {single_local.properties.get_as_str()} : ==> Push to server."
+                        )
                     pkg_mgr.add_to_remote(single_local, remote_db_name)
             if self.verbosity > 0:
                 print()

@@ -17,8 +17,16 @@ class RemoteDatabaseServer(__RemoteDatabase):
     Remote database using server protocol.
     """
 
-    def __init__(self, destination: str, port: int = -1, secure: bool = False, default: bool = False, user: str = "",
-                 cred: str = "", verbosity: int = 0):
+    def __init__(
+        self,
+        destination: str,
+        port: int = -1,
+        secure: bool = False,
+        default: bool = False,
+        user: str = "",
+        cred: str = "",
+        verbosity: int = 0,
+    ):
         self.port = port
         if self.port == -1:
             if secure:
@@ -34,8 +42,14 @@ class RemoteDatabaseServer(__RemoteDatabase):
         else:
             if self.port != 80:
                 true_destination += f":{self.port}"
-        super().__init__(destination=true_destination, default=default, user=user, cred=cred, kind=self.kind,
-                         verbosity=verbosity)
+        super().__init__(
+            destination=true_destination,
+            default=default,
+            user=user,
+            cred=cred,
+            kind=self.kind,
+            verbosity=verbosity,
+        )
 
     def connect(self):
         """
@@ -55,13 +69,19 @@ class RemoteDatabaseServer(__RemoteDatabase):
             resp = httpget(f"{self.destination}/api", auth=basic)
             if resp.status_code != 200:
                 self.valid_shape = False
-                print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}", file=stderr)
+                print(
+                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}",
+                    file=stderr,
+                )
                 print(f"  Response from server:\n{resp.text}", file=stderr)
                 return
             data = resp.text.splitlines(keepends=False)
             self.deps_from_strings(data)
         except Exception as err:
-            print(f"ERROR Exception during server connexion: {self.destination}: {err}", file=stderr)
+            print(
+                f"ERROR Exception during server connexion: {self.destination}: {err}",
+                file=stderr,
+            )
             return
 
     def dep_to_code(self, dep: Dependency):
@@ -126,7 +146,10 @@ class RemoteDatabaseServer(__RemoteDatabase):
 
             if resp.status_code != 200:
                 self.valid_shape = False
-                print(f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}", file=stderr)
+                print(
+                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}",
+                    file=stderr,
+                )
                 print(f"      Server Data: {resp.text}", file=stderr)
                 return
             data = resp.text.strip()
@@ -138,17 +161,21 @@ class RemoteDatabaseServer(__RemoteDatabase):
             if resp.status_code != 200:
                 self.valid_shape = False
                 print(
-                        f"ERROR retrieving file {data} from server {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
-                        file=stderr)
+                    f"ERROR retrieving file {data} from server {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
+                    file=stderr,
+                )
                 with open("error.log", "ab") as fp:
-                    fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
+                    fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode("utf8"))
                     fp.write(resp.content)
                 return
             with open(fname, "wb") as fp:
                 fp.write(resp.content)
             return filename
         except Exception as err:
-            print(f"ERROR Exception during server pull: {self.destination}: {err}", file=stderr)
+            print(
+                f"ERROR Exception during server pull: {self.destination}: {err}",
+                file=stderr,
+            )
             return
 
     def create_callback(self, encoder):
@@ -188,39 +215,61 @@ class RemoteDatabaseServer(__RemoteDatabase):
             return
         result = self.query(dep)
         if len(result) != 0 and not force:
-            print(f"WARNING: Cannot push dependency {dep.properties.name}: already on server.", file=stderr)
+            print(
+                f"WARNING: Cannot push dependency {dep.properties.name}: already on server.",
+                file=stderr,
+            )
             return
         #
         try:
             basic = HTTPBasicAuth(self.user, self.cred)
             post_data = {"action": "push"} | self.dep_to_code(dep)
-            post_data["package"] = (file.name, open(file, "rb"), "application/octet-stream")
+            post_data["package"] = (
+                file.name,
+                open(file, "rb"),
+                "application/octet-stream",
+            )
             encoder = MultipartEncoder(fields=post_data)
             if file.stat().st_size < 1:
                 monitor = MultipartEncoderMonitor(encoder)
                 headers = {"Content-Type": monitor.content_type}
-                resp = httppost(f"{self.destination}/api", auth=basic, data=monitor, headers=headers)
+                resp = httppost(
+                    f"{self.destination}/api", auth=basic, data=monitor, headers=headers
+                )
             else:
-                monitor = MultipartEncoderMonitor(encoder, callback=self.create_callback(encoder))
+                monitor = MultipartEncoderMonitor(
+                    encoder, callback=self.create_callback(encoder)
+                )
                 headers = {"Content-Type": monitor.content_type}
-                resp = httppost(f"{self.destination}/upload", auth=basic, data=monitor, headers=headers)
+                resp = httppost(
+                    f"{self.destination}/upload",
+                    auth=basic,
+                    data=monitor,
+                    headers=headers,
+                )
 
             if resp.status_code == 201:
-                print(f"WARNING coming from server: {self.destination}: {resp.status_code}: {resp.reason}",
-                      file=stderr)
+                print(
+                    f"WARNING coming from server: {self.destination}: {resp.status_code}: {resp.reason}",
+                    file=stderr,
+                )
                 print(f"response: {resp.content.decode('utf8')}", file=stderr)
                 return
             if resp.status_code != 200:
                 self.valid_shape = False
                 print(
-                        f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
-                        file=stderr)
+                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
+                    file=stderr,
+                )
                 with open("error.log", "ab") as fp:
-                    fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode('utf8'))
+                    fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode("utf8"))
                     fp.write(resp.content)
                 return
         except Exception as err:
-            print(f"ERROR Exception during server push: {self.destination}: {err}", file=stderr)
+            print(
+                f"ERROR Exception during server push: {self.destination}: {err}",
+                file=stderr,
+            )
             return
 
     def get_file(self, distant_name: str, destination: Path):
@@ -231,7 +280,10 @@ class RemoteDatabaseServer(__RemoteDatabase):
         :param destination: Destination path.
         """
         self.valid_shape = False
-        print(f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented.", file=stderr)
+        print(
+            f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented.",
+            file=stderr,
+        )
 
     def send_file(self, source: Path, distant_name: str):
         """
@@ -241,4 +293,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
         :param distant_name: Name in the distant location.
         """
         self.valid_shape = False
-        print(f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.", file=stderr)
+        print(
+            f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.",
+            file=stderr,
+        )
