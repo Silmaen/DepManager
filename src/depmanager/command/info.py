@@ -11,6 +11,7 @@ class InfoCommand:
 
     def __init__(self, system=None):
         from depmanager.api.local import LocalManager
+
         self.local_instance = LocalManager(system)
 
     def basedir(self):
@@ -49,12 +50,14 @@ def add_info_parameters(sub_parsers):
     :param sub_parsers: The parent parser.
     """
     from depmanager.api.internal.common import add_common_arguments
+
     info_parser = sub_parsers.add_parser("info")
     info_parser.description = "Tool to search for dependency in the library"
     add_common_arguments(info_parser)  # add -v
     info_parser.add_argument(
-            "what",
-            type=str,
-            choices=possible_info,
-            help="The information you want about the program")
+        "what",
+        type=str,
+        choices=possible_info,
+        help="The information you want about the program",
+    )
     info_parser.set_defaults(func=info)

@@ -9,4 +9,5 @@ def main():
     :return:
     """
     from .manager import main
+
     main()

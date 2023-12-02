@@ -9,6 +9,7 @@ class Recipe:
     """
     Recipe for package creation.
     """
+
     name = ""
     version = ""
     source_dir = ""

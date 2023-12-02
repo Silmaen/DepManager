@@ -15,6 +15,7 @@ def pack(args, system=None):
     """
     from depmanager.api.internal.common import query_argument_to_dict
     from depmanager.api.package import PackageManager
+
     pacman = PackageManager(system, args.verbose)
     if args.what not in possible_info:
         return
@@ -28,13 +29,19 @@ def pack(args, system=None):
         if args.name not in [None, ""]:
             print(f"WARNING: Remotes '{args.name}' not in remotes lists.", file=stderr)
     if args.what in ["add", "del"] and remote_name != "":
-        print(f"ERROR: {args.what} command only work on local database. please do not defined remote.", file=stderr)
+        print(
+            f"ERROR: {args.what} command only work on local database. please do not defined remote.",
+            file=stderr,
+        )
         exit(-666)
     if args.what in ["push", "pull"] and remote_name == "":
         args.default = True
         remote_name = pacman.remote_name(args)
         if remote_name == "":
-            print(f"ERROR: {args.what} command work by linking to a remote, please define a remote.", file=stderr)
+            print(
+                f"ERROR: {args.what} command work by linking to a remote, please define a remote.",
+                file=stderr,
+            )
             exit(-666)
     transitivity = False
     if args.what == "query":
@@ -49,7 +56,10 @@ def pack(args, system=None):
             print(f"ERROR: source path {source_path} does not exists.", file=stderr)
             exit(-666)
         if source_path.is_dir() and not (source_path / "edp.info").exists():
-            print(f"ERROR: source path folder {source_path} does not contains 'edp.info' file.", file=stderr)
+            print(
+                f"ERROR: source path folder {source_path} does not contains 'edp.info' file.",
+                file=stderr,
+            )
             exit(-666)
         if source_path.is_file():
             suffixes = []
@@ -58,7 +68,10 @@ def pack(args, system=None):
                 if suffixes == [".gz"] and len(source_path.suffixes) > 1:
                     suffixes = [source_path.suffixes[-2], source_path.suffixes[-1]]
             if suffixes not in [[".zip"], [".tgz"], [".tar", ".gz"]]:
-                print(f"ERROR: source file {source_path} is in unsupported format.", file=stderr)
+                print(
+                    f"ERROR: source file {source_path} is in unsupported format.",
+                    file=stderr,
+                )
                 exit(-666)
 
         # --- treat command ---
@@ -78,7 +91,10 @@ def pack(args, system=None):
             print("WARNING: No package matching the query.", file=stderr)
             return
         if len(deps) > 1:
-            print("WARNING: More than one package match the query, please precise:", file=stderr)
+            print(
+                "WARNING: More than one package match the query, please precise:",
+                file=stderr,
+            )
             for dep in deps:
                 print(f"{dep.properties.get_as_str()}")
             return
@@ -98,23 +114,30 @@ def add_pack_parameters(sub_parsers):
     Definition of pack parameters.
     :param sub_parsers: The parent parser.
     """
-    from depmanager.api.internal.common import add_query_arguments, add_remote_selection_arguments, add_common_arguments
+    from depmanager.api.internal.common import (
+        add_query_arguments,
+        add_remote_selection_arguments,
+        add_common_arguments,
+    )
+
     pack_parser = sub_parsers.add_parser("pack")
     pack_parser.description = "Tool to search for dependency in the library"
     pack_parser.add_argument(
-            "what",
-            type=str,
-            choices=possible_info,
-            help="The information you want about the program")
+        "what",
+        type=str,
+        choices=possible_info,
+        help="The information you want about the program",
+    )
     add_common_arguments(pack_parser)  # add -v
     add_query_arguments(pack_parser)  # add -p -k -o -a -c
     add_remote_selection_arguments(pack_parser)  # add -n, -d
     pack_parser.add_argument(
-            "--source", "-s",
-            type=str,
-            default="",
-            help="""Location of the package to add. Provide a folder (with an edp.info file) of an archive.
+        "--source",
+        "-s",
+        type=str,
+        default="",
+        help="""Location of the package to add. Provide a folder (with an edp.info file) of an archive.
             supported archive format: zip, tar.gz or tgz.
-            """
+            """,
     )
     pack_parser.set_defaults(func=pack)

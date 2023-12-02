@@ -1,10 +1,10 @@
 """
 Remote Folder database.
 """
+from pathlib import Path
 from shutil import copyfile
 
 from depmanager.api.internal.database_common import __RemoteDatabase
-from pathlib import Path
 
 
 class RemoteDatabaseFolder(__RemoteDatabase):
@@ -13,7 +13,12 @@ class RemoteDatabaseFolder(__RemoteDatabase):
     """
 
     def __init__(self, destination: str, default: bool = False, verbosity: int = 0):
-        super().__init__(destination=Path(destination).resolve(), default=default, kind="folder", verbosity=verbosity)
+        super().__init__(
+            destination=Path(destination).resolve(),
+            default=default,
+            kind="folder",
+            verbosity=verbosity,
+        )
 
     def connect(self):
         """
