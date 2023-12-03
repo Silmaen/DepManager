@@ -7,7 +7,7 @@ from sys import stderr, stdout
 
 from depmanager.api.internal.database_common import __RemoteDatabase
 from depmanager.api.internal.dependency import Dependency
-from requests import get as httpget, post as httppost
+from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
@@ -50,6 +50,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
             kind=self.kind,
             verbosity=verbosity,
         )
+        self.remote_type = "Dependency Server"
 
     def connect(self):
         """
@@ -66,7 +67,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
             if self.verbosity > 3:
                 print("Query dep list from remote.")
             basic = HTTPBasicAuth(self.user, self.cred)
-            resp = httpget(f"{self.destination}/api", auth=basic)
+            resp = http_get(f"{self.destination}/api", auth=basic)
             if resp.status_code != 200:
                 self.valid_shape = False
                 print(
@@ -84,7 +85,8 @@ class RemoteDatabaseServer(__RemoteDatabase):
             )
             return
 
-    def dep_to_code(self, dep: Dependency):
+    @staticmethod
+    def dep_to_code(dep: Dependency):
         data = {}
         if dep.properties.name not in ["", None]:
             data["name"] = dep.properties.name
@@ -142,7 +144,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
         try:
             basic = HTTPBasicAuth(self.user, self.cred)
             post_data = {"action": "pull"} | self.dep_to_code(dep)
-            resp = httppost(f"{self.destination}/api", auth=basic, data=post_data)
+            resp = http_post(f"{self.destination}/api", auth=basic, data=post_data)
 
             if resp.status_code != 200:
                 self.valid_shape = False
@@ -156,19 +158,20 @@ class RemoteDatabaseServer(__RemoteDatabase):
             filename = data.rsplit("/", 1)[-1]
             if filename.startswith(dep.properties.name):
                 filename = filename.replace(dep.properties.name, "")
-            fname = destination / filename
-            resp = httpget(f"{self.destination}{data}", auth=basic)
+            file_name = destination / filename
+            resp = http_get(f"{self.destination}{data}", auth=basic)
             if resp.status_code != 200:
                 self.valid_shape = False
+                server_error = f"{self.destination}: {resp.status_code}: {resp.reason}"
                 print(
-                    f"ERROR retrieving file {data} from server {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
+                    f"ERROR retrieving file {data} from server {server_error}, see error.log",
                     file=stderr,
                 )
                 with open("error.log", "ab") as fp:
                     fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode("utf8"))
                     fp.write(resp.content)
                 return
-            with open(fname, "wb") as fp:
+            with open(file_name, "wb") as fp:
                 fp.write(resp.content)
             return filename
         except Exception as err:
@@ -233,7 +236,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
             if file.stat().st_size < 1:
                 monitor = MultipartEncoderMonitor(encoder)
                 headers = {"Content-Type": monitor.content_type}
-                resp = httppost(
+                resp = http_post(
                     f"{self.destination}/api", auth=basic, data=monitor, headers=headers
                 )
             else:
@@ -241,7 +244,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
                     encoder, callback=self.create_callback(encoder)
                 )
                 headers = {"Content-Type": monitor.content_type}
-                resp = httppost(
+                resp = http_post(
                     f"{self.destination}/upload",
                     auth=basic,
                     data=monitor,
@@ -272,6 +275,48 @@ class RemoteDatabaseServer(__RemoteDatabase):
             )
             return
 
+    def delete(self, dep: Dependency):
+        """
+        Suppress the dependency from the server
+        :param dep: Dependency information.
+        :return: True if success.
+        """
+        if not self.valid_shape:
+            return
+        result = self.query(dep)
+        if len(result) == 0:
+            print(
+                f"WARNING: Cannot suppress dependency {dep.properties.name}: not on server.",
+                file=stderr,
+            )
+            return
+        if len(result) > 1:
+            print(
+                f"WARNING: Cannot suppress dependency {dep.properties.name}: multiple dependencies match on server.",
+                file=stderr,
+            )
+            return
+        try:
+            basic = HTTPBasicAuth(self.user, self.cred)
+            post_data = {"action": "delete"} | self.dep_to_code(dep)
+            resp = http_post(f"{self.destination}/api", auth=basic, data=post_data)
+
+            if resp.status_code != 200:
+                self.valid_shape = False
+                print(
+                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}",
+                    file=stderr,
+                )
+                print(f"      Server Data: {resp.text}", file=stderr)
+                return False
+            return True
+        except Exception as err:
+            print(
+                f"ERROR Exception during server pull: {self.destination}: {err}",
+                file=stderr,
+            )
+            return False
+
     def get_file(self, distant_name: str, destination: Path):
         """
         Download a file.
@@ -281,7 +326,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
         """
         self.valid_shape = False
         print(
-            f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented.",
+            f"WARNING: RemoteDatabaseServer::get_file({distant_name},{destination}) not implemented.",
             file=stderr,
         )
 
@@ -294,6 +339,46 @@ class RemoteDatabaseServer(__RemoteDatabase):
         """
         self.valid_shape = False
         print(
-            f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.",
+            f"WARNING: RemoteDatabaseServer::send_file({source}, {distant_name}) not implemented.",
             file=stderr,
         )
+
+    def suppress(self, dep: Dependency) -> bool:
+        """
+        Suppress the dependency from the server
+        TO IMPLEMENT IN DERIVED CLASS.
+        :param dep: Dependency information.
+        :return: True if success.
+        """
+        self.valid_shape = False
+        print(
+            f"WARNING: RemoteDatabaseServer::suppress({dep}) not implemented.",
+            file=stderr,
+        )
+
+    def get_server_version(self):
+        """
+        Get the version running on the server.
+        :return: Server's version number.
+        """
+        try:
+            basic = HTTPBasicAuth(self.user, self.cred)
+            post_data = {"action": "version"}
+            resp = http_post(f"{self.destination}/api", auth=basic, data=post_data)
+
+            if resp.status_code != 200:
+                self.valid_shape = False
+                print(
+                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}",
+                    file=stderr,
+                )
+                print(f"      Server Data: {resp.text}", file=stderr)
+                return "unknown"
+            data = resp.text.strip().split("version:")[-1].strip()
+            return data
+        except Exception as err:
+            print(
+                f"ERROR Exception during server pull: {self.destination}: {err}",
+                file=stderr,
+            )
+            return "unknown"

@@ -50,7 +50,7 @@ In the base commande you can find:
 | info    | basedir, cmakedir, version  | info on local instance             |
 | get     |                             | Get the config package             |
 | pack    | pull, push, add, del, query | Manage packages                    |
-| remote  | list, add, del              | Manage the list of distant servers |
+| remote  | list, add, del, info        | Manage the list of distant servers |
 | build   |                             | Build a new package                |
 
 In the following, `<query>` designate something representing the dependency's description.
@@ -145,6 +145,7 @@ subcommands:
 * `sync <remote> [--push-only|--pull-only]` push to remote all local package that does not already
   exist on remote. Pull local package that have a newer version on the remote. If no remote given, it will use the
   default one.
+* `info <remote>` gets information from the remote: type and version.
 
 ### build
 
@@ -308,9 +309,12 @@ Among things:
 * version 0.1.5
     * [X] Faster commandline
         * [X] Use remote connexion only if needed
-    * [ ] Transitive search
-        * [ ] Query: search in local then remote.
+    * [X] Transitive search
+        * [X] Query: search in local then remote.
         * [X] get: Auto-pull if not in local.
+    * [X] Add new remote command.
+        * [X] Get info from remote (type and version)
+        * [X] Allow to delete package on remote.
     * [X] Better Package properties
         * [X] Add build Date in package properties.
         * [X] Add build glibc version in package properties if applicable.
