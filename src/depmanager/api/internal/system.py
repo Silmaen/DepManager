@@ -20,9 +20,7 @@ class LocalSystem:
 
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(
-        self, config_file: Path = None, verbosity: int = 0, fast: bool = False
-    ):
+    def __init__(self, config_file: Path = None, verbosity: int = 0):
         self.config = {}
         self.verbosity = verbosity
         if config_file is None:
@@ -41,50 +39,50 @@ class LocalSystem:
         self.default_remote = ""
         if "remotes" not in self.config.keys():
             self.config["remotes"] = {}
-        for name, infos in self.config["remotes"].items():
-            if "url" not in infos:
+        for name, info in self.config["remotes"].items():
+            if "url" not in info:
                 print(f"Missing urls in remote.", file=stderr)
                 continue
-            url = infos["url"]
-            if "kind" in infos:
-                kind = infos["kind"]
+            url = info["url"]
+            if "kind" in info:
+                kind = info["kind"]
             else:
                 kind = self.supported_remote[0]
             if kind not in self.supported_remote:
                 print(f"Unsupported kind: {kind}.", file=stderr)
                 continue
-            if "login" in infos:
-                login = infos["login"]
+            if "login" in info:
+                login = info["login"]
             else:
                 login = ""
-            if "passwd" in infos:
-                passwd = infos["passwd"]
+            if "passwd" in info:
+                passwd = info["passwd"]
             else:
                 passwd = ""
             default = False
-            if "default" in infos:
-                default = infos["default"]
+            if "default" in info:
+                default = info["default"]
             if default:
                 self.default_remote = name
             if kind == "srv":
-                if "port" in infos:
-                    port = infos["port"]
+                if "port" in info:
+                    port = info["port"]
                 else:
                     port = -1
                 self.remote_database[name] = RemoteDatabaseServer(
                     url, port, False, default, login, passwd, verbosity=self.verbosity
                 )
             if kind == "srvs":
-                if "port" in infos:
-                    port = infos["port"]
+                if "port" in info:
+                    port = info["port"]
                 else:
                     port = -1
                 self.remote_database[name] = RemoteDatabaseServer(
                     url, port, True, default, login, passwd, verbosity=self.verbosity
                 )
             elif kind == "ftp":
-                if "port" in infos:
-                    port = infos["port"]
+                if "port" in info:
+                    port = info["port"]
                 else:
                     port = 21
                 self.remote_database[name] = RemoteDatabaseFtp(
@@ -192,9 +190,9 @@ class LocalSystem:
         kind = data["kind"]
         # checking type
         if (
-            type(default) != bool
-            or type(name) != str
-            or type(url) != str
+            isinstance(default, bool)
+            or isinstance(name, str)
+            or isinstance(url, str)
             or kind not in self.supported_remote
         ):
             return False

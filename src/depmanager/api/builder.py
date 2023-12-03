@@ -178,7 +178,7 @@ class Builder:
             #
             #
             # check dependencies
-            if type(rec.dependencies) != list:
+            if isinstance(rec.dependencies, list):
                 print(
                     f"ERROR: dependencies of {rec.to_str()} must be a list.",
                     file=stderr,
@@ -187,7 +187,7 @@ class Builder:
             ok = True
             dep_list = []
             for dep in rec.dependencies:
-                if type(dep) != dict:
+                if isinstance(dep, dict):
                     ok = False
                     print(
                         f"ERROR: dependencies of {rec.to_str()} must be a list of dict.",

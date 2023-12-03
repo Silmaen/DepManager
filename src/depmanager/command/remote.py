@@ -3,7 +3,7 @@ Manage the remotes
 """
 from sys import stderr
 
-possible_remote = ["list", "add", "del", "sync"]
+possible_remote = ["list", "add", "del", "sync", "info"]
 
 
 class RemoteCommand:
@@ -27,8 +27,9 @@ class RemoteCommand:
             if self.verbosity == 0:
                 print(f" {default} {key}")
             else:
+                status = ["OFFLINE", "ONLINE "][value.valid_shape]
                 print(
-                    f" {default} [ {['OFFLINE', 'ONLINE '][value.valid_shape]} ] {key} - {value.kind}, {value.destination}"
+                    f" {default} [ {status} ] {key} - {value.kind}, {value.destination}"
                 )
 
     def add(
@@ -47,7 +48,7 @@ class RemoteCommand:
         :param login: Credential to use for connexion.
         :param passwd: Password for connexion.
         """
-        if type(name) != str or name in ["", None]:
+        if isinstance(name, str) or name in ["", None]:
             print(
                 f"ERROR please give a name for adding/modifying a remote.", file=stderr
             )
@@ -85,7 +86,7 @@ class RemoteCommand:
         Remove a remote from the list.
         :param name: Remote's name.
         """
-        if type(name) != str or name in ["", None]:
+        if isinstance(name, str) or name in ["", None]:
             print(f"ERROR please give a name for removing a remote.", file=stderr)
             exit(-666)
         self.remote_instance.remove_remote(name)
@@ -105,6 +106,24 @@ class RemoteCommand:
         :param push_newer: Push images if newer version exists
         """
         self.remote_instance.sync_remote(name, default, pull_newer, push_newer)
+
+    def info(self, name: str, default: bool = False):
+        """
+        Print info of the designated remote.
+        :param name: Remote's name.
+        :param default: If using default remote
+        """
+        remote_srv = self.remote_instance.get_safe_remote(name, default)
+        name = self.remote_instance.get_safe_remote_name(name, default)
+        if remote_srv is None:
+            print(
+                f"ERROR the information provided does not designate a remote.",
+                file=stderr,
+            )
+            exit(-666)
+        version = remote_srv.get_server_version()
+        r_type = remote_srv.get_server_type()
+        print(f"Remote server: {name}, type: {r_type}, version: {version}.")
 
 
 def remote(args, system=None):
@@ -133,6 +152,8 @@ def remote(args, system=None):
             print("ERROR: push-only & pull-only are mutually exclusive.", file=stderr)
             exit(1)
         rem.sync(args.name, args.default, do_pull, do_push)
+    elif args.what == "info":
+        rem.info(args.name, args.default)
 
 
 def add_remote_parameters(sub_parsers):

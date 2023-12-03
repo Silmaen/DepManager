@@ -29,7 +29,8 @@ def version_lt(vers_a: str, vers_b: str) -> bool:
             continue
         try:
             compare = int(vers_aa[i]) < int(vers_bb[i])
-        except:
+        except Exception as err:
+            print(f"WARNING: Exception during version compare: {err}", file=stderr)
             compare = vers_aa[i] < vers_bb[i]
         return compare
     return len(vers_aa) < len(vers_bb)
@@ -60,13 +61,13 @@ class Props:
         self.query = query
         self.build_date = datetime(2000, 1, 1)
         self.glibc = ""
-        if type(data) == str:
+        if isinstance(data, str):
             self.from_str(data)
-        elif type(data) == dict:
+        elif isinstance(data, dict):
             self.from_dict(data)
 
     def __eq__(self, other):
-        if type(other) != Props:
+        if isinstance(other, Props):
             return False
         return (
             self.name == other.name
@@ -80,7 +81,7 @@ class Props:
         )
 
     def __lt__(self, other):
-        if type(other) != Props:
+        if isinstance(other, Props):
             return False
         if self.name != other.name:
             return self.name < other.name
@@ -115,7 +116,7 @@ class Props:
         :param other_version:
         :return: True if self greater than other version
         """
-        if type(other_version) == str:
+        if isinstance(other_version, str):
             compare = other_version
         elif isinstance(other_version, Props):
             compare = other_version.version
@@ -124,15 +125,7 @@ class Props:
         else:
             compare = str(other_version)
         if self.version != compare:
-            self_version_item = self.version.split(".")
-            other_version_item = compare.split(".")
-            for i in range(min(len(self_version_item), len(other_version_item))):
-                if self_version_item[i] != other_version_item[i]:
-                    try:
-                        return int(self_version_item[i]) > int(other_version_item[i])
-                    except:
-                        return self_version_item[i] > other_version_item[i]
-            return len(self_version_item) > len(other_version_item)
+            return version_lt(compare, self.version)
         return False
 
     def libc_compatible(self, system_libc_version: str = ""):
@@ -245,7 +238,7 @@ class Props:
 
     def hash(self):
         """
-        Get a hash for dependency infos.
+        Get a hash for dependency info.
         :return: The hash as string.
         """
         from hashlib import sha1
@@ -269,8 +262,10 @@ class Props:
         Get a human-readable string.
         :return: A string.
         """
-
-        output = f"{self.name}/{self.version} ({self.build_date.isoformat()}) [{self.arch}, {self.kind}, {self.os}, {self.compiler}"
+        base_info = f"{self.arch}, {self.kind}, {self.os}, {self.compiler}"
+        output = (
+            f"{self.name}/{self.version} ({self.build_date.isoformat()}) [{base_info}"
+        )
         if self.glibc not in ["", None]:
             output += f", {self.glibc}"
         output += "]"
@@ -470,11 +465,11 @@ class Dependency:
         :param other: The other dependency to compare.
         :return: True if regexp match.
         """
-        if type(other) == Props:
+        if isinstance(other, Props):
             return self.properties.match(other)
-        elif type(other) == Dependency:
+        elif isinstance(other, Dependency):
             return self.properties.match(other.properties)
-        elif type(other) in [str, dict]:
+        elif isinstance(other, str) or isinstance(other, dict):
             q = Props(other)
             return self.properties.match(q)
         else:

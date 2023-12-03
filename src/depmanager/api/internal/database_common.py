@@ -47,13 +47,13 @@ class __DataBase:
         """
         if not self.valid_shape:
             return []
-        if type(data) in [str, dict]:
+        if isinstance(data, str) or isinstance(data, dict):
             return sorted([dep for dep in self.dependencies if dep.match(Props(data))])
-        elif type(data) == Dependency:
+        elif isinstance(data, Dependency):
             return sorted(
                 [dep for dep in self.dependencies if dep.match(data.properties)]
             )
-        elif type(data) == Props:
+        elif isinstance(data, Props):
             return sorted([dep for dep in self.dependencies if dep.match(data)])
         else:
             return []
@@ -82,6 +82,14 @@ class __RemoteDatabase(__DataBase):
         self.user = user
         self.cred = cred
         self.initiated = False
+        self.remote_type = "unknown"
+
+    def get_server_type(self):
+        """
+        Returns the server's type.
+        :return: Server type.
+        """
+        return self.remote_type
 
     def get_dep_list(self):
         """
@@ -178,6 +186,31 @@ class __RemoteDatabase(__DataBase):
         file = f"{dep.properties.name}/{dep.properties.hash()}.tgz"
         self.get_file(file, destination)
 
+    def delete(self, dep: Dependency):
+        """
+        Suppress the dependency from the server
+        :param dep: Dependency information.
+        :return: True if success.
+        """
+        if not self.valid_shape:
+            return
+        result = self.query(dep)
+        if len(result) == 0:
+            print(
+                f"WARNING: Cannot suppress dependency {dep.properties.name}: not on server.",
+                file=stderr,
+            )
+            return
+        if len(result) > 1:
+            print(
+                f"WARNING: Cannot suppress dependency {dep.properties.name}: multiple dependencies match on server.",
+                file=stderr,
+            )
+            return
+        self.suppress(dep)
+        self.dependencies.remove(dep)
+        self.send_dep_list()
+
     def query(self, data: any([str, dict, Dependency, Props])):
         """
         Get a list of dependencies matching data.
@@ -221,3 +254,25 @@ class __RemoteDatabase(__DataBase):
             f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.",
             file=stderr,
         )
+
+    def get_server_version(self):
+        """
+        Returns the server's version
+        :return: Server version.
+        """
+        self.valid_shape = False
+        print(
+            f"WARNING: __RemoteDatabase::get_server_version() not implemented.",
+            file=stderr,
+        )
+
+    def suppress(self, dep: Dependency) -> bool:
+        """
+        Suppress the dependency from the server
+        TO IMPLEMENT IN DERIVED CLASS.
+        :param dep: Dependency information.
+        :return: True if success.
+        """
+        self.valid_shape = False
+        print(f"WARNING: __RemoteDatabase::delete({dep}) not implemented.", file=stderr)
+        return False

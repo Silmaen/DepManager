@@ -32,6 +32,8 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             kind="ftp",
             verbosity=verbosity,
         )
+        self.remote_type = "FTP"
+        self.version = "1.0"
 
     def connect(self):
         """
@@ -71,6 +73,22 @@ class RemoteDatabaseFtp(__RemoteDatabase):
                 f"WARNING: error getting {distant_name} from FTP {self.destination}: {err}"
             )
 
+    def suppress(self, dep) -> bool:
+        """
+        Suppress the dependency from the server
+        :param dep: Dependency information.
+        :return: True if success.
+        """
+        destination = f"{dep.properties.name}/{dep.properties.hash()}.tgz"
+        try:
+            self.ftp.delete(destination)
+        except Exception as err:
+            print(
+                f"WARNING: unable to suppress file {destination} on FTP server: {err}"
+            )
+            return False
+        return True
+
     def send_file(self, source: Path, distant_name: str):
         """
         Upload a file.
@@ -96,3 +114,10 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             print(
                 f"WARNING: error sending {distant_name} to FTP {self.destination}: {err}"
             )
+
+    def get_server_version(self):
+        """
+        Returns the server's version
+        :return: Server version.
+        """
+        return self.version

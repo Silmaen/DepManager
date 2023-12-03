@@ -2,6 +2,7 @@
 Machine identification.
 """
 import platform
+from sys import stderr
 
 compilers = ["gnu", "msvc"]
 oses = ["Windows", "Linux"]
@@ -65,7 +66,11 @@ class Machine:
             try:
                 details = platform.freedesktop_os_release()
                 self.os_version = f"{details['PRETTY_NAME']}"
-            except:
+            except Exception as err:
+                print(
+                    f"WARNING: Exception during Linux system introspection: {err}.",
+                    file=stderr,
+                )
                 self.os_version = "unknown"
         elif self.os == "Windows":
             try:
@@ -77,7 +82,11 @@ class Machine:
                         self.os_version = "10"
                     else:
                         self.os_version = "11"
-            except:
+            except Exception as err:
+                print(
+                    f"WARNING: Exception during Windows system introspection: {err}.",
+                    file=stderr,
+                )
                 self.os_version = "unknown"
         else:
             exit(666)

@@ -19,6 +19,8 @@ class RemoteDatabaseFolder(__RemoteDatabase):
             kind="folder",
             verbosity=verbosity,
         )
+        self.remote_type = "Folder"
+        self.version = "1.0"
 
     def connect(self):
         """
@@ -29,6 +31,24 @@ class RemoteDatabaseFolder(__RemoteDatabase):
         if not (self.destination / "deplist.txt").exists():
             self.send_dep_list()
         self.valid_shape = True
+
+    def suppress(self, dep) -> bool:
+        """
+        Suppress the dependency from the server
+        :param dep: Dependency information.
+        :return: True if success.
+        """
+        destination = Path(
+            self.destination / f"{dep.properties.name}" / f"{dep.properties.hash()}.tgz"
+        )
+        try:
+            destination.unlink()
+        except Exception as err:
+            print(
+                f"WARNING: unable to suppress file {destination} on FTP server: {err}"
+            )
+            return False
+        return True
 
     def get_file(self, distant_name: str, destination: Path):
         """
@@ -55,3 +75,10 @@ class RemoteDatabaseFolder(__RemoteDatabase):
         distant = self.destination / distant_name
         distant.parent.mkdir(parents=True, exist_ok=True)
         copyfile(source, distant)
+
+    def get_server_version(self):
+        """
+        Returns the server's version
+        :return: Server version.
+        """
+        return self.version

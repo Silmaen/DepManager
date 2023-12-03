@@ -28,7 +28,7 @@ def pack(args, system=None):
             print("WARNING: No Remotes defined.", file=stderr)
         if args.name not in [None, ""]:
             print(f"WARNING: Remotes '{args.name}' not in remotes lists.", file=stderr)
-    if args.what in ["add", "del"] and remote_name != "":
+    if args.what in ["add"] and remote_name != "":
         print(
             f"ERROR: {args.what} command only work on local database. please do not defined remote.",
             file=stderr,
@@ -100,7 +100,7 @@ def pack(args, system=None):
             return
         dep = deps[0]
         if args.what == "del":
-            pacman.remove_package(dep)
+            pacman.remove_package(dep, remote_name)
         elif args.what == "pull":
             pacman.add_from_remote(dep, remote_name)
         elif args.what == "push":
