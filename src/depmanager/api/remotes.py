@@ -43,7 +43,7 @@ class RemotesManager:
         :param default: to force using default
         :return: the remote
         """
-        if default or type(name) != str or name in ["", None]:
+        if default or isinstance(name, str) or name in ["", None]:
             remote = None
         else:
             remote = self.get_remote(name)
@@ -58,7 +58,7 @@ class RemotesManager:
         :param default: to force using default
         :return: the remote
         """
-        if default or type(name) != str or name in ["", None]:
+        if default or isinstance(name, str) or name in ["", None]:
             remote = None
         else:
             remote = name
@@ -177,14 +177,14 @@ class RemotesManager:
         # Compare local and remote
         for single_local in all_local:
             props = deepcopy(single_local.properties)
-            props_versionless = deepcopy(props)
-            props_versionless.version = "*"
+            props_version_less = deepcopy(props)
+            props_version_less.version = "*"
             just_pulled = False
             if self.verbosity > 0:
                 print(f"Package {single_local.properties.get_as_str()} :", end="")
             # pull newer version of packages
             if pull_newer:
-                remote_list = remote_db.query(props_versionless)
+                remote_list = remote_db.query(props_version_less)
                 if len(remote_list) > 0:
                     dep_first = remote_list[0]
                     if dep_first.properties.version_greater(props):

@@ -123,12 +123,22 @@ class PackageManager:
                     return
                 self.__sys.import_folder(destination_dir)
 
-    def remove_package(self, pack):
+    def remove_package(self, pack, remote_name):
         """
         Suppress package in local database.
         :param pack: The package to remove.
+        :param remote_name: The remote server to use.
         """
-        self.__sys.remove_local(pack)
+        if remote_name == "":
+            self.__sys.remove_local(pack)
+            return
+        if remote_name == "default":
+            remote_name = self.__sys.default_remote
+        if remote_name not in self.__sys.remote_database:
+            print(f"ERROR: no remote named {remote_name} found.", file=stderr)
+            return
+        remote = self.__sys.remote_database[remote_name]
+        remote.delete(pack)
 
     def add_from_remote(self, dep, remote_name):
         """
