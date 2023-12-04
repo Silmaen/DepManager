@@ -50,9 +50,9 @@ class Builder:
 
         self.cross_info = cross_info
         self.generator = ""
-        if isinstance(local, LocalSystem):
+        if type(local) == LocalSystem:
             self.local = local
-        elif isinstance(local, LocalManager):
+        elif type(local) == LocalManager:
             self.local = local.get_sys()
         else:
             self.local = LocalSystem()
@@ -178,7 +178,7 @@ class Builder:
             #
             #
             # check dependencies
-            if isinstance(rec.dependencies, list):
+            if type(rec.dependencies) == list:
                 print(
                     f"ERROR: dependencies of {rec.to_str()} must be a list.",
                     file=stderr,
@@ -187,7 +187,7 @@ class Builder:
             ok = True
             dep_list = []
             for dep in rec.dependencies:
-                if isinstance(dep, dict):
+                if type(dep) == dict:
                     ok = False
                     print(
                         f"ERROR: dependencies of {rec.to_str()} must be a list of dict.",

@@ -39,7 +39,7 @@ class __DataBase:
             return []
         return [dep.properties.get_as_str() for dep in self.dependencies]
 
-    def query(self, data: any([str, dict, Dependency, Props])):
+    def query(self, data: any([str, dict, Dependency, Props]) = None):
         """
         Get a list of dependencies matching data.
         :param data: The query data.
@@ -47,16 +47,17 @@ class __DataBase:
         """
         if not self.valid_shape:
             return []
-        if isinstance(data, str) or isinstance(data, dict):
-            return sorted([dep for dep in self.dependencies if dep.match(Props(data))])
-        elif isinstance(data, Dependency):
-            return sorted(
-                [dep for dep in self.dependencies if dep.match(data.properties)]
-            )
-        elif isinstance(data, Props):
-            return sorted([dep for dep in self.dependencies if dep.match(data)])
+        if data is None:
+            props = Props({}, query=True)
+        elif type(data) in [str, dict]:
+            props = Props(data, query=True)
+        elif type(data) == Dependency:
+            props = data.properties
+        elif type(data) == Props:
+            props = data
         else:
             return []
+        return sorted([dep for dep in self.dependencies if dep.match(props)])
 
 
 class __RemoteDatabase(__DataBase):
@@ -211,7 +212,7 @@ class __RemoteDatabase(__DataBase):
         self.dependencies.remove(dep)
         self.send_dep_list()
 
-    def query(self, data: any([str, dict, Dependency, Props])):
+    def query(self, data: any([str, dict, Dependency, Props]) = None):
         """
         Get a list of dependencies matching data.
         :param data: The query data.

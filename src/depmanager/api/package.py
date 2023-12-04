@@ -15,12 +15,12 @@ class PackageManager:
         from depmanager.api.local import LocalManager
 
         self.verbosity = verbosity
-        if isinstance(system, LocalSystem):
+        if type(system) == LocalSystem:
             self.__sys = system
-        elif isinstance(system, LocalManager):
+        elif type(system) == LocalManager:
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem(verbosity=verbosity, fast=fast)
+            self.__sys = LocalSystem(verbosity=verbosity)
 
     def query(self, query, remote_name: str = "", transitive: bool = False):
         """
@@ -123,7 +123,7 @@ class PackageManager:
                     return
                 self.__sys.import_folder(destination_dir)
 
-    def remove_package(self, pack, remote_name):
+    def remove_package(self, pack, remote_name: str = ""):
         """
         Suppress package in local database.
         :param pack: The package to remove.
@@ -188,6 +188,8 @@ class PackageManager:
         remote = self.__sys.remote_database[remote_name]
         finds = self.__sys.local_database.query(dep)
         if len(finds) > 1:
+            if self.verbosity == 1:
+                print("\n")
             print("WARNING: more than 1 package matches the request:", file=stderr)
             for find in finds:
                 print(f"         {find.properties.get_as_str()}")
@@ -201,9 +203,9 @@ class PackageManager:
             return
 
         dep_path = self.__sys.temp_path / (Path(dep.get_path()).name + ".tgz")
-        if self.verbosity > 0:
+        if self.verbosity > 1:
             print(f"Compressing library to file {dep_path}.")
         self.__sys.local_database.pack(finds[0], self.__sys.temp_path, "tgz")
-        if self.verbosity > 0:
+        if self.verbosity > 1:
             print(f"Starting upload.")
         remote.push(finds[0], dep_path)
