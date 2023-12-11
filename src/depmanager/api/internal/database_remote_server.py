@@ -3,7 +3,7 @@ Remote FTP database
 """
 from datetime import datetime
 from pathlib import Path
-from sys import stderr, stdout
+from sys import stderr
 
 from depmanager.api.internal.database_common import __RemoteDatabase
 from depmanager.api.internal.dependency import Dependency
@@ -87,6 +87,11 @@ class RemoteDatabaseServer(__RemoteDatabase):
 
     @staticmethod
     def dep_to_code(dep: Dependency):
+        """
+
+        :param dep:
+        :return:
+        """
         data = {}
         if dep.properties.name not in ["", None]:
             data["name"] = dep.properties.name
@@ -187,10 +192,15 @@ class RemoteDatabaseServer(__RemoteDatabase):
         :param encoder: The encoder.
         :return: A monitor call back.
         """
-        encoder_len = int(encoder.len / (1024 * 1024.0))
+        from depmanager.api.internal.common import pretty_size_print
+
+        encoder_len = encoder.len
         if self.verbosity > 0:
-            stdout.write(f"[0 of {encoder_len} MB]")
-            stdout.flush()
+            print(
+                f"[{pretty_size_print(0)} of {pretty_size_print(encoder_len)}]                    ",
+                flush=True,
+                end="\r",
+            )
 
         def callback(monitor):
             """
@@ -198,10 +208,11 @@ class RemoteDatabaseServer(__RemoteDatabase):
             :param monitor: The monitor
             """
             if self.verbosity > 0:
-                stdout.write("\r")
-                bytes_read = int(monitor.bytes_read / (1024 * 1024.0))
-                stdout.write(f"[{bytes_read} of {encoder_len} MB]")
-                stdout.flush()
+                print(
+                    f"[{pretty_size_print(monitor.bytes_read)} of {pretty_size_print(encoder_len)}]                    ",
+                    flush=True,
+                    end="\r",
+                )
 
         return callback
 
@@ -250,6 +261,8 @@ class RemoteDatabaseServer(__RemoteDatabase):
                     data=monitor,
                     headers=headers,
                 )
+                if self.verbosity > 0:
+                    print()
 
             if resp.status_code == 201:
                 print(
