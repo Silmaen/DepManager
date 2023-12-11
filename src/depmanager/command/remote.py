@@ -48,7 +48,7 @@ class RemoteCommand:
         :param login: Credential to use for connexion.
         :param passwd: Password for connexion.
         """
-        if isinstance(name, str) or name in ["", None]:
+        if type(name) == str or name in ["", None]:
             print(
                 f"ERROR please give a name for adding/modifying a remote.", file=stderr
             )
@@ -86,7 +86,7 @@ class RemoteCommand:
         Remove a remote from the list.
         :param name: Remote's name.
         """
-        if isinstance(name, str) or name in ["", None]:
+        if type(name) == str or name in ["", None]:
             print(f"ERROR please give a name for removing a remote.", file=stderr)
             exit(-666)
         self.remote_instance.remove_remote(name)
@@ -97,6 +97,7 @@ class RemoteCommand:
         default: bool = False,
         pull_newer: bool = True,
         push_newer: bool = True,
+        dry_run: bool = False,
     ):
         """
         Synchronize local with given remote (push/pull with server all newer package).
@@ -104,8 +105,9 @@ class RemoteCommand:
         :param default: If using default remote
         :param pull_newer: Pull images if newer version exists
         :param push_newer: Push images if newer version exists
+        :param dry_run: Do checks but no transfer.
         """
-        self.remote_instance.sync_remote(name, default, pull_newer, push_newer)
+        self.remote_instance.sync_remote(name, default, pull_newer, push_newer, dry_run)
 
     def info(self, name: str, default: bool = False):
         """
@@ -142,16 +144,19 @@ def remote(args, system=None):
     elif args.what == "del":
         rem.delete(args.name)
     elif args.what == "sync":
+        dry_run = False
         do_pull = True
         do_push = True
         if args.push_only:
             do_pull = False
         if args.pull_only:
             do_push = False
+        if args.dry_run:
+            dry_run = True
         if not (do_push or do_pull):
             print("ERROR: push-only & pull-only are mutually exclusive.", file=stderr)
             exit(1)
-        rem.sync(args.name, args.default, do_pull, do_push)
+        rem.sync(args.name, args.default, do_pull, do_push, dry_run)
     elif args.what == "info":
         rem.info(args.name, args.default)
 
@@ -192,5 +197,11 @@ def add_remote_parameters(sub_parsers):
         action="store_true",
         default=False,
         help="Do only the pull actions in sync.",
+    )
+    info_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="During sync, do the checks, but no transfer.",
     )
     info_parser.set_defaults(func=remote)

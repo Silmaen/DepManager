@@ -142,7 +142,7 @@ subcommands:
         * `srvs` a dedicated server with secure connexion see [gitHub](https://github.com/Silmaen/DepManagerServer)
     * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
 * `del <remote>` remove the designated remote if exists.
-* `sync <remote> [--push-only|--pull-only]` push to remote all local package that does not already
+* `sync <remote> [--push-only|--pull-only] [--dry-run]` push to remote all local package that does not already
   exist on remote. Pull local package that have a newer version on the remote. If no remote given, it will use the
   default one.
 * `info <remote>` gets information from the remote: type and version.
@@ -265,6 +265,7 @@ The builder will use the provided recipe in the following workflow:
 * Call `recipe.install()`
 * Generate edp.info file
 * Import into local cache
+* Call `recipe.clean()`
 * Clean Temporary
 
 Here is a small example
@@ -299,14 +300,22 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 
 Among things:
 
-* version 0.2.0
+* version 0.4.0
+    * [ ] Add recipe libray
+        * [ ] Possibility to store the recipes in remote
+        * [ ] Auto build recipe if neither local nor remote found.
+* version 0.3.0
     * [ ] Add a sorting order for remotes.
-    * [ ] Auto build recipe if neither local nor remote found.
     * [ ] Add concept of toolset.
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
-        * [ ] use toolset in queries.
-* version 0.1.5
+        * [ ] Use toolset in queries.
+    * [ ] CMake integration improvement
+        * [ ] Simplify integration with cmake
+        * [ ] Python auto generate the Module dir for cmake
+        * [ ] Allow to load package by batch
+            * [ ] use Yaml config file.
+* version 0.2.0
     * [X] Faster commandline
         * [X] Use remote connexion only if needed
     * [X] Transitive search
@@ -320,18 +329,18 @@ Among things:
         * [X] Add build glibc version in package properties if applicable.
         * [X] Better queries on glibc compatible system
         * [ ] Use system's glibc in get searches
-* version 0.1.4
+* version 0.1.4 -- 2023-06-21
     * [X] Allow to sync with remote.
         * [X] Allow to pull local package that have newer version.
         * [X] Allow to push local package newer than remote or not existing in remote.
     * [X] Allow to force push/pull.
     * [X] Bugfix: safe delete
-* version 0.1.3
+* version 0.1.3 -- 2023-06-12
     * [X] Update internal statuses when using API.
     * [X] omit -d in push/pull command.
     * [X] add progress bar in push/pull command.
     * [X] Allow single thread in build.
-* version 0.1.2
+* version 0.1.2 -- 2023-05-31
     * [X] Add possibility to force os, arch and compiler for cross compiling.
     * [X] Adapt build system to search dependency in the forced environment.
 * version 0.1.1

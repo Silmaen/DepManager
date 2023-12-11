@@ -202,3 +202,16 @@ def query_argument_to_dict(args):
         "glibc": args.glibc,
         "build_date": args.build_date,
     }
+
+
+def pretty_size_print(raw_size):
+    """
+    Pretty print of sizes with units
+    :param raw_size:
+    :return:
+    """
+    for unite in ["B", "KB", "MB", "GB", "TB"]:
+        if raw_size < 1024.0:
+            break
+        raw_size /= 1024.0
+    return f"{raw_size:.2f} {unite}"
