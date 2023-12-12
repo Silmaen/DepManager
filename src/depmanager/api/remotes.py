@@ -15,9 +15,9 @@ class RemotesManager:
         from depmanager.api.local import LocalManager
 
         self.verbosity = verbosity
-        if type(system) == LocalSystem:
+        if type(system) is LocalSystem:
             self.__sys = system
-        elif type(system) == LocalManager:
+        elif type(system) is LocalManager:
             self.__sys = system.get_sys()
         else:
             self.__sys = LocalSystem(verbosity=verbosity)
@@ -43,7 +43,7 @@ class RemotesManager:
         :param default: to force using default
         :return: the remote
         """
-        if default or type(name) != str or name in ["", None]:
+        if default or type(name) is not str or name in ["", None]:
             remote = None
         else:
             remote = self.get_remote(name)
@@ -58,7 +58,7 @@ class RemotesManager:
         :param default: to force using default
         :return: the remote
         """
-        if default or type(name) != str or name in ["", None]:
+        if default or type(name) is not str or name in ["", None]:
             remote = None
         else:
             remote = name

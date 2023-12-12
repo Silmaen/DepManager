@@ -11,19 +11,29 @@ def get(args, system=None):
     """
     from depmanager.api.internal.common import query_argument_to_dict
     from depmanager.api.package import PackageManager
+    from depmanager.api.internal.machine import Machine
 
     pack_manager = PackageManager(system)
-    deps = pack_manager.query(query_argument_to_dict(args), "")
+    dict_query = query_argument_to_dict(args)
+    if dict_query["os"].lower() in ["linux"]:
+        if dict_query["glibc"] in ["", "*"]:
+            mac = Machine(True)
+            dict_query["glibc"] = f"{mac.glibc}"
+    deps = pack_manager.query(dict_query)
     if len(deps) > 0:
-        print(deps[0].get_cmake_config_dir())
+        print(deps[-1].get_cmake_config_dir())
         return
     # If not found... search and get from remote.
-    rep = pack_manager.query(query_argument_to_dict(args), system.default_remote)
+    name = pack_manager.get_default_remote()
+    if name in ["", None]:
+        print()
+        return
+    rep = pack_manager.query(dict_query, name)
     if len(rep) != 0:
-        pack_manager.add_from_remote(rep[0], system.default_remote)
-        deps = pack_manager.query(query_argument_to_dict(args), "")
+        pack_manager.add_from_remote(rep[0], name)
+        deps = pack_manager.query(dict_query)
         if len(deps) > 0:
-            print(deps[0].get_cmake_config_dir())
+            print(deps[-1].get_cmake_config_dir())
 
 
 def add_get_parameters(sub_parsers):
