@@ -11,7 +11,7 @@ kinds = ["shared", "static", "header", "any"]
 
 default_kind = kinds[0]
 mac = Machine(True)
-base_date = datetime.fromisoformat("2000-01-01T00:00:00+0000")
+base_date = datetime.fromisoformat("2000-01-01T00:00:00+00:00")
 
 
 def version_lt(vers_a: str, vers_b: str) -> bool:
@@ -107,7 +107,6 @@ class Props:
             return self.kind < other.kind
         if self.compiler != other.compiler:
             return self.compiler < other.compiler
-        return False
 
     def __le__(self, other):
         return self == other or self < other
@@ -241,7 +240,7 @@ class Props:
         :return: A string.
         """
         base_info = f"{self.arch}, {self.kind}, {self.os}, {self.compiler}"
-        if type(self.build_date) == datetime:
+        if type(self.build_date) is datetime:
             date = self.build_date.isoformat()
         else:
             date = f"{self.build_date}"
@@ -280,7 +279,7 @@ class Props:
         self.version = version
         if date not in [None, ""]:
             if "+" not in date:
-                date += "+0000"
+                date += "+00:00"
             self.build_date = datetime.fromisoformat(date)
         self.arch = items[0]
         self.kind = items[1]
@@ -336,7 +335,7 @@ class Props:
                 self.glibc = val
             if key == "build_date":
                 if "+" not in val:
-                    val += "+0000"
+                    val += "+00:00"
                 self.build_date = datetime.fromisoformat(val)
 
     def to_edp_file(self, file: Path):
@@ -452,9 +451,9 @@ class Dependency:
         :param other: The other dependency to compare.
         :return: True if regexp match.
         """
-        if type(other) == Props:
+        if type(other) is Props:
             return self.properties.match(other)
-        elif type(other) == Dependency:
+        elif type(other) is Dependency:
             return self.properties.match(other.properties)
         elif type(other) in [str, dict]:
             q = Props(other)
@@ -513,9 +512,9 @@ class Dependency:
         :param other: The reference to check.
         :return: True if newer.
         """
-        if type(other) == Props:
+        if type(other) is Props:
             prop = other
-        elif type(other) == Dependency:
+        elif type(other) is Dependency:
             prop = other.properties
         elif type(other) in [str, dict]:
             prop = Props(other)
@@ -573,11 +572,11 @@ class Dependency:
         :param other_version:
         :return: True if self greater than other version
         """
-        if type(other_version) == str:
+        if type(other_version) is str:
             compare = other_version
-        elif type(other_version) == Props:
+        elif type(other_version) is Props:
             compare = other_version.version
-        elif type(other_version) == Dependency:
+        elif type(other_version) is Dependency:
             compare = other_version.properties.version
         else:
             compare = str(other_version)
@@ -593,7 +592,7 @@ class Dependency:
         :param version: reference version.
         :return: True if newer or equal
         """
-        if not type(version) == str:
+        if not type(version) is not str:
             return False
         if version in ["", None]:
             return False

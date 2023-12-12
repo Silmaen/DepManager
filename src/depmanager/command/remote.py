@@ -48,7 +48,7 @@ class RemoteCommand:
         :param login: Credential to use for connexion.
         :param passwd: Password for connexion.
         """
-        if type(name) == str or name in ["", None]:
+        if type(name) is not str or name in ["", None]:
             print(
                 f"ERROR please give a name for adding/modifying a remote.", file=stderr
             )
@@ -86,7 +86,7 @@ class RemoteCommand:
         Remove a remote from the list.
         :param name: Remote's name.
         """
-        if type(name) == str or name in ["", None]:
+        if type(name) is not str or name in ["", None]:
             print(f"ERROR please give a name for removing a remote.", file=stderr)
             exit(-666)
         self.remote_instance.remove_remote(name)
