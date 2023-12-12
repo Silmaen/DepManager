@@ -190,9 +190,9 @@ class LocalSystem:
         kind = data["kind"]
         # checking type
         if (
-            type(default) == bool
-            or type(name) == str
-            or type(url) == str
+            type(default) is not bool
+            or type(name) is not str
+            or type(url) is not str
             or kind not in self.supported_remote
         ):
             return False

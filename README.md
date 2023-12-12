@@ -300,11 +300,15 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 
 Among things:
 
-* version 0.4.0
+* version 0.4.x
     * [ ] Add recipe libray
         * [ ] Possibility to store the recipes in remote
         * [ ] Auto build recipe if neither local nor remote found.
-* version 0.3.0
+    * [ ] Creation of a frontend application.
+        * [ ] Can view, edit, suppress local package.
+        * [ ] Can add, remove, explore remotes.
+        * [ ] Can push, pull packages.
+* version 0.3.x
     * [ ] Add a sorting order for remotes.
     * [ ] Add concept of toolset.
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
@@ -315,7 +319,8 @@ Among things:
         * [ ] Python auto generate the Module dir for cmake
         * [ ] Allow to load package by batch
             * [ ] use Yaml config file.
-* version 0.2.0
+* version 0.2.0 -- 2023-12-12
+    * WARNING: Some breaking change. Backward compatibility not fully tested.
     * [X] Faster commandline
         * [X] Use remote connexion only if needed
     * [X] Transitive search
@@ -328,7 +333,7 @@ Among things:
         * [X] Add build Date in package properties.
         * [X] Add build glibc version in package properties if applicable.
         * [X] Better queries on glibc compatible system
-        * [ ] Use system's glibc in get searches
+        * [X] Use system's glibc in get searches
 * version 0.1.4 -- 2023-06-21
     * [X] Allow to sync with remote.
         * [X] Allow to pull local package that have newer version.

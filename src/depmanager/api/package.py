@@ -15,9 +15,9 @@ class PackageManager:
         from depmanager.api.local import LocalManager
 
         self.verbosity = verbosity
-        if type(system) == LocalSystem:
+        if type(system) is LocalSystem:
             self.__sys = system
-        elif type(system) == LocalManager:
+        elif type(system) is LocalManager:
             self.__sys = system.get_sys()
         else:
             self.__sys = LocalSystem(verbosity=verbosity)
@@ -53,6 +53,13 @@ class PackageManager:
                 dep.source = s
             db += ldb
         return db
+
+    def get_default_remote(self):
+        """
+        Get the default remote name
+        :return:
+        """
+        return self.__sys.default_remote
 
     def remote_name(self, args):
         """

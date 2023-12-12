@@ -51,9 +51,9 @@ class __DataBase:
             props = Props({}, query=True)
         elif type(data) in [str, dict]:
             props = Props(data, query=True)
-        elif type(data) == Dependency:
+        elif type(data) is Dependency:
             props = data.properties
-        elif type(data) == Props:
+        elif type(data) is Props:
             props = data
         else:
             return []
