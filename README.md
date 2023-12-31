@@ -319,6 +319,8 @@ Among things:
         * [ ] Python auto generate the Module dir for cmake
         * [ ] Allow to load package by batch
             * [ ] use Yaml config file.
+* version 0.2.1 -- 2023-12-31
+    * [X] Bufix: allow more date format and don't break if bad format.
 * version 0.2.0 -- 2023-12-12
     * WARNING: Some breaking change. Backward compatibility not fully tested.
     * [X] Faster commandline
