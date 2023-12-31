@@ -48,6 +48,42 @@ def version_lt(vers_a: str, vers_b: str) -> bool:
     return len(vers_aa) < len(vers_bb)
 
 
+def read_date(the_date: str):
+    try:
+        if "T" not in the_date:  # not dte/hour separator: assume not a date
+            return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+        date, time = the_date.split("T", 1)
+        if "-" not in date:
+            if len(date) == 8:
+                date = date[0:4] + "-" + date[4:6] + "-" + date[6:]
+            elif len(date) == 6:
+                date = "20" + date[0:2] + "-" + date[2:4] + "-" + date[4:]
+            else:  # assume not a real date
+                return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+        else:
+            if len(date) == 8:
+                date = "20" + date
+            if len(date) != 10:  # not  real date
+                return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+        tz_str = "00:00"
+        if "+" in time:
+            time, tz_str = time.split("+", 1)
+        if ":" not in time:
+            if len(time) == 4:
+                time = time[0:1] + ":" + time[2:3] + ":00"
+            elif len(time) == 6:
+                time = time[0:1] + ":" + time[2:3] + ":" + time[4:5]
+        else:
+            if len(time) == 5:
+                time = time + ":00"
+            if len(time) != 8:
+                time = "00:00:00"
+        return datetime.fromisoformat(date + "T" + time + "+" + tz_str)
+    except Exception as err:
+        print(f"*** Exception during date '{the_date}' decoding: {err}", file=stderr)
+        return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+
+
 class Props:
     """
     Class for the details about items.
@@ -80,14 +116,14 @@ class Props:
 
     def __eq__(self, other):
         return (
-            self.name == other.name
-            and self.version == other.version
-            and self.build_date == other.build_date
-            and self.os == other.os
-            and self.glibc == other.glibc
-            and self.arch == other.arch
-            and self.kind == other.kind
-            and self.compiler == other.compiler
+                self.name == other.name
+                and self.version == other.version
+                and self.build_date == other.build_date
+                and self.os == other.os
+                and self.glibc == other.glibc
+                and self.arch == other.arch
+                and self.kind == other.kind
+                and self.compiler == other.compiler
         )
 
     def __lt__(self, other):
@@ -206,7 +242,7 @@ class Props:
                     continue
 
             if attr not in ["name", "version", "glibc"] and (
-                str_other in ["any", "*", ""] or str_self in ["any", "*", ""]
+                    str_other in ["any", "*", ""] or str_self in ["any", "*", ""]
             ):
                 continue
             if not compile(translate(str_other)).match(str_self):
@@ -222,14 +258,14 @@ class Props:
 
         hash_ = sha1()
         glob = (
-            self.name
-            + self.version
-            + self.os
-            + self.arch
-            + self.kind
-            + self.compiler
-            + self.glibc
-            + str(self.build_date)
+                self.name
+                + self.version
+                + self.os
+                + self.arch
+                + self.kind
+                + self.compiler
+                + self.glibc
+                + str(self.build_date)
         )
         hash_.update(glob.encode())
         return str(hash_.hexdigest())
@@ -278,9 +314,7 @@ class Props:
         self.name = name
         self.version = version
         if date not in [None, ""]:
-            if "+" not in date:
-                date += "+00:00"
-            self.build_date = datetime.fromisoformat(date)
+            self.build_date = read_date(date)
         self.arch = items[0]
         self.kind = items[1]
         self.os = items[2]
@@ -334,9 +368,7 @@ class Props:
             if key == "glibc":
                 self.glibc = val
             if key == "build_date":
-                if "+" not in val:
-                    val += "+00:00"
-                self.build_date = datetime.fromisoformat(val)
+                self.build_date = read_date(val)
 
     def to_edp_file(self, file: Path):
         """
@@ -373,8 +405,8 @@ class Dependency:
         if isinstance(data, Path):
             self.base_path = Path(data)
             if (
-                not self.base_path.exists()
-                or not (self.base_path / "edp.info").exists()
+                    not self.base_path.exists()
+                    or not (self.base_path / "edp.info").exists()
             ):
                 self.base_path = None
                 return
@@ -529,9 +561,9 @@ class Dependency:
                 return False
         else:
             if (
-                prop.os != self.properties.os
-                or prop.arch != self.properties.arch
-                or prop.kind != self.properties.kind
+                    prop.os != self.properties.os
+                    or prop.arch != self.properties.arch
+                    or prop.kind != self.properties.kind
             ):
                 return False
             if prop.os == "Linux" and prop.glibc not in ["", None]:
