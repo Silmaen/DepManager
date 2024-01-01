@@ -49,6 +49,10 @@ def version_lt(vers_a: str, vers_b: str) -> bool:
 
 
 def read_date(the_date: str):
+    """
+    :param the_date:
+    :return:
+    """
     try:
         if "T" not in the_date:  # not dte/hour separator: assume not a date
             return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
@@ -63,21 +67,28 @@ def read_date(the_date: str):
         else:
             if len(date) == 8:
                 date = "20" + date
-            if len(date) != 10:  # not  real date
+            if len(date) != 10:  # not real date
                 return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
         tz_str = "00:00"
         if "+" in time:
             time, tz_str = time.split("+", 1)
+        elif time.endswith("Z"):
+            time = time.replace("Z", "")
         if ":" not in time:
             if len(time) == 4:
-                time = time[0:1] + ":" + time[2:3] + ":00"
+                time = time[0:2] + ":" + time[2:] + ":00"
             elif len(time) == 6:
-                time = time[0:1] + ":" + time[2:3] + ":" + time[4:5]
+                time = time[0:2] + ":" + time[2:4] + ":" + time[4:]
         else:
             if len(time) == 5:
-                time = time + ":00"
+                time += ":00"
             if len(time) != 8:
                 time = "00:00:00"
+        if ":" not in tz_str:
+            if len(tz_str) != 4:
+                tz_str = "00:00"
+            else:
+                tz_str = tz_str[0:2] + ":" + tz_str[2:]
         return datetime.fromisoformat(date + "T" + time + "+" + tz_str)
     except Exception as err:
         print(f"*** Exception during date '{the_date}' decoding: {err}", file=stderr)
@@ -109,21 +120,21 @@ class Props:
         self.query = query
         self.build_date = base_date
         self.glibc = ""
-        if type(data) == str:
+        if type(data) is str:
             self.from_str(data)
-        elif type(data) == dict:
+        elif type(data) is dict:
             self.from_dict(data)
 
     def __eq__(self, other):
         return (
-                self.name == other.name
-                and self.version == other.version
-                and self.build_date == other.build_date
-                and self.os == other.os
-                and self.glibc == other.glibc
-                and self.arch == other.arch
-                and self.kind == other.kind
-                and self.compiler == other.compiler
+            self.name == other.name
+            and self.version == other.version
+            and self.build_date == other.build_date
+            and self.os == other.os
+            and self.glibc == other.glibc
+            and self.arch == other.arch
+            and self.kind == other.kind
+            and self.compiler == other.compiler
         )
 
     def __lt__(self, other):
@@ -242,7 +253,7 @@ class Props:
                     continue
 
             if attr not in ["name", "version", "glibc"] and (
-                    str_other in ["any", "*", ""] or str_self in ["any", "*", ""]
+                str_other in ["any", "*", ""] or str_self in ["any", "*", ""]
             ):
                 continue
             if not compile(translate(str_other)).match(str_self):
@@ -258,14 +269,14 @@ class Props:
 
         hash_ = sha1()
         glob = (
-                self.name
-                + self.version
-                + self.os
-                + self.arch
-                + self.kind
-                + self.compiler
-                + self.glibc
-                + str(self.build_date)
+            self.name
+            + self.version
+            + self.os
+            + self.arch
+            + self.kind
+            + self.compiler
+            + self.glibc
+            + str(self.build_date)
         )
         hash_.update(glob.encode())
         return str(hash_.hexdigest())
@@ -405,8 +416,8 @@ class Dependency:
         if isinstance(data, Path):
             self.base_path = Path(data)
             if (
-                    not self.base_path.exists()
-                    or not (self.base_path / "edp.info").exists()
+                not self.base_path.exists()
+                or not (self.base_path / "edp.info").exists()
             ):
                 self.base_path = None
                 return
@@ -561,9 +572,9 @@ class Dependency:
                 return False
         else:
             if (
-                    prop.os != self.properties.os
-                    or prop.arch != self.properties.arch
-                    or prop.kind != self.properties.kind
+                prop.os != self.properties.os
+                or prop.arch != self.properties.arch
+                or prop.kind != self.properties.kind
             ):
                 return False
             if prop.os == "Linux" and prop.glibc not in ["", None]:
@@ -584,7 +595,7 @@ class Dependency:
     def get_generic_query(self):
         """
         Construct generic query for searching dependencies similar to this one.
-        :return: generic query.
+        :return: Generic query.
         """
         query = {
             "name": self.properties.name,
@@ -621,7 +632,7 @@ class Dependency:
     def has_minimal_version(self, version: str):
         """
         Check version at least the reference.
-        :param version: reference version.
+        :param version: Reference version.
         :return: True if newer or equal
         """
         if not type(version) is not str:
