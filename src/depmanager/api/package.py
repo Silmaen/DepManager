@@ -33,6 +33,8 @@ class PackageManager:
         using_name = "local"
         if remote_name in self.__sys.remote_database:
             using_name = remote_name
+        elif remote_name == "default":
+            using_name = self.__sys.default_remote
 
         if transitive:
             slist = self.__sys.get_source_list()
@@ -91,7 +93,7 @@ class PackageManager:
                 return
             self.__sys.import_folder(source)
             return
-        if source.is_file():
+        elif source.is_file():
             suffixes = []
             if len(source.suffixes) > 0:
                 suffixes = [source.suffixes[-1]]

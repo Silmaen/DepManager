@@ -41,9 +41,16 @@ class Locker:
 
     def release_lock(self):
         if not self.lock_file.exists():
+            if self.verbosity > 3:
+                print(f"Depmanager locking: Lock already released")
             return
         try:
             self.lock_file.unlink(missing_ok=True)
+            if self.verbosity > 3:
+                if self.lock_file.exists():
+                    print(f"Depmanager locking: failed Lock released")
+                else:
+                    print(f"Depmanager locking: Lock released")
         except Exception as err:
             if self.verbosity > 0:
                 print(
@@ -51,6 +58,8 @@ class Locker:
                 )
 
     def request_lock(self):
+        if self.verbosity > 3:
+            print(f"Depmanager locking: requesting Lock")
         call_start = datetime.now()
         # wait if there is a lock!
         while self.is_locked():
@@ -60,6 +69,16 @@ class Locker:
                     print(f"Depmanager locking: Deadlock timeout reached.", file=stderr)
                 return False
         # just create the lock file
+        if not self.lock_file.parent.exists():
+            self.lock_file.parent.mkdir(parents=True, exist_ok=True)
+            if not self.lock_file.parent.exists():
+                print(
+                    f"Depmanager locking FATAL: Cannot create folder {self.lock_file.parent}, check you permissions.",
+                    file=stderr,
+                )
+                exit(1)
         self.lock_file.touch()
+        if self.verbosity > 3:
+            print(f"Depmanager locking: Lock State: {self.lock_file.exists()}")
         # return existence.
         return self.lock_file.exists()
