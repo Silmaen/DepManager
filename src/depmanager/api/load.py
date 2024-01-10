@@ -19,6 +19,8 @@ def load_environment(
         internal_system = system
     elif type(system) is LocalManager:
         internal_system = system.get_sys()
+    else:
+        internal_system = LocalSystem()
     verbosity = internal_system.verbosity
 
     pacman = PackageManager(internal_system)
@@ -100,7 +102,7 @@ def load_environment(
                         to_skip = True
         if to_skip:
             if verbosity > 2:
-                print(f"    SKIPING")
+                print(f"    SKIPPING")
             continue
         #
         # search package

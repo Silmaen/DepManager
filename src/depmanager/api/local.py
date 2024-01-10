@@ -9,13 +9,13 @@ class LocalManager:
     Local manager.
     """
 
-    version = "0.2.2"
+    version = "0.3.0"
 
     def __init__(self, system=None, verbosity: int = 0):
         from depmanager.api.internal.system import LocalSystem
 
         self.verbosity = verbosity
-        if type(system) == LocalSystem:
+        if type(system) is LocalSystem:
             self.__sys = system
         else:
             self.__sys = LocalSystem(verbosity=verbosity)

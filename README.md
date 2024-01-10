@@ -230,9 +230,9 @@ remote:
     # Same parameter as command-line (also the required)
     name: "my_server"
     kind: "srvs"
-    url: "https://packages.argawaen.net"
-    login: "argawaen"
-    passwd: "ElorAloric1024*"
+    url: "https://packages.example.net"
+    login: "foo"
+    passwd: "bar"
   # If package not found locally, do you allow for download?
   pull: true
   # If newer remote package exists, download it? (implies 'pull')
@@ -399,7 +399,7 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
-* version 0.3.x
+* version 0.3.0
     * [X] CMake integration improvement
         * [X] Simplify integration with cmake
         * [X] Python auto generate the Module dir for cmake
