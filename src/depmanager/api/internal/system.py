@@ -39,6 +39,10 @@ class LocalSystem:
         if not self.locker.request_lock():
             print(f"Locking system reach deadlock - exit.", file=stderr)
             exit(1)
+        self.released = False
+        # in case of first initialization
+        self.data_path.mkdir(parents=True, exist_ok=True)
+        self.temp_path.mkdir(parents=True, exist_ok=True)
         #
         # this instance has now exclusive (hope)
         #
@@ -103,11 +107,16 @@ class LocalSystem:
                 )
         self.write_config_file()
 
+    def __del__(self):
+        if not self.released:
+            self.release()
+
     def release(self):
         """
         Release the lock on the data
         """
         self.locker.release_lock()
+        self.released = True
 
     def get_source_list(self):
         """
@@ -129,6 +138,8 @@ class LocalSystem:
         """
         import json
 
+        if not self.file.exists():
+            return
         with open(self.file, "r") as fp:
             self.config = json.load(fp)
         if "base_path" in self.config.keys():
@@ -179,7 +190,9 @@ class LocalSystem:
             or "default" not in data
             or "kind" not in data
         ):
-            return
+            if self.verbosity > 3:
+                print("ERROR: cannot add remote: missing required fields")
+            return False
         name = data["name"]
         url = data["url"]
         default = data["default"]
@@ -191,12 +204,18 @@ class LocalSystem:
             or type(url) is not str
             or kind not in self.supported_remote
         ):
+            if self.verbosity > 3:
+                print("ERROR: cannot add remote: wrong type in required fields")
             return False
         if name in [None, ""]:
+            if self.verbosity > 3:
+                print("ERROR: cannot add remote: empty name")
             return False
         if "://" in url:
             url = str(url).split("://")[-1]
         if url in [None, ""]:
+            if self.verbosity > 3:
+                print("ERROR: cannot add remote: empty url")
             return False
         if default and self.default_remote != "":
             self.remote_database[self.default_remote].default = False

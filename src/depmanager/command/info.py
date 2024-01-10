@@ -11,8 +11,14 @@ class InfoCommand:
 
     def __init__(self, system=None):
         from depmanager.api.local import LocalManager
+        from depmanager.api.internal.system import LocalSystem
 
-        self.local_instance = LocalManager(system)
+        if type(system) is LocalManager:
+            self.local_instance = system
+        elif type(system) is LocalSystem:
+            self.local_instance = LocalManager(system)
+        else:
+            self.local_instance = LocalManager()
 
     def basedir(self):
         """

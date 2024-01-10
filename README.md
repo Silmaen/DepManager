@@ -183,7 +183,86 @@ else()
 endif()
 ```
 
-### Find packages
+### Automated mode
+
+In automated mode, depmanager can automatically set a remote repository, retrieve packages from this repository
+and load then in one command.
+
+#### The command
+
+```cmake
+dm_load_environment(
+   [QUIET]
+   [PATH path]
+   [KIND kind]
+   [ARCH target_arch]
+   [OS target_os]
+   [COMPILER target_compiler]
+   [GLIBC target_glibc]
+) 
+```
+
+If `QUIET` set, only errors are written.
+
+`path` is the path to the configuration file, either directly a configuration file name,
+or a directory containing a file named `depmanager.yml`. By default, it will look at the
+project root. See the next paragraph for more information about configuration file.
+
+`kind` is used to force library kind (`shared`, `static`, `header`). By default, it uses
+the value from `BUILD_SHARED_LIBS`.
+
+`target_arch`, `target_os`, `target_compiler`, `target_glibc` are used in the query. If not set, default
+values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER_ID`
+
+The cmake function will update the CMAKE variable for the search of package.
+
+After call this command, the cmake user has to call for needed `find_package`.
+
+#### Configuration file
+
+The configuration file is a yaml file. Here is an example with explication in comment.
+
+```yaml
+remote:
+  # If server is defined, depmanager will add this server to its
+  # database (if not already there)
+  server:
+    # Same parameter as command-line (also the required)
+    name: "my_server"
+    kind: "srvs"
+    url: "https://packages.argawaen.net"
+    login: "argawaen"
+    passwd: "ElorAloric1024*"
+  # If package not found locally, do you allow for download?
+  pull: true
+  # If newer remote package exists, download it? (implies 'pull')
+  pull-newer: true
+packages:
+  # list the needed packages.
+  fmt:
+    # version 'at least'
+    version: ">=10.1.0"
+  spdlog:
+    # exact version
+    version: "1.12.0"
+  debugbreak:
+    # if not found locally, don't pull, nor error.
+    optional: true
+  glm:
+    version: "0.9.9.9"
+    # force the shared version even in static build mode.
+    kind: "shared"
+  glfw:
+    # use this only for the (same for arch, and compiler)
+    os: Linux
+```
+
+### Manual mode
+
+In manual mode you should load or find each package individually.
+You should also manually set the remote and download the package.
+
+#### Find packages
 
 With depmanager initialized in cmake, it provides an alternative to classical `find_package`
 of cmake by `dm_find_package`
@@ -220,7 +299,7 @@ values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER
 
 **LIMITATION:** it requires the library name is the package name. So no multi lib or lib with different name.
 
-### Load package
+#### Load package
 
 This command is similar to the previous one, but does not directly do a cmake's `find_package`.
 It only adds to the `CMAKE_PREFIX_PATH` list the folders of given package.
@@ -302,25 +381,30 @@ First of all in the roadmap is to use this tool in C++ project to get feedback.
 
 Among things:
 
-* version 0.4.x
-    * [ ] Add recipe libray
-        * [ ] Possibility to store the recipes in remote
-        * [ ] Auto build recipe if neither local nor remote found.
+* version 0.7.x
     * [ ] Creation of a frontend application.
         * [ ] Can view, edit, suppress local package.
         * [ ] Can add, remove, explore remotes.
         * [ ] Can push, pull packages.
-* version 0.3.x
+* version 0.6.x
+    * [ ] Add recipe libray
+        * [ ] Possibility to store the recipes in remote
+        * [ ] Auto build recipe if neither local nor remote found.
+* version 0.5.x
     * [ ] Add a sorting order for remotes.
+        * [ ] Searching across remotes with final package sorting.
+        * [ ] Allow auto-pull best-fitting package
+* version 0.4.x
     * [ ] Add concept of toolset.
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
-    * [ ] CMake integration improvement
-        * [ ] Simplify integration with cmake
-        * [ ] Python auto generate the Module dir for cmake
-        * [ ] Allow to load package by batch
-            * [ ] use Yaml config file.
+* version 0.3.x
+    * [X] CMake integration improvement
+        * [X] Simplify integration with cmake
+        * [X] Python auto generate the Module dir for cmake
+        * [X] Allow to load package by batch
+            * [X] use Yaml config file.
 * version 0.2.1 -- 2023-12-31
     * [X] Bufix: allow more date format and don't break if bad format.
 * version 0.2.0 -- 2023-12-12
