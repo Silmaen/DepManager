@@ -31,8 +31,34 @@ function(dm_get_data_path OUTPUT)
     set(${OUTPUT} ${RESULT} PARENT_SCOPE)
 endfunction()
 
+function(dm_get_glibc OUTPUT)
+    # Créer un fichier source C pour tester la version de glibc
+    file(WRITE ${CMAKE_BINARY_DIR}/check_glibc_version.c "
+#include <features.h>
+#include <stdio.h>
+
+int main() {
+    printf(\"%d.%d\\n\", __GLIBC__, __GLIBC_MINOR__);
+    return 0;
+}")
+
+    # try to compile source
+    try_compile(CHECK_GLIBC_VERSION_RESULT
+        ${CMAKE_BINARY_DIR}/check_glibc_version
+        SOURCES ${CMAKE_BINARY_DIR}/check_glibc_version.c
+        OUTPUT_VARIABLE OUTPUT_C)
+
+    # Verfy result
+    if(CHECK_GLIBC_VERSION_RESULT)
+        set(${OUTPUT} ${OUTPUT_C} PARENT_SCOPE)
+    else()
+        set(${OUTPUT} "" PARENT_SCOPE)
+        message("Unable to determine GLIBC version.")
+    endif()
+endfunction()
+
 function(dm_load_package PACKAGE)
-    cmake_parse_arguments(FP "QUIET;TRACE" "VERSION;KIND;ARCH;OS;COMPILER" "" ${ARGN})
+    cmake_parse_arguments(FP "REQUIRED;TRACE" "VERSION;KIND;ARCH;OS;COMPILER;GLIBC" "" ${ARGN})
     if (FP_VERSION)
         set(PREDICATE "${PACKAGE}/${FP_VERSION}")
     else ()
@@ -61,25 +87,43 @@ function(dm_load_package PACKAGE)
     endif ()
     set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -c ${TRUE_COMPILER}")
 
+    if (FP_GLIBC)
+        set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -g ${FP_GLIBC}")
+    else ()
+        dm_get_glibc(O_GLIBC)
+        if (O_GLIBC)
+            set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -g ${O_GLIBC}")
+        endif ()
+    endif ()
+
     set(CMD "${DM_INTERNAL_COMMAND} get -p ${PREDICATE} ${SEARCH_OPTIONS}")
     if (FP_TRACE)
         message(STATUS "QUERY: ${CMD}")
     endif()
     string(REPLACE " " ";" CMD ${CMD})
     execute_process(COMMAND ${CMD}
-            OUTPUT_VARIABLE TMP)
-    string(STRIP "${TMP}" TMP)
-    string(REPLACE "\\" "/" TMP "${TMP}")
-    if ("${TMP}" STREQUAL "")
-        if (NOT FP_QUIET)
-            message(FATAL_ERROR "Could not found suitable versions of ${PACKAGE}")
+            OUTPUT_VARIABLE TMP
+            RESULT_VRIABLE res)
+    if (res EQUAL 0)
+        string(STRIP "${TMP}" TMP)
+        string(REPLACE "\\" "/" TMP "${TMP}")
+        if ("${TMP}" STREQUAL "")
+            if (REQUIRED)
+                message(FATAL_ERROR "Could not found suitable versions of ${PACKAGE}")
+            endif ()
+        endif ()
+        if (FP_TRACE)
+            message(STATUS "RESULT: ${TMP}")
+        endif()
+        list(PREPEND CMAKE_PREFIX_PATH ${TMP})
+        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
+    else ()
+        if (REQUIRED)
+            message(FATAL_ERROR "Depmanager error (${res}) while searching for ${PACKAGE}: ${TMP}")
+        else ()
+            message(WARNING "Depmanager error (${res}) while searching for ${PACKAGE}: ${TMP}")
         endif ()
     endif ()
-    if (FP_TRACE)
-        message(STATUS "RESULT: ${TMP}")
-    endif()
-    list(PREPEND CMAKE_PREFIX_PATH ${TMP})
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
 endfunction()
 
 function(dm_find_package PACKAGE)
