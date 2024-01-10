@@ -4,8 +4,8 @@ Everything needed for database.
 from pathlib import Path
 from shutil import rmtree
 from sys import stderr
-from time import sleep
 
+from depmanager.api.internal.data_locking import Locker
 from depmanager.api.internal.database_local import LocalDatabase
 from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
 from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
@@ -33,6 +33,15 @@ class LocalSystem:
             self.base_path = self.file.parent
             self.data_path = self.base_path / "data"
             self.temp_path = self.base_path / "tmp"
+        #
+        # request data lock
+        self.locker = Locker(base_path=self.base_path, verbosity=verbosity)
+        if not self.locker.request_lock():
+            print(f"Locking system reach deadlock - exit.", file=stderr)
+            exit(1)
+        #
+        # this instance has now exclusive (hope)
+        #
         self.read_config_file()
         self.local_database = LocalDatabase(self.data_path, verbosity=self.verbosity)
         self.remote_database = {}
@@ -94,6 +103,12 @@ class LocalSystem:
                 )
         self.write_config_file()
 
+    def release(self):
+        """
+        Release the lock on the data
+        """
+        self.locker.release_lock()
+
     def get_source_list(self):
         """
         Get the list of source starting from local, then default remote then other remotes
@@ -114,18 +129,6 @@ class LocalSystem:
         """
         import json
 
-        if not self.file.exists():
-            return
-        lockfile = Path(self.file.parent / (self.file.name + ".lock"))
-        counter = 0
-        while lockfile.exists():
-            sleep(0.5)
-            counter += 0.5
-            if counter > 5:
-                print(
-                    f"ERROR: config file locked. Wait for unfinished tasks or delete the file {lockfile}."
-                )
-                exit(-1)
         with open(self.file, "r") as fp:
             self.config = json.load(fp)
         if "base_path" in self.config.keys():
@@ -148,18 +151,11 @@ class LocalSystem:
         self.data_path.mkdir(parents=True, exist_ok=True)
         self.temp_path.mkdir(parents=True, exist_ok=True)
 
-        lockfile = Path(self.file.parent / (self.file.name + ".lock"))
-        while lockfile.exists():
-            sleep(0.5)
         try:
-            lockfile.touch()
             with open(self.file, "w") as fp:
                 fp.write(json.dumps(self.config, indent=2))
-            lockfile.unlink(missing_ok=True)
         except Exception as err:
             print(f"Exception during config writing: {err}", file=stderr)
-            if lockfile.exists():
-                print("Lock file still exists...", file=stderr)
 
     def clear_tmp(self):
         """
