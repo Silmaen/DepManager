@@ -197,6 +197,7 @@ dm_find_package(
    [ARCH target_arch]
    [OS target_os]
    [COMPILER target_compiler]
+   [GLIBC target_glibc]
 )
 ```
 
@@ -205,7 +206,7 @@ dm_find_package(
 `version` is the exact version to match (wildcard are allowed). By default, find the
 latest one.
 
-`kind` is used to force library kind (`shared`, `static`, `header`). By default it return
+`kind` is used to force library kind (`shared`, `static`, `header`). By default, it returns
 the first found.
 
 If `REQUIRED` set, the function will give an error if no package found.
@@ -214,7 +215,7 @@ If `REQUIRED` set, the function will give an error if no package found.
 If `QUIET` set, only errors are written. (same as original `find_package`). In opposition,
 if `TRACE` set, many more debug message displayed.
 
-`target_arch`, `target_os`, `target_compiler` are used in the query. If not set, default
+`target_arch`, `target_os`, `target_compiler` `target_glibc` are used in the query. If not set, default
 values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER_ID`
 
 **LIMITATION:** it requires the library name is the package name. So no multi lib or lib with different name.
@@ -227,12 +228,13 @@ It only adds to the `CMAKE_PREFIX_PATH` list the folders of given package.
 ```cmake
 dm_load_package(
    package
-   [QUIET] [TRACE]
+   [REQUIRED] [TRACE]
    [VERSION version]
    [KIND kind]
    [ARCH target_arch]
    [OS target_os]
    [COMPILER target_compiler]
+   [GLIBC target_glibc]
 )
 ```
 
