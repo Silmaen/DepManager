@@ -54,3 +54,4 @@ class LocalManager:
         Clean the Temp Folder.
         """
         self.__sys.clear_tmp()
+        self.__sys.release()
