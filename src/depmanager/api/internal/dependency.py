@@ -14,6 +14,21 @@ mac = Machine(True)
 base_date = datetime.fromisoformat("2000-01-01T00:00:00+00:00")
 
 
+def safe_to_int(vers: str):
+    """
+    Safely convert a string to int taking only the fist digit characters.
+    :param vers: The string to convert
+    :return: Corresponding int.
+    """
+    from re import match
+
+    crr = match(r"^\D*(\d+)", vers)
+    if crr:
+        return int(crr.group(1))
+    else:
+        return 0
+
+
 def version_lt(vers_a: str, vers_b: str) -> bool:
     """
     Compare 2 string describing version number
@@ -28,23 +43,7 @@ def version_lt(vers_a: str, vers_b: str) -> bool:
     for i in range(min(len(vers_aa), len(vers_bb))):
         if vers_aa[i] == vers_bb[i]:
             continue
-        try:
-            if vers_aa[i] == "":
-                ia = 0
-            else:
-                ia = int(vers_aa[i])
-            if vers_bb[i] == "":
-                ib = 0
-            else:
-                ib = int(vers_bb[i])
-            compare = ia < ib
-        except Exception as err:
-            print(
-                f"WARNING: Exception during version compare: {err} // {vers_a} vs. {vers_b}",
-                file=stderr,
-            )
-            compare = vers_aa[i] < vers_bb[i]
-        return compare
+        return safe_to_int(vers_aa[i]) < safe_to_int(vers_bb[i])
     return len(vers_aa) < len(vers_bb)
 
 
@@ -72,6 +71,8 @@ def read_date(the_date: str):
         tz_str = "00:00"
         if "+" in time:
             time, tz_str = time.split("+", 1)
+        if "." in time:
+            time, _ = time.split(".", 1)
         elif time.endswith("Z"):
             time = time.replace("Z", "")
         if ":" not in time:
@@ -235,7 +236,6 @@ class Props:
             "kind",
             "compiler",
             "glibc",
-            "build_date",
         ]:
             str_other = f"{getattr(other, attr)}"
             str_self = f"{getattr(self, attr)}"
@@ -276,7 +276,6 @@ class Props:
             + self.kind
             + self.compiler
             + self.glibc
-            + str(self.build_date)
         )
         hash_.update(glob.encode())
         return str(hash_.hexdigest())
@@ -551,7 +550,7 @@ class Dependency:
 
     def check_newest(self, other):
         """
-        Verify if this Dependency is newer than a reference.
+        Check this Dependency newer than a reference.
         :param other: The reference to check.
         :return: True if newer.
         """

@@ -50,9 +50,9 @@ class Builder:
 
         self.cross_info = cross_info
         self.generator = ""
-        if type(local) == LocalSystem:
+        if type(local) is LocalSystem:
             self.local = local
-        elif type(local) == LocalManager:
+        elif type(local) is LocalManager:
             self.local = local.get_sys()
         else:
             self.local = LocalSystem()
@@ -124,7 +124,10 @@ class Builder:
         Do the build of recipes.
         """
         mac = Machine(True)
-        creation_date = datetime.now()
+        creation_date = datetime.now(tz=datetime.now().astimezone().tzinfo).replace(
+            microsecond=0
+        )
+        error = 0
         for rec in self.recipes:
             #
             #
@@ -145,11 +148,13 @@ class Builder:
                 compiler = mac.default_compiler
                 glibc = mac.glibc
 
-            rec.define(os, arch, compiler, self.temp / "install", glibc)
+            rec.define(os, arch, compiler, self.temp / "install", glibc, creation_date)
 
             #
             #
             # Check for existing
+            if self.local.verbosity > 2:
+                print(f"package {rec.to_str()}: Checking existing...")
             p = Props(
                 {
                     "name": rec.name,
@@ -159,7 +164,6 @@ class Builder:
                     "kind": rec.kind,
                     "compiler": compiler,
                     "glibc": glibc,
-                    "build_date": creation_date,
                 }
             )
             search = self.local.local_database.query(p)
@@ -173,30 +177,34 @@ class Builder:
                         f"REMARK: library {p.get_as_str()} already exists, skipping it."
                     )
                     continue
+            p.build_date = creation_date
             rec.source()
 
             #
             #
-            # check dependencies
-            if type(rec.dependencies) == list:
+            # check dependencies+
+            if self.local.verbosity > 2:
+                print(f"package {rec.to_str()}: Checking dependencies...")
+            if type(rec.dependencies) is not list:
                 print(
-                    f"ERROR: dependencies of {rec.to_str()} must be a list.",
+                    f"ERROR: package {rec.to_str()}: dependencies must be a list.",
                     file=stderr,
                 )
+                error += 1
                 continue
             ok = True
             dep_list = []
             for dep in rec.dependencies:
-                if type(dep) == dict:
+                if type(dep) is not dict:
                     ok = False
                     print(
-                        f"ERROR: dependencies of {rec.to_str()} must be a list of dict.",
+                        f"ERROR: package {rec.to_str()}: dependencies must be a list of dict.",
                         file=stderr,
                     )
                     break
                 if "name" not in dep:
                     print(
-                        f"ERROR: dependencies of {rec.to_str()}\n{dep} must be a contain a name.",
+                        f"ERROR: package {rec.to_str()}: dependencies {dep} must be a contain a name.",
                         file=stderr,
                     )
                     ok = False
@@ -208,7 +216,7 @@ class Builder:
                 result = self.local.local_database.query(dep)
                 if len(result) == 0:
                     print(
-                        f"ERROR: dependencies of {rec.to_str()}, {dep['name']} Not found:\n{dep}",
+                        f"ERROR: package {rec.to_str()}: dependency {dep['name']} Not found:\n{dep}",
                         file=stderr,
                     )
                     ok = False
@@ -222,36 +230,56 @@ class Builder:
             #
             #
             # configure
+            if self.local.verbosity > 2:
+                print(f"package {rec.to_str()}: Configure...")
+            if rec.kind not in ["shared", "static"]:
+                rec.config = ["Release"]
             rec.configure()
             cmd = f'cmake -S {self._get_source_dir(rec)} -B {self.temp / "build"}'
             cmd += f' -G "{self._get_generator(rec)}"'
             if len(dep_list) != 0:
                 cmd += ' -DCMAKE_PREFIX_PATH="' + ";".join(dep_list) + '"'
             cmd += f" {self._get_options_str(rec)}"
-            cont = try_run(cmd)
-
+            if not try_run(cmd):
+                if self.local.verbosity > 0:
+                    print(
+                        f"ERROR: package {rec.to_str()}: Configuration fail.",
+                        file=stderr,
+                    )
+                error += 1
+                continue
             #
             #
             # build & install
-            if cont:
-                for conf in rec.config:
-                    cmd = f"cmake --build {self.temp / 'build'} --target install --config {conf}"
-                    if self.cross_info["SINGLE_THREAD"]:
-                        cmd += f" -j 1"
-                    cont = try_run(cmd)
-                    if not cont:
-                        break
-
+            if self.local.verbosity > 2:
+                print(f"package {rec.to_str()}: Build and install...")
+            has_fail = False
+            for conf in rec.config:
+                if self.local.verbosity > 2:
+                    print(f"package {rec.to_str()}: Build config {conf}...")
+                cmd = f"cmake --build {self.temp / 'build'} --target install --config {conf}"
+                if self.cross_info["SINGLE_THREAD"]:
+                    cmd += f" -j 1"
+                if not try_run(cmd):
+                    print(
+                        f"ERROR: package {rec.to_str()}, ({conf}): install Fail.",
+                        file=stderr,
+                    )
+                    has_fail = True
+                    break
+            if has_fail:
+                error += 1
+                continue
             #
             #
             # create the info file
-            if cont:
-                rec.install()
-                p.to_edp_file(self.temp / "install" / "edp.info")
-                # copy to repository
-                self.local.import_folder(self.temp / "install")
+            if self.local.verbosity > 2:
+                print(f"package {rec.to_str()}: Create package...")
+            rec.install()
+            p.to_edp_file(self.temp / "install" / "edp.info")
+            # copy to repository
+            self.local.import_folder(self.temp / "install")
             # clean Temp
             rec.clean()
             rmtree(self.temp, ignore_errors=True)
-            if not cont:
-                exit(-666)
+        return error

@@ -38,7 +38,9 @@ def build(args, system=None):
     print(f"found {len(builder.recipes)} in the given source folder")
     for rep in builder.recipes:
         print(f" - {rep.to_str()}")
-    builder.build_all(args.force)
+    error_count = builder.build_all(args.force)
+    if error_count > 0:
+        exit(-666)
 
 
 def add_build_parameters(sub_parsers):

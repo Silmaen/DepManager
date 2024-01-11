@@ -27,15 +27,21 @@ class Recipe:
         Get string representing recipe.
         :return: String.
         """
-        os = "any"
-        if len(self.settings["os"]) > 0:
-            os = self.settings["os"]
-        arch = "any"
-        if len(self.settings["arch"]) > 0:
-            arch = self.settings["arch"]
-        return f"{self.name}/{self.version} on {os}/{arch} as {self.kind} from {self.source_dir}"
+        result = f"{self.name}/{self.version}"
+        if self.kind in ["static", "shared"]:
+            os = "any"
+            if len(self.settings["os"]) > 0:
+                os = self.settings["os"]
+            arch = "any"
+            if len(self.settings["arch"]) > 0:
+                arch = self.settings["arch"]
+            result += f" {os}/{arch}"
+            if os == "Linux":
+                result += f"/glibc_{self.settings['glibc']}"
+        result += f" as {self.kind}"
+        return result
 
-    def define(self, os, arch, compiler, install_path, glibc=""):
+    def define(self, os, arch, compiler, install_path, glibc="", creation_date=None):
         """
         Actualize parameters
         :param os:
@@ -43,13 +49,19 @@ class Recipe:
         :param compiler:
         :param install_path:
         :param glibc:
+        :param creation_date:
         """
         self.settings["os"] = os
         self.settings["arch"] = arch
         self.settings["compiler"] = compiler
         self.settings["install_path"] = install_path
         self.settings["glibc"] = glibc
-        self.settings["build_date"] = datetime.now()
+        if creation_date is None or type(creation_date) is not datetime:
+            self.settings["build_date"] = datetime.now(
+                tz=datetime.now().astimezone().tzinfo
+            ).replace(microsecond=0)
+        else:
+            self.settings["build_date"] = creation_date
 
     def source(self):
         """
