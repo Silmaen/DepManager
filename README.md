@@ -399,7 +399,7 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
-* version 0.3.0
+* version 0.3.0 -- 2024-01-12
     * [X] CMake integration improvement
         * [X] Simplify integration with cmake
         * [X] Python auto generate the Module dir for cmake
