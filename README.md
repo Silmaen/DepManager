@@ -399,6 +399,13 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
+* version 0.3.1
+    * [ ] Allow to externally control the build system
+        * [X] Allow to build a package by giving a single recipe
+        * [ ] Allow to manipulate the list of recipes
+        * [ ] Allow to pull packages prior to build if exists on a remote
+        * [ ] Allow to push (force) to remote after build
+    * [ ] Helper functions to find recipes in filesystem
 * version 0.3.0 -- 2024-01-12
     * [X] CMake integration improvement
         * [X] Simplify integration with cmake
