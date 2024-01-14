@@ -322,10 +322,21 @@ After call this command, the cmake user has to call for needed `find_package`.
 ## Create you own package
 
 Depmanager allow you to create your own packages by defining recipes. Then run
-`depmanager build <location of recipes>`
+`depmanager build <location of recipes> [OPTIONS]`
 The program will then build and add dependencies to the local cache.
 
 The location can contain as many recipe in any number of files.
+
+The search behavior can bve set as recursive with option `--recursive,-r`. As sometimes, sources also contains python
+files that may fail to load, the depth of recursion can be restrained using `--recursi-depth <n>`.
+
+By default, a package will not be build if already exists in the local cache. You can force the rebuild with the
+option `--force,-f`.
+
+By default, the builder will use all the cpu cores, but `--single-thred,-s` will force to use only one core.
+
+Cross-compilation can be used by giving the tools at command
+line: `--cross-c <C_COMPILER> --cross-cxx <CXX_COMPILER> --cross-arch <TARGET_ARCH> --cross-os <TARGET_OS>`
 
 ### The recipe
 
@@ -375,6 +386,9 @@ class AnotherAwesomeLib(MyAwesomeLib):
     kind = "shared"
 ```
 
+As many python file may exist in the source you want to build, python file using shebang will be ignored to avoid errors
+when parsing them. Do not add shebang in your recipe files.
+
 ## Roadmap
 
 First of all in the roadmap is to use this tool in C++ project to get feedback.
@@ -402,10 +416,10 @@ Among things:
 * version 0.3.1
     * [ ] Allow to externally control the build system
         * [X] Allow to build a package by giving a single recipe
-        * [ ] Allow to manipulate the list of recipes
         * [ ] Allow to pull packages prior to build if exists on a remote
         * [ ] Allow to push (force) to remote after build
-    * [ ] Helper functions to find recipes in filesystem
+    * [X] Helper functions to find recipes in filesystem
+        * [X] Allow recursive search
 * version 0.3.0 -- 2024-01-12
     * [X] CMake integration improvement
         * [X] Simplify integration with cmake
