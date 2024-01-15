@@ -69,7 +69,15 @@ class RecipeBuilder:
     def _get_source_dir(self):
         from pathlib import Path
 
-        source_dir = Path(self.recipe.source_dir)
+        if self.recipe.path is None:
+            print(
+                "warning: it may be better to setup recipe path for automated builder."
+            )
+            source_dir = Path(self.recipe.source_dir).resolve()
+        else:
+            source_dir = (
+                Path(self.recipe.path) / Path(self.recipe.source_dir)
+            ).resolve()
         if not source_dir.exists():
             print(
                 f"Cannot build {self.recipe.to_str()}: could not find source dir {source_dir}",
@@ -176,11 +184,9 @@ class RecipeBuilder:
         search = self.local.local_database.query(p)
         if len(search) > 0:
             if forced:
-                print(
-                    f"REMARK: library {p.get_as_str()} already exists, overriding it."
-                )
+                print(f"package {self.recipe.to_str()}: already exists, overriding it.")
             else:
-                print(f"REMARK: library {p.get_as_str()} already exists, skipping it.")
+                print(f"package {self.recipe.to_str()}: already exists, skipping it.")
                 return True
         p.build_date = creation_date
 

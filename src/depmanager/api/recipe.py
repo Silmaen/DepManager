@@ -19,8 +19,9 @@ class Recipe:
     dependencies = []
     settings = {"os": "", "arch": "", "compiler": "", "install_path": Path()}
 
-    def __init__(self, possible: bool = True):
+    def __init__(self, path: Path = None, possible: bool = True):
         self.possible = possible
+        self.path = path
 
     def to_str(self):
         """

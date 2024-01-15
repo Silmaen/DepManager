@@ -5,9 +5,11 @@ from pathlib import Path
 from shutil import rmtree
 from sys import stderr
 
+from depmanager.api.internal.machine import Machine
 from depmanager.api.internal.recipe_builder import RecipeBuilder
 from depmanager.api.internal.system import LocalSystem
 from depmanager.api.local import LocalManager
+from depmanager.api.package import PackageManager
 from depmanager.api.recipe import Recipe
 
 
@@ -57,13 +59,13 @@ def find_recipes(location: Path, depth: int = -1):
             file_has_recipe = False
             for name, obj in getmembers(mod):
                 if isclass(obj) and name != "Recipe" and issubclass(obj, Recipe):
-                    recipes.append(obj())
+                    recipes.append(obj(path=file.parent))
                     file_has_recipe = True
             if file_has_recipe:
                 idx += 1
         except Exception as err:
             print(
-                f"Exception during analysis of file {file}, module {name} : {err}",
+                f"Exception during analysis of file {file}: {err}",
                 file=stderr,
             )
             continue
@@ -83,6 +85,11 @@ class Builder:
         depth: int = 0,
         local: LocalSystem = None,
         cross_info=None,
+        server_name: str = "",
+        dry_run: bool = False,
+        skip_pull: bool = False,
+        skip_push: bool = False,
+        forced: bool = False,
     ):
         if cross_info is None:
             cross_info = {}
@@ -95,6 +102,7 @@ class Builder:
             self.local = local.get_sys()
         else:
             self.local = LocalSystem()
+        self.pacman = PackageManager(self.local, verbosity=self.local.verbosity)
         self.source_path = source
         if temp is None:
             self.temp = self.local.temp_path / "builder"
@@ -103,6 +111,11 @@ class Builder:
         if self.local.verbosity > 0:
             print(f"Recipes search ..")
         self.recipes = find_recipes(self.source_path, depth)
+        self.server_name = server_name
+        self.dry_run = dry_run
+        self.skip_pull = skip_pull
+        self.skip_push = skip_push
+        self.forced = forced
 
     def has_recipes(self):
         """
@@ -111,22 +124,108 @@ class Builder:
         """
         return len(self.recipes) > 0
 
-    def build_all(self, forced: bool = False):
+    def build_all(
+        self,
+    ):
         """
         Do the build of recipes.
+        :return:
         """
         rmtree(self.temp, ignore_errors=True)
         self.temp.mkdir(parents=True, exist_ok=True)
+
+        mac = Machine(True)
+
         error = 0
         for rec in self.recipes:
-            if self.temp.exists():
+            glibc = ""
+            if rec.kind == "header":
+                arch = "any"
+                os = "any"
+                compiler = "any"
+            else:
+                if "CROSS_ARCH" in self.cross_info:
+                    arch = self.cross_info["CROSS_ARCH"]
+                else:
+                    arch = mac.arch
+                if "CROSS_OS" in self.cross_info:
+                    os = self.cross_info["CROSS_OS"]
+                else:
+                    os = mac.os
+                compiler = mac.default_compiler
+                glibc = mac.glibc
+            #
+            # remote check and pull
+            do_pull = False
+            if (
+                self.server_name in self.local.remote_database.keys()
+                and not self.skip_pull
+            ):
+                pull_query = self.pacman.query(
+                    {
+                        "name": rec.name,
+                        "version": rec.version,
+                        "os": os,
+                        "arch": arch,
+                        "kind": rec.kind,
+                        "compiler": compiler,
+                        "glibc": glibc,
+                    },
+                    self.server_name,
+                )
+                if len(pull_query) > 0:
+                    # do pull !
+                    do_pull = True
+                    if not self.dry_run:
+                        print(f"Package {rec.to_str()}: found on remote, pull it.")
+                        self.pacman.add_from_remote(pull_query[0], self.server_name)
+
+            #
+            # local check and build
+            do_build = False
+            do_skip = False
+            if self.dry_run:
+                local_query = self.pacman.query(
+                    {
+                        "name": rec.name,
+                        "version": rec.version,
+                        "os": os,
+                        "arch": arch,
+                        "kind": rec.kind,
+                        "compiler": compiler,
+                        "glibc": glibc,
+                    },
+                )
+                if len(local_query) > 0 or do_pull:
+                    do_build = False
+                    do_skip = True
+                else:
+                    do_build = True
+            else:
+                if self.temp.exists():
+                    rmtree(self.temp, ignore_errors=True)
+                self.temp.mkdir(parents=True, exist_ok=True)
+                rec_build = RecipeBuilder(rec, self.temp, self.local, self.cross_info)
+                if not rec_build.has_recipes():
+                    print("Something gone wrong with the recipe!", file=stderr)
+                    continue
+                if not rec_build.build(self.forced):
+                    error += 1
                 rmtree(self.temp, ignore_errors=True)
-            self.temp.mkdir(parents=True, exist_ok=True)
-            rec_build = RecipeBuilder(rec, self.temp, self.local, self.cross_info)
-            if not rec_build.has_recipes():
-                print("Something gone wrong with the recipe!", file=stderr)
-                continue
-            if not rec_build.build(forced):
-                error += 1
-            rmtree(self.temp, ignore_errors=True)
+            #
+            # remote push
+            do_push = False
+            if (
+                self.server_name in self.local.remote_database.keys()
+                and not self.skip_push
+            ):
+                if do_build:
+                    do_push = True
+                if not self.dry_run:
+                    # do the push
+                    pass
+            if self.dry_run:
+                print(
+                    f"Package {rec.to_str()} - action:{['',' pull'][do_pull]}{['',' skip'][do_skip]}{['',' build'][do_build]}{['',' push'][do_push]}."
+                )
         return error
