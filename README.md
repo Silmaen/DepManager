@@ -338,6 +338,13 @@ By default, the builder will use all the cpu cores, but `--single-thred,-s` will
 Cross-compilation can be used by giving the tools at command
 line: `--cross-c <C_COMPILER> --cross-cxx <CXX_COMPILER> --cross-arch <TARGET_ARCH> --cross-os <TARGET_OS>`
 
+It is also possible to give a remote name `-n <remote_name>` or set to default remote `-d`. This way,
+The builder will look into remote to see if an package already exists and pull it instead of building it.
+Also, after a successful build, it will automatically push to the remote. Use either `--no-pull`and `--no-push`
+option to skip these steps.
+
+A `--dry-run` option will do all the checks and print the results but no pull, build and push action will be done.
+
 ### The recipe
 
 During build, Depmanager will look in all `.py` file for class that inherits from
@@ -413,7 +420,9 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
-* version 0.3.1
+    * [ ] More detail documentation.
+        * [ ] Documentation hosted in instance of [Depmanager Server](https://github.com/Silmaen/DepManagerServer).
+* version 0.3.1 -- 2024-01-16
     * [X] Allow to externally control the build system
         * [X] Allow to build a package by giving a single recipe
         * [X] Allow to pull packages prior to build if exists on a remote
