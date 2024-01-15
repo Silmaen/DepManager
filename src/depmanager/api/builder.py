@@ -155,10 +155,24 @@ class Builder:
                 compiler = mac.default_compiler
                 glibc = mac.glibc
             #
+            # do a local query
+            local_query = self.pacman.query(
+                {
+                    "name": rec.name,
+                    "version": rec.version,
+                    "os": os,
+                    "arch": arch,
+                    "kind": rec.kind,
+                    "compiler": compiler,
+                    "glibc": glibc,
+                },
+            )
+            #
             # remote check and pull
             do_pull = False
             if (
-                self.server_name in self.local.remote_database.keys()
+                len(local_query) == 0
+                and self.server_name in self.local.remote_database.keys()
                 and not self.skip_pull
             ):
                 pull_query = self.pacman.query(
@@ -185,17 +199,6 @@ class Builder:
             do_build = False
             do_skip = False
             if self.dry_run:
-                local_query = self.pacman.query(
-                    {
-                        "name": rec.name,
-                        "version": rec.version,
-                        "os": os,
-                        "arch": arch,
-                        "kind": rec.kind,
-                        "compiler": compiler,
-                        "glibc": glibc,
-                    },
-                )
                 if len(local_query) > 0 or do_pull:
                     do_build = False
                     do_skip = True
@@ -222,8 +225,28 @@ class Builder:
                 if do_build:
                     do_push = True
                 if not self.dry_run:
-                    # do the push
-                    pass
+                    local_query = self.pacman.query(
+                        {
+                            "name": rec.name,
+                            "version": rec.version,
+                            "os": os,
+                            "arch": arch,
+                            "kind": rec.kind,
+                            "compiler": compiler,
+                            "glibc": glibc,
+                        },
+                    )
+                    if len(local_query) == 0:
+                        print(
+                            f"Package {rec.to_str()}: not found locally after build.",
+                            file=stderr,
+                        )
+                        error += 1
+                    else:
+                        print(
+                            f"Package {rec.to_str()}: push to remote {self.server_name}."
+                        )
+                        self.pacman.add_to_remote(local_query[0], self.server_name)
             if self.dry_run:
                 print(
                     f"Package {rec.to_str()} - action:{['',' pull'][do_pull]}{['',' skip'][do_skip]}{['',' build'][do_build]}{['',' push'][do_push]}."

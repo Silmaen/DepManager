@@ -414,10 +414,10 @@ Among things:
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
 * version 0.3.1
-    * [ ] Allow to externally control the build system
+    * [X] Allow to externally control the build system
         * [X] Allow to build a package by giving a single recipe
-        * [ ] Allow to pull packages prior to build if exists on a remote
-        * [ ] Allow to push (force) to remote after build
+        * [X] Allow to pull packages prior to build if exists on a remote
+        * [X] Allow to push (force) to remote after build
     * [X] Helper functions to find recipes in filesystem
         * [X] Allow recursive search
 * version 0.3.0 -- 2024-01-12

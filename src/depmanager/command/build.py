@@ -55,7 +55,7 @@ def build(args, system=None):
         server_name=remote_name,
         dry_run=args.dry_run,
         skip_pull=args.no_pull,
-        skip_push=True,
+        skip_push=args.no_push,
     )
     if not builder.has_recipes():
         print(f"ERROR: no recipe found in {location}", file=stderr)
@@ -118,6 +118,11 @@ def add_build_parameters(sub_parsers):
         "--no-pull",
         action="store_true",
         help="Disable the pull even if a remote is defined.",
+    )
+    build_parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Disable the push after successful build.",
     )
     build_parser.add_argument(
         "--cross-c", type=str, default="", help="Define the cross compiler for C."
