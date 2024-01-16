@@ -167,6 +167,9 @@ class Builder:
                     "glibc": glibc,
                 },
             )
+            if len(local_query) > 0 and not self.forced:
+                print(f"Package {rec.to_str()}: already build, skipping.")
+                continue
             #
             # remote check and pull
             do_pull = False
@@ -243,10 +246,35 @@ class Builder:
                         )
                         error += 1
                     else:
-                        print(
-                            f"Package {rec.to_str()}: push to remote {self.server_name}."
+                        push_query = self.pacman.query(
+                            {
+                                "name": rec.name,
+                                "version": rec.version,
+                                "os": os,
+                                "arch": arch,
+                                "kind": rec.kind,
+                                "compiler": compiler,
+                                "glibc": glibc,
+                            },
+                            self.server_name,
                         )
-                        self.pacman.add_to_remote(local_query[0], self.server_name)
+
+                        if len(push_query) > 0:
+                            print(
+                                f"Package {rec.to_str()}: already exists on remote remote {self.server_name}."
+                            )
+                            if not self.forced:
+                                do_push = False
+                            else:
+                                # to 'force' push, start by deleting the package
+                                self.pacman.remove_package(
+                                    push_query[0], self.server_name
+                                )
+                        if do_push:
+                            print(
+                                f"Package {rec.to_str()}: push to remote {self.server_name}."
+                            )
+                            self.pacman.add_to_remote(local_query[0], self.server_name)
             if self.dry_run:
                 print(
                     f"Package {rec.to_str()} - action:{['',' pull'][do_pull]}{['',' skip'][do_skip]}{['',' build'][do_build]}{['',' push'][do_push]}."
