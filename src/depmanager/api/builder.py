@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import rmtree
 from sys import stderr
 
+from depmanager.api.internal.dependency import version_lt
 from depmanager.api.internal.machine import Machine
 from depmanager.api.internal.recipe_builder import RecipeBuilder
 from depmanager.api.internal.system import LocalSystem
@@ -124,6 +125,52 @@ class Builder:
         """
         return len(self.recipes) > 0
 
+    def _find_recipe(self, rec_list: list, criteria: dict):
+        found = False
+        for rec in rec_list:
+            if "name" in criteria:
+                if rec.name != criteria["name"]:
+                    continue
+            if "kind" in criteria:
+                if rec.kind != criteria["kind"]:
+                    continue
+            if "version" in criteria:
+                if version_lt(rec.version, criteria["version"]):
+                    continue
+            found = True
+            break
+        return found
+
+    def reorder_recipes(self):
+        """
+        Reorder the recipes to take the dependencies into account.
+        """
+        new_recipe = []
+        stalled = False
+        while not stalled:
+            for rec in self.recipes:
+                stalled = True
+                if rec in new_recipe:  # add recipe only once
+                    continue
+                if len(rec.dependencies) == 0:  # no dependency -> just add it!
+                    stalled = False
+                    new_recipe.append(rec)
+                else:
+                    dep_satisfied = True
+                    for dep in rec.dependencies:
+                        if not self._find_recipe(new_recipe, dep):
+                            dep_satisfied = False
+                    if dep_satisfied:
+                        stalled = False
+                        new_recipe.append(rec)
+        # add unresolved dependency recipes
+        for rec in self.recipes:
+            if rec in new_recipe:  # add recipe only once
+                continue
+            new_recipe.append(rec)
+        # replace the list
+        self.recipes = new_recipe
+
     def build_all(
         self,
     ):
@@ -135,6 +182,7 @@ class Builder:
         self.temp.mkdir(parents=True, exist_ok=True)
 
         mac = Machine(True)
+        self.reorder_recipes()
 
         error = 0
         for rec in self.recipes:
