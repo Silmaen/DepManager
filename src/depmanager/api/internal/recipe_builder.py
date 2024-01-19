@@ -60,6 +60,12 @@ class RecipeBuilder:
             self.local = LocalSystem()
         self.temp = temp
 
+        self.creation_date = None
+        self.os = None
+        self.arch = None
+        self.os = None
+        self.compiler = None
+
     def has_recipes(self):
         """
         Check if the builder has a recipe objet.
@@ -119,88 +125,37 @@ class RecipeBuilder:
             out += f" -D{key}={val}"
         return out
 
-    def build(self, forced: bool = False):
-        """
-        Do the build of recipes.
-        """
-        # check output folder
-        if not self.temp.exists():
-            if self.local.verbosity > 0:
-                print(
-                    f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not exists",
-                    file=stderr,
-                )
-            return False
-        # check read write permissions
-        if not access(self.temp, R_OK | W_OK):
-            if self.local.verbosity > 0:
-                print(
-                    f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not have enough permissions",
-                    file=stderr,
-                )
-            return False
-
+    def _make_define(self):
         mac = Machine(True)
-        creation_date = datetime.now(tz=datetime.now().astimezone().tzinfo).replace(
-            microsecond=0
-        )
-        #
-        #
-        glibc = ""
+        self.creation_date = datetime.now(
+            tz=datetime.now().astimezone().tzinfo
+        ).replace(microsecond=0)
+        self.glibc = ""
         if self.recipe.kind == "header":
-            arch = "any"
-            os = "any"
-            compiler = "any"
+            self.arch = "any"
+            self.os = "any"
+            self.compiler = "any"
         else:
             if "CROSS_ARCH" in self.cross_info:
-                arch = self.cross_info["CROSS_ARCH"]
+                self.arch = self.cross_info["CROSS_ARCH"]
             else:
-                arch = mac.arch
+                self.arch = mac.arch
             if "CROSS_OS" in self.cross_info:
-                os = self.cross_info["CROSS_OS"]
+                self.os = self.cross_info["CROSS_OS"]
             else:
-                os = mac.os
-            compiler = mac.default_compiler
-            glibc = mac.glibc
+                self.os = mac.os
+            self.compiler = mac.default_compiler
+            self.glibc = mac.glibc
         self.recipe.define(
-            os, arch, compiler, self.temp / "install", glibc, creation_date
+            self.os,
+            self.arch,
+            self.compiler,
+            self.temp / "install",
+            self.glibc,
+            self.creation_date,
         )
 
-        #
-        # Check for existing
-        if self.local.verbosity > 2:
-            print(f"package {self.recipe.to_str()}: Checking existing...")
-        p = Props(
-            {
-                "name": self.recipe.name,
-                "version": self.recipe.version,
-                "os": os,
-                "arch": arch,
-                "kind": self.recipe.kind,
-                "compiler": compiler,
-                "glibc": glibc,
-            }
-        )
-        search = self.local.local_database.query(p)
-        if len(search) > 0:
-            if forced:
-                print(f"package {self.recipe.to_str()}: already exists, overriding it.")
-            else:
-                print(f"package {self.recipe.to_str()}: already exists, skipping it.")
-                return True
-        p.build_date = creation_date
-
-        #
-        #
-        # getting the sources
-        source_dir = self._get_source_dir()
-        if source_dir is None:
-            return False
-        self.recipe.source()
-
-        #
-        #
-        # check dependencies+
+    def _check_dependencies(self):
         if self.local.verbosity > 2:
             print(f"package {self.recipe.to_str()}: Checking dependencies...")
         if type(self.recipe.dependencies) is not list:
@@ -228,9 +183,9 @@ class RecipeBuilder:
                 ok = False
                 break
             if "os" not in dep:
-                dep["os"] = os
+                dep["os"] = self.os
             if "arch" not in dep:
-                dep["arch"] = arch
+                dep["arch"] = self.arch
             result = self.local.local_database.query(dep)
             if len(result) == 0:
                 print(
@@ -240,6 +195,67 @@ class RecipeBuilder:
                 ok = False
                 break
             dep_list.append(str(result[0].get_cmake_config_dir()).replace("\\", "/"))
+        return ok, dep_list
+
+    def build(self, forced: bool = False):
+        """
+        Do the build of recipes.
+        """
+        # check output folder
+        if not self.temp.exists():
+            if self.local.verbosity > 0:
+                print(
+                    f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not exists",
+                    file=stderr,
+                )
+            return False
+        # check read write permissions
+        if not access(self.temp, R_OK | W_OK):
+            if self.local.verbosity > 0:
+                print(
+                    f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not have enough permissions",
+                    file=stderr,
+                )
+            return False
+
+        self._make_define()
+
+        #
+        # Check for existing
+        if self.local.verbosity > 2:
+            print(f"package {self.recipe.to_str()}: Checking existing...")
+        p = Props(
+            {
+                "name": self.recipe.name,
+                "version": self.recipe.version,
+                "os": self.os,
+                "arch": self.arch,
+                "kind": self.recipe.kind,
+                "compiler": self.compiler,
+                "glibc": self.glibc,
+            }
+        )
+        search = self.local.local_database.query(p)
+        if len(search) > 0:
+            if forced:
+                print(f"package {self.recipe.to_str()}: already exists, overriding it.")
+            else:
+                print(f"package {self.recipe.to_str()}: already exists, skipping it.")
+                return True
+        p.build_date = self.creation_date
+
+        #
+        #
+        # getting the sources
+        source_dir = self._get_source_dir()
+        if source_dir is None:
+            return False
+        self.recipe.source()
+
+        #
+        #
+        # check dependencies+
+        ok, dep_list = self._check_dependencies()
         if not ok:
             self.recipe.clean()
             return False

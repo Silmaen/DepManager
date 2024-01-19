@@ -422,9 +422,10 @@ Among things:
         * [ ] Use toolset in queries.
     * [ ] More detail documentation.
         * [ ] Documentation hosted in instance of [Depmanager Server](https://github.com/Silmaen/DepManagerServer).
-* version 0.3.2
+* version 0.3.2 -- 2024-01-19
     * [X] Better management of push in auto-build
-    * [ ] manage dependency in the list of Recipes
+    * [X] Bugfixes in the use of CMake
+    * [X] manage dependency in the list of Recipes
 * version 0.3.1 -- 2024-01-16
     * [X] Allow to externally control the build system
         * [X] Allow to build a package by giving a single recipe
