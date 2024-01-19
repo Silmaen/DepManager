@@ -33,27 +33,19 @@ endfunction()
 
 function(dm_get_glibc OUTPUT)
     # Créer un fichier source C pour tester la version de glibc
-    file(WRITE ${CMAKE_BINARY_DIR}/check_glibc_version.c "
-#include <features.h>
-#include <stdio.h>
+    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
-int main() {
-    printf(\"%d.%d\\n\", __GLIBC__, __GLIBC_MINOR__);
-    return 0;
-}")
-
-    # try to compile source
-    try_compile(CHECK_GLIBC_VERSION_RESULT
-        ${CMAKE_BINARY_DIR}/check_glibc_version
-        SOURCES ${CMAKE_BINARY_DIR}/check_glibc_version.c
-        OUTPUT_VARIABLE OUTPUT_C)
-
-    # Verfy result
-    if(CHECK_GLIBC_VERSION_RESULT)
-        set(${OUTPUT} ${OUTPUT_C} PARENT_SCOPE)
+        execute_process(COMMAND ldd --version OUTPUT_VARIABLE glibc_version RESULT_VARIABLE RES)
+        if (${RES} EQUAL 0)
+            string(REGEX MATCH "[0-9]+\\.[0-9]+" glibc_version "${glibc_version}")
+            set(${OUTPUT} ${CMAKE_MATCH_0} PARENT_SCOPE)
+            message(STATUS "Found Glib_C: ${CMAKE_MATCH_0}")
+        else ()
+            set(${OUTPUT} "" PARENT_SCOPE)
+            message("Unable to determine GLIBC version.")
+        endif ()
     else()
         set(${OUTPUT} "" PARENT_SCOPE)
-        message("Unable to determine GLIBC version.")
     endif()
 endfunction()
 
@@ -102,40 +94,38 @@ function(dm_load_package PACKAGE)
     endif()
     string(REPLACE " " ";" CMD ${CMD})
     execute_process(COMMAND ${CMD}
-            OUTPUT_VARIABLE TMP
-            RESULT_VRIABLE res)
-    if (res EQUAL 0)
-        string(STRIP "${TMP}" TMP)
-        string(REPLACE "\\" "/" TMP "${TMP}")
-        if ("${TMP}" STREQUAL "")
+            OUTPUT_VARIABLE OUT
+            RESULT_VARIABLE RES
+            ERROR_VARIABLE ERR)
+    if (${RES} EQUAL 0)
+        string(STRIP "${OUT}" OUT)
+        string(REPLACE "\\" "/" OUT "${OUT}")
+        if ("${OUT}" STREQUAL "")
             if (FP_REQUIRED)
                 message(FATAL_ERROR "Could not found suitable versions of ${PACKAGE}")
             endif ()
         endif ()
         if (FP_TRACE)
-            message(STATUS "RESULT: ${TMP}")
+            message(STATUS "RESULT: ${OUT}")
         endif()
-        list(PREPEND CMAKE_PREFIX_PATH ${TMP})
+        list(PREPEND CMAKE_PREFIX_PATH ${OUT})
         set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
     else ()
-        if (FP_REQUIRED)
-            message(FATAL_ERROR "Depmanager error (${res}) while searching for ${PACKAGE}: ${TMP}")
-        else ()
-            message(WARNING "Depmanager error (${res}) while searching for ${PACKAGE}: ${TMP}")
-        endif ()
+        message(WARNING "${CMD}")
+        message(FATAL_ERROR "Depmanager error (${RES}) while searching for ${PACKAGE}: ${OUT} ${ERR}, ${CMD}")
     endif ()
 endfunction()
 
 function(dm_find_package PACKAGE)
     cmake_parse_arguments(FP "QUIET;REQUIRED" "" "" ${ARGN})
-    dm_load_package(${ARGN})
+    dm_load_package(${ARGN} ${PACKAGE})
     if (FP_QUIET)
         set(FIND_OPTIONS ${FIND_OPTION} QUIET)
     endif()
     if (FP_REQUIRED)
         set(FIND_OPTIONS ${FIND_OPTION} REQUIRED)
     endif()
-    find_package(${PACKAGE} ${FIND_OPTIONS})
+    find_package(${PACKAGE} ${FIND_OPTIONS} CONFIG)
 endfunction()
 
 function(dm_load_environment)
@@ -177,21 +167,26 @@ function(dm_load_environment)
         endif ()
     endif ()
     set(CMD "${DM_INTERNAL_COMMAND} load ${SEARCH_OPTIONS}")
+    STRING(REPLACE " " ";" CMD ${CMD})
     execute_process(COMMAND ${CMD}
-            RESULT_VRIABLE res
-            OUTPUT_VARIABLE TMP)
-    if (res EQUAL 0)
-        if ("${TMP}" STREQUAL "")
+            RESULT_VARIABLE RES
+            OUTPUT_VARIABLE OUT
+            ERROR_VARIABLE ERR
+    )
+    if (${RES} EQUAL 0)
+        string(STRIP "${OUT}" OUT)
+        string(REPLACE "\\" "/" OUT "${OUT}")
+        if ("${OUT}" STREQUAL "")
             if (NOT FP_QUIET)
-                message(FATAR_ERROR "Depmanager loading environment empty.")
+                message(FATAL_ERROR "Depmanager loading environment empty.")
             else ()
                 message(WARNING "Depmanager loading environment empty.")
             endif ()
         else ()
-            list(PREPEND CMAKE_PREFIX_PATH ${TMP})
+            list(PREPEND CMAKE_PREFIX_PATH ${OUT})
             set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
         endif ()
     else ()
-        message(FATAL_ERROR "Depmanager error (${res}) while loading environment: ${TMP}")
+        message(FATAL_ERROR "Depmanager error (${RES}) while loading environment: ${OUT} ${ERR}")
     endif ()
 endfunction()

@@ -57,7 +57,9 @@ class __DataBase:
             props = data
         else:
             return []
-        return sorted([dep for dep in self.dependencies if dep.match(props)])
+        return sorted(
+            [dep for dep in self.dependencies if dep.match(props)], reverse=True
+        )
 
 
 class __RemoteDatabase(__DataBase):

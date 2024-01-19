@@ -421,7 +421,7 @@ class Dependency:
                 self.base_path = None
                 return
             self.read_edp_file()
-            search = list(self.base_path.rglob("*onfig.cmake"))
+            search = list(set(self.base_path.rglob("*onfig.cmake")))
             if len(search) > 0:
                 self.cmake_config_path = ";".join([str(s.parent) for s in search])
         elif type(data) in [str, dict]:
