@@ -107,13 +107,22 @@ class RecipeBuilder:
 
     def _get_generator(self):
         if self.generator not in ["", None]:
-            return self.generator
+            return f" -G {self.generator}"
         if len(self.recipe.config) > 1:
-            return "Ninja Multi-Config"
-        return "Ninja"
+            return " -G Ninja Multi-Config"
+        if len(self.recipe.config) == 1:
+            return " -G Ninja"
+        return ""
+
+    def _get_configs(self):
+        if len(self.recipe.config) > 1:
+            return f" -DCMAKE_CONFIGURATION_TYPES={';'.join(self.recipe.config)}"
+        if len(self.recipe.config) == 1:
+            return f" -DCMAKE_BUILD_TYPE={self.recipe.config[0]}"
+        return ""
 
     def _get_options_str(self):
-        out = f"-DCMAKE_INSTALL_PREFIX={self.temp / 'install'}"
+        out = f" -DCMAKE_INSTALL_PREFIX={self.temp / 'install'}"
         out += f" -DBUILD_SHARED_LIBS={['OFF', 'ON'][self.recipe.kind.lower() == 'shared']}"
         if "C_COMPILER" in self.cross_info:
             out += f" -DCMAKE_C_COMPILER={self.cross_info['C_COMPILER']}"
@@ -269,10 +278,11 @@ class RecipeBuilder:
             self.recipe.config = ["Release"]
         self.recipe.configure()
         cmd = f'cmake -S {self._get_source_dir()} -B {self.temp / "build"}'
-        cmd += f' -G "{self._get_generator()}"'
+        cmd += self._get_generator()
+        cmd += self._get_configs()
         if len(dep_list) != 0:
-            cmd += ' -DCMAKE_PREFIX_PATH="' + ";".join(dep_list) + '"'
-        cmd += f" {self._get_options_str()}"
+            cmd += f' -DCMAKE_PREFIX_PATH="{";".join(dep_list)}"'
+        cmd += self._get_options_str()
         if not try_run(cmd):
             if self.local.verbosity > 0:
                 print(
@@ -290,9 +300,9 @@ class RecipeBuilder:
         for conf in self.recipe.config:
             if self.local.verbosity > 2:
                 print(f"package {self.recipe.to_str()}: Build config {conf}...")
-            cmd = (
-                f"cmake --build {self.temp / 'build'} --target install --config {conf}"
-            )
+            cmd = f"cmake --build {self.temp / 'build'} --target install"
+            if len(self.recipe.config):
+                cmd += f" --config {conf}"
             if self.cross_info["SINGLE_THREAD"]:
                 cmd += f" -j 1"
             if not try_run(cmd):

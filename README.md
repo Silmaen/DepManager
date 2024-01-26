@@ -422,6 +422,7 @@ Among things:
         * [ ] Use toolset in queries.
     * [ ] More detail documentation.
         * [ ] Documentation hosted in instance of [Depmanager Server](https://github.com/Silmaen/DepManagerServer).
+    * [X] Improved Builder Configurations management
 * version 0.3.2 -- 2024-01-19
     * [X] Better management of push in auto-build
     * [X] Bugfixes in the use of CMake
