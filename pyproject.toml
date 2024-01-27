@@ -7,7 +7,7 @@ authors = [
 description = "Simple Dependency manager"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     # How mature is this project? Common values are
     #   3 - Alpha

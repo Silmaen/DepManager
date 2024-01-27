@@ -113,11 +113,14 @@ The `--transitive(-t)` flag will allow to use transitive query, meaning to searc
 folder, then it must contain a properly formatted `edp.info` file. Or an archive (.zip, .tgz or .tar.gz
 file format allowed). The uncompressed archive must contain a properly formatted `edp.info` file.
 
-`depmanager pack del <query>` Will remove from local cache all package matching the query.
+`depmanager pack del <query> <remote> [-r]` Will remove from local cache all package matching the query.
+
+The `-r` option allows operation on multiple packages (local only), else the command will return an error if multiple
+package matches the query.
 
 #### push, pull
 
-`depmanager pack [push|pull] <query> <remote> [--force(-f)]` will synchronize Local cache with the remote.
+`depmanager pack [push|pull] <query> <remote> [--force(-f)] [-r]` will synchronize Local cache with the remote.
 The `query` must be precise enough to match one and only one package. `remote` must be valid.
 
 `push` will look for the package in local cache that match the query and send it to the given remote.
@@ -125,6 +128,15 @@ The `query` must be precise enough to match one and only one package. `remote` m
 `pull` will look for the package in given remote that match the query and bring it to the local cache.
 
 If `--force` is given, The transfert occurs even if the package already exists in the destination.
+
+The `-r` option allows operation on multiple packages. If multiple versions, only the highest one will be used.
+
+#### clean
+
+`depmanager pack clean [--full(-f)]` Will clean the local repository by removing old packages, only the newest
+version of each package is kept.
+
+The `[--full(-f)]` option will make the clean operation applies to all package, thus emptying the local database.
 
 ### remote
 
@@ -422,7 +434,14 @@ Among things:
         * [ ] Use toolset in queries.
     * [ ] More detail documentation.
         * [ ] Documentation hosted in instance of [Depmanager Server](https://github.com/Silmaen/DepManagerServer).
+* version 0.3.3 -- 2024-01-27
     * [X] Improved Builder Configurations management
+    * [X] Operation on multiple package
+        * [X] add a 'clean' command
+            * [X] basic mode: keep only the newest packages
+            * [X] full mode: delete everything.
+        * [X] allow local deletion of multiple packages
+        * [X] allow push/pull of multiple packages
 * version 0.3.2 -- 2024-01-19
     * [X] Better management of push in auto-build
     * [X] Bugfixes in the use of CMake
