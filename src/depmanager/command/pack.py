@@ -4,7 +4,7 @@ Pack command
 from pathlib import Path
 from sys import stderr
 
-possible_info = ["pull", "push", "add", "del", "query"]
+possible_info = ["pull", "push", "add", "del", "query", "clean"]
 
 
 def pack(args, system=None):
@@ -28,7 +28,7 @@ def pack(args, system=None):
             print("WARNING: No Remotes defined.", file=stderr)
         if args.name not in [None, ""]:
             print(f"WARNING: Remotes '{args.name}' not in remotes lists.", file=stderr)
-    if args.what in ["add"] and remote_name != "":
+    if args.what in ["add", "clean"] and remote_name != "":
         print(
             f"ERROR: {args.what} command only work on local database. please do not defined remote.",
             file=stderr,
@@ -86,11 +86,25 @@ def pack(args, system=None):
         for dep in deps:
             print(f"[{dep.get_source()}] {dep.properties.get_as_str()}")
         return
+    if args.what == "clean":
+        if args.full:
+            for dep in deps:
+                pacman.remove_package(dep, remote_name)
+        else:
+            for dep in deps:
+                props = dep.properties
+                props.version = "*"
+                result = pacman.query(props, remote_name)
+                if len(result) < 2:
+                    continue
+                if result[0].version_greater(dep):
+                    pacman.remove_package(dep, remote_name)
+        return
     if args.what in ["del", "pull", "push"]:
         if len(deps) == 0:
             print("WARNING: No package matching the query.", file=stderr)
             return
-        if len(deps) > 1:
+        if len(deps) > 1 and not args.recurse:
             print(
                 "WARNING: More than one package match the query, please precise:",
                 file=stderr,
@@ -98,13 +112,19 @@ def pack(args, system=None):
             for dep in deps:
                 print(f"{dep.properties.get_as_str()}")
             return
-        dep = deps[0]
-        if args.what == "del":
-            pacman.remove_package(dep, remote_name)
-        elif args.what == "pull":
-            pacman.add_from_remote(dep, remote_name)
-        elif args.what == "push":
-            pacman.add_to_remote(dep, remote_name)
+        for dep in deps:
+            if args.what == "del":
+                pacman.remove_package(dep, remote_name)
+                continue
+            props = dep.properties
+            props.version = "*"
+            result = pacman.query(props, remote_name)
+            if len(result) >= 2 and result[0].version_greater(dep):
+                continue
+            if args.what == "pull":
+                pacman.add_from_remote(dep, remote_name)
+            elif args.what == "push":
+                pacman.add_to_remote(dep, remote_name)
         return
     print(f"Command {args.what} is not yet implemented", file=stderr)
 
@@ -139,5 +159,19 @@ def add_pack_parameters(sub_parsers):
         help="""Location of the package to add. Provide a folder (with an edp.info file) of an archive.
             supported archive format: zip, tar.gz or tgz.
             """,
+    )
+    pack_parser.add_argument(
+        "--recurse",
+        "-r",
+        action="store_true",
+        default=False,
+        help="""Allow operation on multiple packages.""",
+    )
+    pack_parser.add_argument(
+        "--full",
+        "-f",
+        action="store_true",
+        default=False,
+        help="""Do a full cleaning, removing all local packages.""",
     )
     pack_parser.set_defaults(func=pack)
