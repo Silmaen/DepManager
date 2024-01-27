@@ -1,6 +1,7 @@
 """
 Pack command
 """
+from copy import deepcopy
 from pathlib import Path
 from sys import stderr
 
@@ -116,7 +117,7 @@ def pack(args, system=None):
             if args.what == "del":
                 pacman.remove_package(dep, remote_name)
                 continue
-            props = dep.properties
+            props = deepcopy(dep.properties)
             props.version = "*"
             result = pacman.query(props, remote_name)
             if len(result) >= 2 and result[0].version_greater(dep):
