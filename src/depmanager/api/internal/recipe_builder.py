@@ -107,31 +107,31 @@ class RecipeBuilder:
 
     def _get_generator(self):
         if self.generator not in ["", None]:
-            return f" -G {self.generator}"
+            return f' -G "{self.generator}"'
         if len(self.recipe.config) > 1:
-            return " -G Ninja Multi-Config"
+            return ' -G "Ninja Multi-Config"'
         if len(self.recipe.config) == 1:
-            return " -G Ninja"
+            return ' -G "Ninja"'
         return ""
 
     def _get_configs(self):
         if len(self.recipe.config) > 1:
-            return f" -DCMAKE_CONFIGURATION_TYPES={';'.join(self.recipe.config)}"
+            return f' -DCMAKE_CONFIGURATION_TYPES="{";".join(self.recipe.config)}"'
         if len(self.recipe.config) == 1:
-            return f" -DCMAKE_BUILD_TYPE={self.recipe.config[0]}"
+            return f' -DCMAKE_BUILD_TYPE="{self.recipe.config[0]}"'
         return ""
 
     def _get_options_str(self):
-        out = f" -DCMAKE_INSTALL_PREFIX={self.temp / 'install'}"
+        out = f' -DCMAKE_INSTALL_PREFIX="{self.temp / "install"}"'
         out += f" -DBUILD_SHARED_LIBS={['OFF', 'ON'][self.recipe.kind.lower() == 'shared']}"
         if "C_COMPILER" in self.cross_info:
-            out += f" -DCMAKE_C_COMPILER={self.cross_info['C_COMPILER']}"
+            out += f' -DCMAKE_C_COMPILER="{self.cross_info["C_COMPILER"]}"'
         if "CXX_COMPILER" in self.cross_info:
-            out += f" -DCMAKE_CXX_COMPILER={self.cross_info['CXX_COMPILER']}"
+            out += f' -DCMAKE_CXX_COMPILER="{self.cross_info["CXX_COMPILER"]}"'
         if self.recipe.settings["os"].lower() in ["linux"]:
             out += " -DCMAKE_SKIP_INSTALL_RPATH=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
         for key, val in self.recipe.cache_variables.items():
-            out += f" -D{key}={val}"
+            out += f' -D{key}="{val}"'
         return out
 
     def _make_define(self):
