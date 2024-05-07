@@ -88,8 +88,14 @@ def pack(args, system=None):
             print(f"[{dep.get_source()}] {dep.properties.get_as_str()}")
         return
     if args.what == "clean":
+        if args.verbose > 0:
+            print(
+                f"Do a {['','full '][args.full]} Cleaning of the local package repository."
+            )
         if args.full:
             for dep in deps:
+                if args.verbose > 0:
+                    print(f"Remove package {dep.properties.get_as_str()}")
                 pacman.remove_package(dep, remote_name)
         else:
             for dep in deps:
@@ -97,9 +103,16 @@ def pack(args, system=None):
                 props.version = "*"
                 result = pacman.query(props, remote_name)
                 if len(result) < 2:
+                    if args.verbose > 0:
+                        print(f"Keeping package {dep.properties.get_as_str()}")
                     continue
                 if result[0].version_greater(dep):
+                    if args.verbose > 0:
+                        print(f"Remove package {dep.properties.get_as_str()}")
                     pacman.remove_package(dep, remote_name)
+                else:
+                    if args.verbose > 0:
+                        print(f"Keeping package {dep.properties.get_as_str()}")
         return
     if args.what in ["del", "pull", "push"]:
         if len(deps) == 0:
