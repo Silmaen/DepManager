@@ -183,16 +183,16 @@ Here is a small cmake code snippet to initialize depmanager in cmake.
 
 ```cmake
 # add HINTS or PATH to find the executable if not in the PATH
-find_program(EDEPMANAGER depmanager) 
+find_program(EDEPMANAGER depmanager)
 if (${EDEPMANAGER} STREQUAL EDEPMANAGER-NOTFOUND)
     message(FATAL_ERROR "Dependency manager not found.")
-else()
+else ()
     execute_process(COMMAND ${EDEPMANAGER} info cmakedir
             OUTPUT_VARIABLE depmanager_path)
     string(STRIP ${depmanager_path} depmanager_path)
     list(PREPEND CMAKE_MODULE_PATH ${depmanager_path})
     include(DepManager)
-endif()
+endif ()
 ```
 
 ### Automated mode
@@ -204,13 +204,13 @@ and load then in one command.
 
 ```cmake
 dm_load_environment(
-   [QUIET]
-   [PATH path]
-   [KIND kind]
-   [ARCH target_arch]
-   [OS target_os]
-   [COMPILER target_compiler]
-   [GLIBC target_glibc]
+        [QUIET]
+        [PATH path]
+        [KIND kind]
+        [ARCH target_arch]
+        [OS target_os]
+        [COMPILER target_compiler]
+        [GLIBC target_glibc]
 ) 
 ```
 
@@ -281,14 +281,14 @@ of cmake by `dm_find_package`
 
 ```cmake
 dm_find_package(
-   package
-   [QUIET] [TRACE] [REQUIRED]
-   [VERSION version]
-   [KIND kind]
-   [ARCH target_arch]
-   [OS target_os]
-   [COMPILER target_compiler]
-   [GLIBC target_glibc]
+        package
+        [QUIET] [TRACE] [REQUIRED]
+        [VERSION version]
+        [KIND kind]
+        [ARCH target_arch]
+        [OS target_os]
+        [COMPILER target_compiler]
+        [GLIBC target_glibc]
 )
 ```
 
@@ -318,14 +318,14 @@ It only adds to the `CMAKE_PREFIX_PATH` list the folders of given package.
 
 ```cmake
 dm_load_package(
-   package
-   [REQUIRED] [TRACE]
-   [VERSION version]
-   [KIND kind]
-   [ARCH target_arch]
-   [OS target_os]
-   [COMPILER target_compiler]
-   [GLIBC target_glibc]
+        package
+        [REQUIRED] [TRACE]
+        [VERSION version]
+        [KIND kind]
+        [ARCH target_arch]
+        [OS target_os]
+        [COMPILER target_compiler]
+        [GLIBC target_glibc]
 )
 ```
 
@@ -432,8 +432,10 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
-    * [ ] More detail documentation.
-        * [ ] Documentation hosted in instance of [Depmanager Server](https://github.com/Silmaen/DepManagerServer).
+* version 0.3.4 -- 2024-05-08
+    * [X] bugfix: deepcopy in push command (for multiple push)
+    * [X] bugfix: quotes in Cmake invocation command
+    * [X] Add more verbose output in cleaning command
 * version 0.3.3 -- 2024-01-27
     * [X] Improved Builder Configurations management
     * [X] Operation on multiple package
@@ -460,7 +462,7 @@ Among things:
         * [X] Allow to load package by batch
             * [X] use Yaml config file.
 * version 0.2.1 -- 2023-12-31
-    * [X] Bufix: allow more date format and don't break if bad format.
+    * [X] Bugfix: allow more date format and don't break if bad format.
 * version 0.2.0 -- 2023-12-12
     * WARNING: Some breaking change. Backward compatibility not fully tested.
     * [X] Faster commandline
