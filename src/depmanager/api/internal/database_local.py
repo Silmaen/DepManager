@@ -32,6 +32,7 @@ class LocalDatabase(__DataBase):
         if self.valid_shape:
             if self.verbosity > 3:
                 print("Reload local data base.")
+            self.dependencies.clear()
             for depend in self.base_path.iterdir():
                 dep = Dependency(depend)
                 if not dep.valid:

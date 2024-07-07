@@ -259,6 +259,7 @@ class Builder:
                 if self.temp.exists():
                     rmtree(self.temp, ignore_errors=True)
                 self.temp.mkdir(parents=True, exist_ok=True)
+                rec.cache_variables = {}
                 rec_build = RecipeBuilder(rec, self.temp, self.local, self.cross_info)
                 if not rec_build.has_recipes():
                     print("Something gone wrong with the recipe!", file=stderr)
