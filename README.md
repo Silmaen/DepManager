@@ -428,8 +428,21 @@ Among things:
         * [ ] Searching across remotes with final package sorting.
         * [ ] Allow auto-pull best-fitting package
 * version 0.4.x
-    * [ ] Add concept of toolset.
-        * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
+    * [ ] Add more cmake commands
+        * [ ] Check for package updates
+        * [ ] Allow to retrieve specific package
+        * [ ] Manage Remotes
+        * [ ] Manage Toolsets
+    * [ ] Add concept of package dependencies
+        * [ ] Add dependency list in built packages.
+            * [ ] Construct dependency based on build.
+            * [ ] Use dependency list in query search
+            * [ ] Rebuild if dependency change.
+        * [ ] Allow pull package with dependencies.
+        * [ ] Dependency checks during load.
+        * [ ] Recursive load of package.
+    * [X] Add concept of toolset.
+        * [X] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
     * [X] bugfixes

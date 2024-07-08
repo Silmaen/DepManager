@@ -1,6 +1,7 @@
 """
 Everything needed for database.
 """
+
 from pathlib import Path
 from shutil import rmtree
 from sys import stderr
@@ -11,6 +12,7 @@ from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
 from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
 from depmanager.api.internal.database_remote_server import RemoteDatabaseServer
 from depmanager.api.internal.dependency import Props
+from depmanager.api.internal.toolset import Toolset
 
 
 class LocalSystem:
@@ -47,6 +49,9 @@ class LocalSystem:
         # this instance has now exclusive (hope)
         #
         self.read_config_file()
+        #
+        # Manage databases
+        #
         self.local_database = LocalDatabase(self.data_path, verbosity=self.verbosity)
         self.remote_database = {}
         self.default_remote = ""
@@ -105,6 +110,19 @@ class LocalSystem:
                 self.remote_database[name] = RemoteDatabaseFolder(
                     url, default, verbosity=self.verbosity
                 )
+        #
+        # Manage toolsets
+        #
+        self.toolsets = {}
+        self.default_toolset = ""
+        if "toolsets" not in self.config.keys():
+            self.config["toolsets"] = {}
+        for name, info in self.config["toolsets"].items():
+            self.toolsets[name] = Toolset(name)
+            self.toolsets[name].from_dict(info)
+            if self.toolsets[name].default:
+                self.default_toolset = name
+        #
         self.write_config_file()
 
     def __del__(self):
@@ -346,3 +364,46 @@ class LocalSystem:
         :param pack: Package's query to remove.
         """
         self.local_database.delete(pack)
+
+    def add_toolset(self, name: str, info: dict, default: bool = False):
+        """
+        Add a new toolset to the system.
+        :param name: The Toolset's name.
+        :param info: The toolset's internal information.
+        :param default: If that toolset is the default one.
+        """
+        if name not in self.toolsets:
+            self.toolsets[name] = Toolset(name)
+            self.toolsets[name].from_dict(info)
+        if default:
+            self.default_toolset = name
+
+    def del_toolset(self, name: str = ""):
+        """
+        Remove the toolset with the given name.
+        :param name: Name of the toolset to remove.
+        """
+        if name in [None, str]:
+            return
+        if name not in self.toolsets:
+            return
+        self.toolsets.pop(name)
+        if name == self.default_toolset:
+            if len(self.toolsets) == 0:
+                self.default_toolset = ""
+            else:
+                self.default_toolset = list(self.toolsets.keys())[0]
+
+    def get_toolset(self, name: str = ""):
+        """
+        Get the toolset with given name.
+        :param name: Name of the toolset, empty for default one.
+        :return: Tool set.
+        """
+        if len(self.toolsets) == 0:
+            return None
+        if name in self.toolsets:
+            return self.toolsets[name]
+        return self.toolsets[self.default_toolset]
+
+    #

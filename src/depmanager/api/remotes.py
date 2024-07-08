@@ -1,13 +1,14 @@
 """
 Instance of remotes manager.
 """
+
 from copy import deepcopy
 from sys import stderr
 
 
 class RemotesManager:
     """
-    Local manager.
+    Remotes manager.
     """
 
     def __init__(self, system=None, verbosity: int = 0):
