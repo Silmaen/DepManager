@@ -420,7 +420,7 @@ Among things:
         * [ ] Can add, remove, explore remotes.
         * [ ] Can push, pull packages.
 * version 0.6.x
-    * [ ] Add recipe libray
+    * [ ] Add recipe library
         * [ ] Possibility to store the recipes in remote
         * [ ] Auto build recipe if neither local nor remote found.
 * version 0.5.x
@@ -432,6 +432,9 @@ Among things:
         * [ ] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
         * [ ] Use toolset in build.
         * [ ] Use toolset in queries.
+    * [X] bugfixes
+        * [X] Better local database reload
+        * [X] Refactor builder in case of multiple build (pull, build, push)
 * version 0.3.4 -- 2024-05-08
     * [X] bugfix: deepcopy in push command (for multiple push)
     * [X] bugfix: quotes in Cmake invocation command

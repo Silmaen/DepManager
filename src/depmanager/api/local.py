@@ -1,6 +1,7 @@
 """
 Local instance of manager.
 """
+
 from pathlib import Path
 
 
@@ -9,7 +10,7 @@ class LocalManager:
     Local manager.
     """
 
-    version = "0.3.4"
+    version = "0.3.5"
 
     def __init__(self, system=None, verbosity: int = 0):
         from depmanager.api.internal.system import LocalSystem

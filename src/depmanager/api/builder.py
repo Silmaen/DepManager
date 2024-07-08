@@ -1,6 +1,7 @@
 """
 Tools for building packages.
 """
+
 from pathlib import Path
 from shutil import rmtree
 from sys import stderr
@@ -41,6 +42,8 @@ def find_recipes(location: Path, depth: int = -1):
                 if "conan" in entry.name:  # skip conan files
                     continue
                 if "doxy" in entry.name:  # skip doxygen files
+                    continue
+                if "setup" in entry.name:  # skip files like setup.py
                     continue
                 with open(entry, "r") as f:
                     if f.readline().startswith("#!"):  # skip files with a shebang
@@ -118,6 +121,33 @@ class Builder:
         self.skip_push = skip_push
         self.forced = forced
 
+    def query_from_recipe(self, recipe, machine: Machine):
+        glibc = ""
+        if recipe.kind == "header":
+            arch = "any"
+            os = "any"
+            compiler = "any"
+        else:
+            if "CROSS_ARCH" in self.cross_info:
+                arch = self.cross_info["CROSS_ARCH"]
+            else:
+                arch = machine.arch
+            if "CROSS_OS" in self.cross_info:
+                os = self.cross_info["CROSS_OS"]
+            else:
+                os = machine.os
+            compiler = machine.default_compiler
+            glibc = machine.glibc
+        return {
+            "name": recipe.name,
+            "version": recipe.version,
+            "os": os,
+            "arch": arch,
+            "kind": recipe.kind,
+            "compiler": compiler,
+            "glibc": glibc,
+        }
+
     def has_recipes(self):
         """
         Check recipes in the list.
@@ -167,13 +197,16 @@ class Builder:
         for rec in self.recipes:
             if rec in new_recipe:  # add recipe only once
                 continue
+            if self.local.verbosity > 1:
+                print(
+                    f"WARNING: Added {rec.to_str()} with missing dependency.",
+                    file=stderr,
+                )
             new_recipe.append(rec)
         # replace the list
         self.recipes = new_recipe
 
-    def build_all(
-        self,
-    ):
+    def build_all(self):
         """
         Do the build of recipes.
         :return:
@@ -182,150 +215,89 @@ class Builder:
         self.temp.mkdir(parents=True, exist_ok=True)
 
         mac = Machine(True)
+        #
+        # Reorder Recipes
         self.reorder_recipes()
-
-        error = 0
-        for rec in self.recipes:
-            glibc = ""
-            if rec.kind == "header":
-                arch = "any"
-                os = "any"
-                compiler = "any"
-            else:
-                if "CROSS_ARCH" in self.cross_info:
-                    arch = self.cross_info["CROSS_ARCH"]
-                else:
-                    arch = mac.arch
-                if "CROSS_OS" in self.cross_info:
-                    os = self.cross_info["CROSS_OS"]
-                else:
-                    os = mac.os
-                compiler = mac.default_compiler
-                glibc = mac.glibc
-            #
-            # do a local query
-            local_query = self.pacman.query(
-                {
-                    "name": rec.name,
-                    "version": rec.version,
-                    "os": os,
-                    "arch": arch,
-                    "kind": rec.kind,
-                    "compiler": compiler,
-                    "glibc": glibc,
-                },
-            )
-            if len(local_query) > 0 and not self.forced:
-                print(f"Package {rec.to_str()}: already build, skipping.")
-                continue
-            #
-            # remote check and pull
-            do_pull = False
-            if (
-                len(local_query) == 0
-                and self.server_name in self.local.remote_database.keys()
-                and not self.skip_pull
-            ):
-                pull_query = self.pacman.query(
-                    {
-                        "name": rec.name,
-                        "version": rec.version,
-                        "os": os,
-                        "arch": arch,
-                        "kind": rec.kind,
-                        "compiler": compiler,
-                        "glibc": glibc,
-                    },
-                    self.server_name,
-                )
-                if len(pull_query) > 0:
-                    # do pull !
-                    do_pull = True
-                    if not self.dry_run:
-                        print(f"Package {rec.to_str()}: found on remote, pull it.")
-                        self.pacman.add_from_remote(pull_query[0], self.server_name)
-
-            #
-            # local check and build
-            do_build = False
-            do_skip = False
-            if self.dry_run:
-                if len(local_query) > 0 or do_pull:
-                    do_build = False
-                    do_skip = True
-                else:
-                    do_build = True
-            else:
-                if self.temp.exists():
-                    rmtree(self.temp, ignore_errors=True)
-                self.temp.mkdir(parents=True, exist_ok=True)
-                rec.cache_variables = {}
-                rec_build = RecipeBuilder(rec, self.temp, self.local, self.cross_info)
-                if not rec_build.has_recipes():
-                    print("Something gone wrong with the recipe!", file=stderr)
+        #
+        # Distinguish recipes to build or to pull
+        #
+        recipe_to_build = []
+        if self.skip_pull:
+            recipe_to_build = self.recipes
+        else:
+            for recipe in self.recipes:
+                query_result = self.pacman.query(self.query_from_recipe(recipe, mac))
+                if len(query_result):
+                    if self.local.verbosity > 0:
+                        print(f"Package {recipe.to_str()} found locally, no build.")
                     continue
-                if not rec_build.build(self.forced):
-                    error += 1
-                rmtree(self.temp, ignore_errors=True)
-            #
-            # remote push
-            do_push = False
-            if (
-                self.server_name in self.local.remote_database.keys()
-                and not self.skip_push
-            ):
-                if do_build:
-                    do_push = True
-                if not self.dry_run:
-                    local_query = self.pacman.query(
-                        {
-                            "name": rec.name,
-                            "version": rec.version,
-                            "os": os,
-                            "arch": arch,
-                            "kind": rec.kind,
-                            "compiler": compiler,
-                            "glibc": glibc,
-                        },
-                    )
-                    if len(local_query) == 0:
-                        print(
-                            f"Package {rec.to_str()}: not found locally after build.",
-                            file=stderr,
-                        )
-                        error += 1
-                    else:
-                        push_query = self.pacman.query(
-                            {
-                                "name": rec.name,
-                                "version": rec.version,
-                                "os": os,
-                                "arch": arch,
-                                "kind": rec.kind,
-                                "compiler": compiler,
-                                "glibc": glibc,
-                            },
-                            self.server_name,
-                        )
-
-                        if len(push_query) > 0:
-                            print(
-                                f"Package {rec.to_str()}: already exists on remote remote {self.server_name}."
-                            )
-                            if not self.forced:
-                                do_push = False
-                            else:
-                                # to 'force' push, start by deleting the package
-                                self.pacman.remove_package(
-                                    push_query[0], self.server_name
-                                )
-                        if do_push:
-                            print(
-                                f"Package {rec.to_str()}: push to remote {self.server_name}."
-                            )
-                            self.pacman.add_to_remote(local_query[0], self.server_name)
-            if self.dry_run:
-                print(
-                    f"Package {rec.to_str()} - action:{['',' pull'][do_pull]}{['',' skip'][do_skip]}{['',' build'][do_build]}{['',' push'][do_push]}."
+                query_result = self.pacman.query(
+                    self.query_from_recipe(recipe, mac), remote_name="default"
                 )
+                if len(query_result) > 0:
+                    if self.local.verbosity > 0:
+                        print(
+                            f"Package {recipe.to_str()} found on remote, pulling, no build."
+                        )
+                    if not self.dry_run:
+                        self.pacman.add_from_remote(query_result[0], "default")
+                    continue
+                recipe_to_build.append(recipe)
+        nb = len(recipe_to_build)
+        if nb == 0:
+            print("Nothing to build!")
+            return 0
+        else:
+            print(f"{nb} recipe{['', 's'][nb > 1]} needs to be build.")
+            if self.local.verbosity > 2:
+                for recipe in recipe_to_build:
+                    print(f" --- Need to build: {recipe.to_str()}...")
+        #
+        # do the builds
+        #
+        error = 0
+        for recipe in recipe_to_build:
+            if self.local.verbosity > 1:
+                print(f"Building: {recipe.to_str()}...")
+            if self.dry_run:
+                continue
+            # clear the static cache variables, in case of previous builds
+            recipe.cache_variables.clear()
+            # clear the temp directory if not void.
+            if self.temp.exists():
+                rmtree(self.temp, ignore_errors=True)
+            self.temp.mkdir(parents=True, exist_ok=True)
+            builder = RecipeBuilder(recipe, self.temp, self.local, self.cross_info)
+            if not builder.has_recipes():
+                print("WARNING Something gone wrong with the recipe!", file=stderr)
+                continue
+            # do the build
+            if not builder.build(self.forced):
+                error += 1
+            # Actualize the local database
+            self.local.local_database.reload()
+        # clean temp directory when all build finished
+        rmtree(self.temp, ignore_errors=True)
+        #
+        # do the push
+        #
+        for recipe in recipe_to_build:
+            if not self.dry_run:
+                packs = self.pacman.query(self.query_from_recipe(recipe, mac))
+                if len(packs) == 0:
+                    print(
+                        f"ERROR: recipe {recipe.to_str()} should be built", file=stderr
+                    )
+                    error += 1
+                    continue
+                elif len(packs) > 1:
+                    print(
+                        f"warning: recipe {recipe.to_str()} seems to appear more than once",
+                        file=stderr,
+                    )
+                print(f"Pushing {packs[0].properties.get_as_str()} to te remote!")
+                if not self.skip_push:
+                    self.pacman.add_to_remote(packs[0], "default")
+            else:
+                print(f"Pushing {recipe.to_str()} to te remote!")
         return error
