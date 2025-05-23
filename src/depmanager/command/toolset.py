@@ -4,7 +4,7 @@ Manage the toolsets
 
 from sys import stderr
 
-possible_toolset = ["list", "add", "del"]
+possible_toolset = ["list", "add", "del", "rm"]
 
 
 class ToolsetCommand:
@@ -87,7 +87,7 @@ def toolset(args, system=None):
         rem.list()
     elif args.what == "add":
         rem.add(args.name, args.compiler, args.os, args.arch, args.glibc, args.default)
-    elif args.what == "del":
+    elif args.what in ["del", "rm"]:
         rem.delete(args.name)
 
 
