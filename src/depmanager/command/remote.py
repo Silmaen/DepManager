@@ -1,9 +1,10 @@
 """
 Manage the remotes
 """
+
 from sys import stderr
 
-possible_remote = ["list", "add", "del", "sync", "info"]
+possible_remote = ["list", "ls", "add", "del", "rm", "sync", "info"]
 
 
 class RemoteCommand:
@@ -137,11 +138,11 @@ def remote(args, system=None):
     if args.what not in possible_remote:
         return
     rem = RemoteCommand(args.verbose, system)
-    if args.what == "list":
+    if args.what in ["list", "ls"]:
         rem.list()
     elif args.what == "add":
         rem.add(args.name, args.url, args.default, args.login, args.passwd)
-    elif args.what == "del":
+    elif args.what == ["del", "rm"]:
         rem.delete(args.name)
     elif args.what == "sync":
         dry_run = False

@@ -1,11 +1,12 @@
 """
 Pack command
 """
+
 from copy import deepcopy
 from pathlib import Path
 from sys import stderr
 
-possible_info = ["pull", "push", "add", "del", "query", "clean"]
+possible_info = ["pull", "push", "add", "del", "rm", "query", "ls", "clean"]
 
 
 def pack(args, system=None):
@@ -83,7 +84,7 @@ def pack(args, system=None):
         deps = pacman.query(query)
     else:
         deps = pacman.query(query, remote_name, transitivity)
-    if args.what == "query":
+    if args.what in ["query", "ls"]:
         for dep in deps:
             print(f"[{dep.get_source()}] {dep.properties.get_as_str()}")
         return
@@ -114,7 +115,7 @@ def pack(args, system=None):
                     if args.verbose > 0:
                         print(f"Keeping package {dep.properties.get_as_str()}")
         return
-    if args.what in ["del", "pull", "push"]:
+    if args.what in ["ls", "del", "pull", "push"]:
         if len(deps) == 0:
             print("WARNING: No package matching the query.", file=stderr)
             return
@@ -127,7 +128,7 @@ def pack(args, system=None):
                 print(f"{dep.properties.get_as_str()}")
             return
         for dep in deps:
-            if args.what == "del":
+            if args.what in ["del", "rm"]:
                 pacman.remove_package(dep, remote_name)
                 continue
             props = deepcopy(dep.properties)

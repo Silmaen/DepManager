@@ -410,7 +410,7 @@ when parsing them. Do not add shebang in your recipe files.
 
 ## Roadmap
 
-First of all in the roadmap is to use this tool in C++ project to get feedback.
+The First in the roadmap is to use this tool in C++ project to get feedback.
 
 Among things:
 
@@ -448,6 +448,8 @@ Among things:
     * [X] bugfixes
         * [X] Better local database reload
         * [X] Refactor builder in case of multiple build (pull, build, push)
+    * [X] misc
+        * [X] Add alias `rm` and `ls`
 * version 0.3.4 -- 2024-05-08
     * [X] bugfix: deepcopy in push command (for multiple push)
     * [X] bugfix: quotes in Cmake invocation command
