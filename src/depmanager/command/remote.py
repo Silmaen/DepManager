@@ -25,13 +25,23 @@ class RemoteCommand:
         """
         remotes = self.remote_instance.get_remote_list()
         for key, value in remotes.items():
-            default = [" ", "*"][value.default]
+            info = value.get_remote_info()
+            default = [" ", "*"][info["default"]]
             if self.verbosity == 0:
                 print(f" {default} {key}")
-            else:
+            elif self.verbosity == 1:
                 status = ["OFFLINE", "ONLINE "][value.valid_shape]
                 print(
-                    f" {default} [ {status} ] {key} - {value.kind}, {value.destination}"
+                    f" {default} [ {status} ] {key} - {info['kind']}, {info['destination']}"
+                )
+            else:
+                status = ["OFFLINE", "ONLINE "][value.valid_shape]
+                api = ""
+                if "api_version" in info.keys():
+                    api = f", API: {info['api_version']}"
+                print(
+                    f" {default} [ {status} ] {key} - {info['kind']}, {info['destination']}, "
+                    f"version: {info['version']}{api}"
                 )
 
     def add(

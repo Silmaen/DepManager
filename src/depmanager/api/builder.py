@@ -89,7 +89,6 @@ class Builder:
         depth: int = 0,
         local: LocalSystem = None,
         cross_info=None,
-        toolset: str = "",
         server_name: str = "",
         dry_run: bool = False,
         skip_pull: bool = False,
@@ -107,8 +106,6 @@ class Builder:
             self.local = local.get_sys()
         else:
             self.local = LocalSystem()
-
-        self.toolset = self.local.get_toolset(toolset)
         self.pacman = PackageManager(self.local, verbosity=self.local.verbosity)
         self.source_path = source
         if temp is None:
@@ -217,7 +214,7 @@ class Builder:
         rmtree(self.temp, ignore_errors=True)
         self.temp.mkdir(parents=True, exist_ok=True)
 
-        mac = Machine(True, self.toolset)
+        mac = Machine(True)
         #
         # Reorder Recipes
         self.reorder_recipes()
@@ -270,9 +267,7 @@ class Builder:
             if self.temp.exists():
                 rmtree(self.temp, ignore_errors=True)
             self.temp.mkdir(parents=True, exist_ok=True)
-            builder = RecipeBuilder(
-                recipe, self.temp, self.local, self.cross_info, self.toolset
-            )
+            builder = RecipeBuilder(recipe, self.temp, self.local, self.cross_info)
             if not builder.has_recipes():
                 print("WARNING Something gone wrong with the recipe!", file=stderr)
                 continue
@@ -300,17 +295,9 @@ class Builder:
                         f"warning: recipe {recipe.to_str()} seems to appear more than once",
                         file=stderr,
                     )
-                if self.skip_push and self.local.verbosity > 1:
-                    print(
-                        f"SKIP pushing {packs[0].properties.get_as_str()} to te remote!"
-                    )
+                print(f"Pushing {packs[0].properties.get_as_str()} to te remote!")
                 if not self.skip_push:
-                    print(f"Pushing {packs[0].properties.get_as_str()} to te remote!")
                     self.pacman.add_to_remote(packs[0], "default")
             else:
-                if self.local.verbosity > 1:
-                    if self.skip_push:
-                        print(f"SKIP pushing {recipe.to_str()} to te remote!")
-                    else:
-                        print(f"Pushing {recipe.to_str()} to te remote!")
+                print(f"Pushing {recipe.to_str()} to te remote!")
         return error

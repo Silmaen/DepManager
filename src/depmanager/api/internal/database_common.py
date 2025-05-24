@@ -87,6 +87,7 @@ class __RemoteDatabase(__DataBase):
         self.cred = cred
         self.initiated = False
         self.remote_type = "unknown"
+        self.version = "0.0"
 
     def get_server_type(self):
         """
@@ -280,3 +281,17 @@ class __RemoteDatabase(__DataBase):
         self.valid_shape = False
         print(f"WARNING: __RemoteDatabase::delete({dep}) not implemented.", file=stderr)
         return False
+
+    def get_remote_info(self) -> dict:
+        """
+        Get information about the remote.
+        :return: Dictionary with remote information.
+        """
+        return {
+            "destination": str(self.destination),
+            "default": self.default,
+            "user": self.user,
+            "kind": self.kind,
+            "remote_type": self.remote_type,
+            "version": self.version,
+        }
