@@ -1,6 +1,7 @@
 """
 Manager for package.
 """
+
 from pathlib import Path
 from sys import stderr
 

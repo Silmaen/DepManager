@@ -1,6 +1,7 @@
 """
 Tools for building single recipe.
 """
+
 from datetime import datetime
 from os import access, R_OK, W_OK
 from pathlib import Path
@@ -8,6 +9,7 @@ from sys import stderr
 
 from depmanager.api.internal.machine import Machine
 from depmanager.api.internal.system import LocalSystem, Props
+from depmanager.api.internal.toolset import Toolset
 from depmanager.api.local import LocalManager
 from depmanager.api.recipe import Recipe
 
@@ -36,11 +38,7 @@ class RecipeBuilder:
     """
 
     def __init__(
-        self,
-        recipe,
-        temp: Path,
-        local=None,
-        cross_info=None,
+        self, recipe, temp: Path, local=None, cross_info=None, toolset: Toolset = None
     ):
         # manage cross Info
         self.generator = None
@@ -59,12 +57,14 @@ class RecipeBuilder:
         else:
             self.local = LocalSystem()
         self.temp = temp
+        # toolset
+        self.toolset = toolset
 
         self.creation_date = None
         self.os = None
         self.arch = None
         self.os = None
-        self.compiler = None
+        self.abi = None
 
     def has_recipes(self):
         """
@@ -124,10 +124,26 @@ class RecipeBuilder:
     def _get_options_str(self):
         out = f' -DCMAKE_INSTALL_PREFIX="{self.temp / "install"}"'
         out += f" -DBUILD_SHARED_LIBS={['OFF', 'ON'][self.recipe.kind.lower() == 'shared']}"
-        if "C_COMPILER" in self.cross_info:
-            out += f' -DCMAKE_C_COMPILER="{self.cross_info["C_COMPILER"]}"'
-        if "CXX_COMPILER" in self.cross_info:
-            out += f' -DCMAKE_CXX_COMPILER="{self.cross_info["CXX_COMPILER"]}"'
+        if self.toolset is not None:
+            out += f" -DCMAKE_CXX_COMPILER={self.toolset.compiler_path}"
+            if "clang" in self.toolset.compiler_path:
+                out += f" -DCMAKE_C_COMPILER={self.toolset.compiler_path}"
+                if self.toolset.abi == "gnu":
+                    out += ' -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libstdc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libstdc++"'
+                elif self.toolset.abi == "llvm":
+                    out += ' -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++"'
+                else:
+                    print(
+                        f"ERROR: unknown Clang ABI: {self.toolset.abi}.",
+                        file=stderr,
+                    )
+                    self.recipe.clean()
+                    return False
+        else:
+            if "C_COMPILER" in self.cross_info:
+                out += f' -DCMAKE_C_COMPILER="{self.cross_info["C_COMPILER"]}"'
+            if "CXX_COMPILER" in self.cross_info:
+                out += f' -DCMAKE_CXX_COMPILER="{self.cross_info["CXX_COMPILER"]}"'
         if self.recipe.settings["os"].lower() in ["linux"]:
             out += " -DCMAKE_SKIP_INSTALL_RPATH=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
         for key, val in self.recipe.cache_variables.items():
@@ -135,7 +151,7 @@ class RecipeBuilder:
         return out
 
     def _make_define(self):
-        mac = Machine(True)
+        mac = Machine(True, self.toolset)
         self.creation_date = datetime.now(
             tz=datetime.now().astimezone().tzinfo
         ).replace(microsecond=0)
@@ -143,7 +159,7 @@ class RecipeBuilder:
         if self.recipe.kind == "header":
             self.arch = "any"
             self.os = "any"
-            self.compiler = "any"
+            self.abi = "any"
         else:
             if "CROSS_ARCH" in self.cross_info:
                 self.arch = self.cross_info["CROSS_ARCH"]
@@ -153,12 +169,12 @@ class RecipeBuilder:
                 self.os = self.cross_info["CROSS_OS"]
             else:
                 self.os = mac.os
-            self.compiler = mac.default_compiler
+            self.abi = mac.default_abi
             self.glibc = mac.glibc
         self.recipe.define(
             self.os,
             self.arch,
-            self.compiler,
+            self.abi,
             self.temp / "install",
             self.glibc,
             self.creation_date,
@@ -240,7 +256,7 @@ class RecipeBuilder:
                 "os": self.os,
                 "arch": self.arch,
                 "kind": self.recipe.kind,
-                "compiler": self.compiler,
+                "abi": self.abi,
                 "glibc": self.glibc,
             }
         )

@@ -4,7 +4,7 @@ Manage the toolsets
 
 from sys import stderr
 
-possible_toolset = ["list", "add", "del", "rm"]
+possible_toolset = ["list", "ls", "add", "del", "rm"]
 
 
 class ToolsetCommand:
@@ -28,19 +28,20 @@ class ToolsetCommand:
             if self.verbosity == 0:
                 print(f" {default} {key}")
             else:
-                to_print = f" {default} [ {key} ] {value.compiler} - "
+                to_print = f" {default} [ {key} ] {value.compiler_path} - {value.abi} - "
                 if value.autofill:
                     to_print += "native"
                 else:
                     to_print += f"{value.os}/{value.arch}"
-                    if value.glibc not in [None, ""]:
-                        to_print += f" glibc {value.glibc}"
+                if value.glibc not in [None, ""]:
+                    to_print += f" glibc {value.glibc}"
                 print(to_print)
 
     def add(
         self,
         name: str,
-        compiler: str,
+        compiler_path: str,
+        abi: str,
         os: str = "",
         arch: str = "",
         glibc: str = "",
@@ -49,7 +50,8 @@ class ToolsetCommand:
         """
         Add a toolset to the list or modify the existing one.
         :param name: Toolset's name.
-        :param compiler: Toolset's compiler.
+        :param compiler_path: Compiler path.
+        :param abi: Toolset's abi.
         :param os: Optional: the target os (empty for native).
         :param arch: Optional: the target arch (empty for native).
         :param glibc: Optional: the target glibc if applicable (empty for native).
@@ -58,10 +60,14 @@ class ToolsetCommand:
         if type(name) is not str or name in ["", None]:
             print(f"ERROR please give a name for adding a toolset.", file=stderr)
             exit(-666)
-        if type(compiler) is not str or compiler in ["", None]:
-            print(f"ERROR please give a compiler for adding a toolset.", file=stderr)
+        if type(compiler_path) is not str or compiler_path in ["", None]:
+            print(
+                f"ERROR please give a compiler_path for adding a toolset.", file=stderr
+            )
             exit(-666)
-        self.toolset_instance.add_toolset(name, compiler, os, arch, glibc, default)
+        self.toolset_instance.add_toolset(
+            name, compiler_path, abi, os, arch, glibc, default
+        )
 
     def delete(self, name: str):
         """
@@ -83,10 +89,18 @@ def toolset(args, system=None):
     if args.what not in possible_toolset:
         return
     rem = ToolsetCommand(args.verbose, system)
-    if args.what == "list":
+    if args.what in ["list", "ls"]:
         rem.list()
     elif args.what == "add":
-        rem.add(args.name, args.compiler, args.os, args.arch, args.glibc, args.default)
+        rem.add(
+            args.name,
+            args.compiler,
+            args.abi,
+            args.os,
+            args.arch,
+            args.glibc,
+            args.default,
+        )
     elif args.what in ["del", "rm"]:
         rem.delete(args.name)
 
@@ -111,6 +125,16 @@ def add_toolset_parameters(sub_parsers):
     add_common_arguments(info_parser)  # add -v
     info_parser.add_argument("--compiler", "-c", type=str, help="Compiler path.")
     info_parser.add_argument("--os", "-o", type=str, default="", help="The target os.")
+    info_parser.add_argument(
+        "--name", "-n", type=str, default="", help="The toolset name."
+    )
+    info_parser.add_argument(
+        "--abi",
+        "-b",
+        type=str,
+        default="",
+        help="The abi if different from the compiler's default.",
+    )
     info_parser.add_argument(
         "--arch", "-a", type=str, default="", help="The target architecture."
     )

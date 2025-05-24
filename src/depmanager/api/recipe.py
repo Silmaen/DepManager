@@ -1,6 +1,7 @@
 """
 Base recipe for building package.
 """
+
 from datetime import datetime
 from pathlib import Path
 
@@ -17,7 +18,7 @@ class Recipe:
     config = ["Debug", "Release"]
     kind = "shared"
     dependencies = []
-    settings = {"os": "", "arch": "", "compiler": "", "install_path": Path()}
+    settings = {"os": "", "arch": "", "abi": "", "install_path": Path()}
 
     def __init__(self, path: Path = None, possible: bool = True):
         self.possible = possible
@@ -42,19 +43,19 @@ class Recipe:
         result += f" as {self.kind}"
         return result
 
-    def define(self, os, arch, compiler, install_path, glibc="", creation_date=None):
+    def define(self, os, arch, abi, install_path, glibc="", creation_date=None):
         """
         Actualize parameters
         :param os:
         :param arch:
-        :param compiler:
+        :param abi:
         :param install_path:
         :param glibc:
         :param creation_date:
         """
         self.settings["os"] = os
         self.settings["arch"] = arch
-        self.settings["compiler"] = compiler
+        self.settings["abi"] = abi
         self.settings["install_path"] = install_path
         self.settings["glibc"] = glibc
         if creation_date is None or type(creation_date) is not datetime:

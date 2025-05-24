@@ -50,6 +50,7 @@ def build(args, system=None):
         location,
         local=system,
         depth=depth,
+        toolset=args.toolset,
         cross_info=cross_info,
         forced=args.force,
         server_name=remote_name,
@@ -123,6 +124,9 @@ def add_build_parameters(sub_parsers):
         "--no-push",
         action="store_true",
         help="Disable the push after successful build.",
+    )
+    build_parser.add_argument(
+        "--toolset", "-t", type=str, default="", help="Define the toolset if not default."
     )
     build_parser.add_argument(
         "--cross-c", type=str, default="", help="Define the cross compiler for C."

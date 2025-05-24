@@ -7,7 +7,7 @@
 Depmanager is a minimalistic tool to manage dependencies (also known as third-party
 libraries) of a C++ Project. It works closely with cmake tool.
 
-It allow to store dependencies in a distant repository to share builds with other and
+It allows to store dependencies in a distant repository to share builds with other and
 have a local cache project-independent.
 
 ## Installation
@@ -43,19 +43,20 @@ on parameters or usage.
 
 ### Generalities
 
-In the base commande you can find:
+In the base command you can find:
 
-| command | subcommands                 | description                        |
-|---------|-----------------------------|------------------------------------|
-| info    | basedir, cmakedir, version  | info on local instance             |
-| get     |                             | Get the config package             |
-| pack    | pull, push, add, del, query | Manage packages                    |
-| remote  | list, add, del, info        | Manage the list of distant servers |
-| build   |                             | Build a new package                |
+| command | subcommands                         | description                        |
+|---------|-------------------------------------|------------------------------------|
+| info    | basedir, cmakedir, version          | info on local instance             |
+| get     |                                     | Get the config package             |
+| pack    | pull, push, add, del, rm, query, ls | Manage packages                    |
+| remote  | list, ls, add, del, rm, info        | Manage the list of distant servers |
+| build   |                                     | Build a new package                |
+| toolset | list, ls, add, del,rm               | Manage toolsets                    |
 
 In the following, `<query>` designate something representing the dependency's description.
 The syntax reads:  `--predicate(-p) <name>:<version> --type(-t)
-<type> --os(-o) <os> --arch(-a) <arch> --compiler(-c) <compiler> --glibc <glibc>`
+<type> --os(-o) <os> --arch(-a) <arch> --abi(-c) <abi> --glibc <glibc>`
 
 Valid values for `type`: `shared`, `static`, `header`.
 
@@ -63,11 +64,11 @@ Valid values for `os` : `Windows`, `Linux` (default: host os)
 
 Valid values for `arch` : `x86_64`, `aarch64` (default: host arch)
 
-Valid values for `compiler` : `gnu`, `msvc` (default: `gnu`)
-Note: clang compiler stands for `gnu` while clang-cl stands for `msvc`.
+Valid values for `abi` : `gnu`, `llvm` or `msvc` (default: `gnu`)
+Note: clang compiler stands for `gnu` if using libstdc++ or `llvm` when using libc++ while clang-cl stands for `msvc`.
 
 Valid values for `glibc` are only needed for linux. By giving, a value the system will look at
-package with compatible version will be search (ie. wit a version number lower or equal).
+package with compatible version will be search (i.e. wit a version number lower or equal).
 It is still possible to do an exact search by using `=` as first character. (like `--glibc =2.36`)
 
 Also, we will designate `<remote>` as a description a remote server, syntax reads: `[-n <name>|-d]`.
@@ -100,20 +101,20 @@ cmake integration.
 
 Actions on packages.
 
-#### query
+#### query or ls
 
-`depmanager pack query <query> [--transitive(-t)] <remote>` Simply do a search in the given remote (in local if
+`depmanager pack query|ls <query> [--transitive(-t)] <remote>` Simply do a search in the given remote (in local if
 nothing given) and print the result.
 
 The `--transitive(-t)` flag will allow to use transitive query, meaning to search for local then remote.
 
-#### add, del
+#### add, del or rm
 
 `depmanager pack add <location>` Will add a package to the local database. `<location>` can be a
 folder, then it must contain a properly formatted `edp.info` file. Or an archive (.zip, .tgz or .tar.gz
 file format allowed). The uncompressed archive must contain a properly formatted `edp.info` file.
 
-`depmanager pack del <query> <remote> [-r]` Will remove from local cache all package matching the query.
+`depmanager pack del|rm <query> <remote> [-r]` Will remove from local cache all package matching the query.
 
 The `-r` option allows operation on multiple packages (local only), else the command will return an error if multiple
 package matches the query.
@@ -127,7 +128,7 @@ The `query` must be precise enough to match one and only one package. `remote` m
 
 `pull` will look for the package in given remote that match the query and bring it to the local cache.
 
-If `--force` is given, The transfert occurs even if the package already exists in the destination.
+If `--force` is given, The transfer occurs even if the package already exists in the destination.
 
 The `-r` option allows operation on multiple packages. If multiple versions, only the highest one will be used.
 
@@ -143,7 +144,7 @@ The `[--full(-f)]` option will make the clean operation applies to all package, 
 Manage the list of remote servers
 subcommands:
 
-* `list` lists the defined remote server.
+* `list` or `ls` lists the defined remote server.
 * `add` adds a new remote to the list.
     * `--name(-n) <name> --url(-u) <proto>://<url[:port]> [--default(-d)]`.
     * Mandatory. If name already exists it will modify the existing one.
@@ -153,24 +154,26 @@ subcommands:
         * `srv` a dedicated server see [gitHub](https://github.com/Silmaen/DepManagerServer)
         * `srvs` a dedicated server with secure connexion see [gitHub](https://github.com/Silmaen/DepManagerServer)
     * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
-* `del <remote>` remove the designated remote if exists.
+* `del|rm <remote>` remove the designated remote if exists.
 * `sync <remote> [--push-only|--pull-only] [--dry-run]` push to remote all local package that does not already
   exist on remote. Pull local package that have a newer version on the remote. If no remote given, it will use the
   default one.
 * `info <remote>` gets information from the remote: type and version.
 
+### toolset
+
+Manage the toolset list.
+
+* `list` or `ls` for listing the toolsets.
+* `add` add a new toolset to the list
+    * `--name(-n) <name> --compiler(-c) <compiler_path> [--abi(-b) <abi>`
+* `del|rm --name(-n) <name>` remove a toolset
+
 ### build
 
 `depmanager build [OPTIONS] <location>` will search for recipe in the given location and build them.
 
-Some option can be passed to the build system:
-
-* `--single-thread`: on some low-end devices (such as RaspberryPi) single thread build is recommended.
-* `--force`, `-f`: Force the build even if the dependency already exists
-* `--cross-c`: redefine the C compiler
-* `--cross-cxx`: redefine the C++ compiler
-* `--cross-arch`: redefine the architecture
-* `--cross-os`: redefine the OS
+See the section [Create you own package](#create-your-own-package) for more details.
 
 ## Using package with cmake
 
@@ -209,7 +212,7 @@ dm_load_environment(
         [KIND kind]
         [ARCH target_arch]
         [OS target_os]
-        [COMPILER target_compiler]
+        [ABI target_abi]
         [GLIBC target_glibc]
 ) 
 ```
@@ -223,7 +226,7 @@ project root. See the next paragraph for more information about configuration fi
 `kind` is used to force library kind (`shared`, `static`, `header`). By default, it uses
 the value from `BUILD_SHARED_LIBS`.
 
-`target_arch`, `target_os`, `target_compiler`, `target_glibc` are used in the query. If not set, default
+`target_arch`, `target_os`, `target_abi`, `target_glibc` are used in the query. If not set, default
 values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER_ID`
 
 The cmake function will update the CMAKE variable for the search of package.
@@ -265,7 +268,7 @@ packages:
     # force the shared version even in static build mode.
     kind: "shared"
   glfw:
-    # use this only for the (same for arch, and compiler)
+    # use this only for the (same for arch, and abi)
     os: Linux
 ```
 
@@ -287,7 +290,7 @@ dm_find_package(
         [KIND kind]
         [ARCH target_arch]
         [OS target_os]
-        [COMPILER target_compiler]
+        [ABI target_abi]
         [GLIBC target_glibc]
 )
 ```
@@ -306,7 +309,7 @@ If `REQUIRED` set, the function will give an error if no package found.
 If `QUIET` set, only errors are written. (same as original `find_package`). In opposition,
 if `TRACE` set, many more debug message displayed.
 
-`target_arch`, `target_os`, `target_compiler` `target_glibc` are used in the query. If not set, default
+`target_arch`, `target_os`, `target_abi` `target_glibc` are used in the query. If not set, default
 values are `CMAKE_SYSTEM_PROCESSOR`, `CMAKE_SYSTEM_NAME` and `CMAKE_CXX_COMPILER_ID`
 
 **LIMITATION:** it requires the library name is the package name. So no multi lib or lib with different name.
@@ -324,14 +327,14 @@ dm_load_package(
         [KIND kind]
         [ARCH target_arch]
         [OS target_os]
-        [COMPILER target_compiler]
+        [ABI target_abi]
         [GLIBC target_glibc]
 )
 ```
 
 After call this command, the cmake user has to call for needed `find_package`.
 
-## Create you own package
+## Create your own package
 
 Depmanager allow you to create your own packages by defining recipes. Then run
 `depmanager build <location of recipes> [OPTIONS]`
@@ -340,7 +343,7 @@ The program will then build and add dependencies to the local cache.
 The location can contain as many recipe in any number of files.
 
 The search behavior can bve set as recursive with option `--recursive,-r`. As sometimes, sources also contains python
-files that may fail to load, the depth of recursion can be restrained using `--recursi-depth <n>`.
+files that may fail to load, the depth of recursion can be restrained using `--recursive-depth <n>`.
 
 By default, a package will not be build if already exists in the local cache. You can force the rebuild with the
 option `--force,-f`.
@@ -350,8 +353,10 @@ By default, the builder will use all the cpu cores, but `--single-thred,-s` will
 Cross-compilation can be used by giving the tools at command
 line: `--cross-c <C_COMPILER> --cross-cxx <CXX_COMPILER> --cross-arch <TARGET_ARCH> --cross-os <TARGET_OS>`
 
+A defined toolset can be used by giving its name: `--toolset,-t <TOOLSET_NAME>`.
+
 It is also possible to give a remote name `-n <remote_name>` or set to default remote `-d`. This way,
-The builder will look into remote to see if an package already exists and pull it instead of building it.
+The builder will look into remote to see if a package already exists and pull it instead of building it.
 Also, after a successful build, it will automatically push to the remote. Use either `--no-pull`and `--no-push`
 option to skip these steps.
 
@@ -427,7 +432,6 @@ Among things:
     * [ ] Add a sorting order for remotes.
         * [ ] Searching across remotes with final package sorting.
         * [ ] Allow auto-pull best-fitting package
-* version 0.4.x
     * [ ] Add more cmake commands
         * [ ] Check for package updates
         * [ ] Allow to retrieve specific package
@@ -441,10 +445,13 @@ Among things:
         * [ ] Allow pull package with dependencies.
         * [ ] Dependency checks during load.
         * [ ] Recursive load of package.
+* version 0.4.x
     * [X] Add concept of toolset.
         * [X] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
-        * [ ] Use toolset in build.
-        * [ ] Use toolset in queries.
+        * [ ] Allow to define toolset in recipe.
+        * [X] Add concept of ABi for the compilers.
+        * [X] Use toolset in build.
+        * [X] Use toolset in queries.
     * [X] bugfixes
         * [X] Better local database reload
         * [X] Refactor builder in case of multiple build (pull, build, push)

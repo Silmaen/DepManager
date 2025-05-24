@@ -1,6 +1,7 @@
 """
 Common helper function.
 """
+
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -59,7 +60,7 @@ class LocalConfiguration:
             self.save_config()
 
     def hash_path(
-        self, name: str, version: str, os: str, arch: str, lib_type: str, compiler: str
+        self, name: str, version: str, os: str, arch: str, lib_type: str, abi: str
     ):
         """
         Get the hash for path determination
@@ -68,7 +69,7 @@ class LocalConfiguration:
         :param os:
         :param arch:
         :param lib_type:
-        :param compiler:
+        :param abi:
         :return:
         """
         from hashlib import sha1
@@ -80,7 +81,7 @@ class LocalConfiguration:
             + os.encode()
             + arch.encode()
             + lib_type.encode()
-            + compiler.encode()
+            + abi.encode()
         )
         return self.data_path / str(hash_.hexdigest())
 
@@ -153,10 +154,10 @@ def add_query_arguments(parser: ArgumentParser):
         default="*",
     )
     parser.add_argument(
-        "--compiler",
-        "-c",
+        "--abi",
+        "-b",
         type=str,
-        help="Compiler of the packet to search, use * as wildcard",
+        help="Abi of the packet to search, use * as wildcard",
         default="*",
     )
     parser.add_argument(
@@ -198,7 +199,7 @@ def query_argument_to_dict(args):
         "os": args.os,
         "arch": args.arch,
         "kind": args.kind,
-        "compiler": args.compiler,
+        "abi": args.abi,
         "glibc": args.glibc,
         "build_date": args.build_date,
     }

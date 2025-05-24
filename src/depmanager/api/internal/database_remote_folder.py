@@ -1,6 +1,7 @@
 """
 Remote Folder database.
 """
+
 from pathlib import Path
 from shutil import copyfile
 

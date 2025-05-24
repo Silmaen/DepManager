@@ -1,6 +1,7 @@
 """
 Database Object.
 """
+
 from pathlib import Path
 from sys import stderr
 

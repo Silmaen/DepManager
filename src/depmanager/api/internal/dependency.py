@@ -1,6 +1,7 @@
 """
 Dependency object.
 """
+
 from datetime import datetime
 from pathlib import Path
 from sys import stderr
@@ -106,7 +107,7 @@ class Props:
     os = mac.os
     arch = mac.arch
     kind = default_kind
-    compiler = mac.default_compiler
+    abi = mac.default_abi
     query = False
     build_date = base_date
     glibc = ""
@@ -117,7 +118,7 @@ class Props:
         self.os = mac.os
         self.arch = mac.arch
         self.kind = default_kind
-        self.compiler = mac.default_compiler
+        self.abi = mac.default_abi
         self.query = query
         self.build_date = base_date
         self.glibc = ""
@@ -135,7 +136,7 @@ class Props:
             and self.glibc == other.glibc
             and self.arch == other.arch
             and self.kind == other.kind
-            and self.compiler == other.compiler
+            and self.abi == other.abi
         )
 
     def __lt__(self, other):
@@ -153,8 +154,8 @@ class Props:
             return self.arch < other.arch
         if self.kind != other.kind:
             return self.kind < other.kind
-        if self.compiler != other.compiler:
-            return self.compiler < other.compiler
+        if self.abi != other.abi:
+            return self.abi < other.abi
 
     def __le__(self, other):
         return self == other or self < other
@@ -180,14 +181,14 @@ class Props:
             self.os = "*"
             self.arch = "*"
             self.kind = "*"
-            self.compiler = "*"
+            self.abi = "*"
             self.glibc = "*"
             self.build_date = "*"
         else:
             self.os = mac.os
             self.arch = mac.arch
             self.kind = default_kind
-            self.compiler = mac.default_compiler
+            self.abi = mac.default_abi
             self.glibc = mac.glibc
             self.build_date = base_date
         if "os" in data:
@@ -196,12 +197,15 @@ class Props:
             self.arch = data["arch"]
         if "kind" in data:
             self.kind = data["kind"]
-        if "compiler" in data:
-            self.compiler = data["compiler"]
+        if "abi" in data:
+            self.abi = data["abi"]
         if "glibc" in data:
             self.glibc = data["glibc"]
         if "build_date" in data:
             self.build_date = data["build_date"]
+        # read deprecated component
+        if "compiler" in data:
+            self.abi = data["compiler"]
 
     def to_dict(self):
         """
@@ -214,7 +218,7 @@ class Props:
             "os": self.os,
             "arch": self.arch,
             "kind": self.kind,
-            "compiler": self.compiler,
+            "abi": self.abi,
             "glibc": self.glibc,
             "build_date": self.build_date,
         }
@@ -234,7 +238,7 @@ class Props:
             "os",
             "arch",
             "kind",
-            "compiler",
+            "abi",
             "glibc",
         ]:
             str_other = f"{getattr(other, attr)}"
@@ -274,7 +278,7 @@ class Props:
             + self.os
             + self.arch
             + self.kind
-            + self.compiler
+            + self.abi
             + self.glibc
         )
         hash_.update(glob.encode())
@@ -285,7 +289,7 @@ class Props:
         Get a human-readable string.
         :return: A string.
         """
-        base_info = f"{self.arch}, {self.kind}, {self.os}, {self.compiler}"
+        base_info = f"{self.arch}, {self.kind}, {self.os}, {self.abi}"
         if type(self.build_date) is datetime:
             date = self.build_date.isoformat()
         else:
@@ -328,7 +332,7 @@ class Props:
         self.arch = items[0]
         self.kind = items[1]
         self.os = items[2]
-        self.compiler = items[3].split("-", 1)[0]
+        self.abi = items[3].split("-", 1)[0]
         if len(items) == 5:
             self.glibc = items[4]
         else:
@@ -358,9 +362,11 @@ class Props:
                 "os",
                 "arch",
                 "kind",
-                "compiler",
+                "abi",
                 "glibc",
                 "build_date",
+                # deprecated:
+                "compiler",
             ] or val in [None, ""]:
                 continue
             if key == "name":
@@ -373,12 +379,15 @@ class Props:
                 self.arch = val
             if key == "kind":
                 self.kind = val
-            if key == "compiler":
-                self.compiler = val
+            if key == "abi":
+                self.abi = val
             if key == "glibc":
                 self.glibc = val
             if key == "build_date":
                 self.build_date = read_date(val)
+            # deprecated keys
+            if key == "compiler":
+                self.abi = val
 
     def to_edp_file(self, file: Path):
         """
@@ -392,7 +401,7 @@ class Props:
             fp.write(f"os = {self.os}\n")
             fp.write(f"arch = {self.arch}\n")
             fp.write(f"kind = {self.kind}\n")
-            fp.write(f"compiler = {self.compiler}\n")
+            fp.write(f"abi = {self.abi}\n")
             fp.write(f"glibc = {self.glibc}\n")
             fp.write(f"build_date = {self.build_date.isoformat()}\n")
 
@@ -604,7 +613,7 @@ class Dependency:
         if self.is_platform_dependent():
             query["os"] = self.properties.os
             query["arch"] = self.properties.arch
-            query["compiler"] = self.properties.compiler
+            query["abi"] = self.properties.abi
             if self.has_glibc():
                 query["glibc"] = self.properties.glibc
         return query

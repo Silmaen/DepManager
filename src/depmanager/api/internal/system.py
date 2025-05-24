@@ -122,6 +122,10 @@ class LocalSystem:
             self.toolsets[name].from_dict(info)
             if self.toolsets[name].default:
                 self.default_toolset = name
+        if self.default_toolset == "":
+            for name, info in self.config["toolsets"].items():
+                self.default_toolset = name
+                self.toolsets[name].default = True
         #
         self.write_config_file()
 
@@ -375,8 +379,18 @@ class LocalSystem:
         if name not in self.toolsets:
             self.toolsets[name] = Toolset(name)
             self.toolsets[name].from_dict(info)
-        if default:
-            self.default_toolset = name
+            if default or self.default_toolset in [None, ""]:
+                if self.default_toolset not in [None, ""]:
+                    self.toolsets[self.default_toolset].default =False
+                    self.config["toolsets"][self.default_toolset] = self.toolsets[self.default_toolset].to_dict()
+                self.default_toolset = name
+                self.toolsets[name].default = True
+            self.config["toolsets"][name] = self.toolsets[name].to_dict()
+        else:
+            if self.verbosity > 0:
+                print("WARNING: cannot add toolset: already exists.")
+        self.write_config_file()
+        return True
 
     def del_toolset(self, name: str = ""):
         """
@@ -384,15 +398,17 @@ class LocalSystem:
         :param name: Name of the toolset to remove.
         """
         if name in [None, str]:
-            return
+            return False
         if name not in self.toolsets:
-            return
+            return False
         self.toolsets.pop(name)
         if name == self.default_toolset:
             if len(self.toolsets) == 0:
                 self.default_toolset = ""
             else:
                 self.default_toolset = list(self.toolsets.keys())[0]
+        self.write_config_file()
+        return True
 
     def get_toolset(self, name: str = ""):
         """
