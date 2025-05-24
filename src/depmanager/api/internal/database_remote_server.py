@@ -6,12 +6,11 @@ from datetime import datetime
 from pathlib import Path
 from sys import stderr
 
+from depmanager.api.internal.database_common import __RemoteDatabase
+from depmanager.api.internal.dependency import Dependency
 from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
-
-from depmanager.api.internal.database_common import __RemoteDatabase
-from depmanager.api.internal.dependency import Dependency
 
 
 class RemoteDatabaseServer(__RemoteDatabase):
@@ -53,23 +52,59 @@ class RemoteDatabaseServer(__RemoteDatabase):
             verbosity=verbosity,
         )
         self.remote_type = "Dependency Server"
+        self.api_version = "1.0.0"
+        self.api_url = "/api"
+        self.upload_url = "/upload"
+        self.version = "1.0"
+        self.connected = False
 
     def connect(self):
         """
         Initialize the connection to remote host.
         TO IMPLEMENT IN DERIVED CLASS.
         """
-        pass
+        if self.connected:
+            return
+        basic = HTTPBasicAuth(self.user, self.cred)
+        resp = http_post(
+            f"{self.destination}{self.api_url}", auth=basic, data={"action": "version"}
+        )
+
+        if resp.status_code != 200:
+            self.valid_shape = False
+            return
+        try:
+            self.api_version = "1.0.0"
+            for line in resp.text.splitlines(keepends=False):
+                if line.startswith("version"):
+                    self.version = line.strip().split("version:")[-1].strip()
+                elif line.startswith("api_version:"):
+                    self.api_version = line.strip().split("api_version:")[-1].strip()
+            if self.verbosity > 3:
+                print(
+                    f"Connected to server {self.destination} version {self.version} API: {self.api_version}"
+                )
+            self.valid_shape = True
+        except Exception as err:
+            print(
+                f"ERROR Exception during server connexion: {self.destination}: {err}",
+                file=stderr,
+            )
+            self.valid_shape = False
+        self.connected = True
 
     def get_dep_list(self):
         """
         Get a list of string describing dependency from the server.
         """
+        self.connect()
+        if not self.valid_shape:
+            return
         try:
             if self.verbosity > 3:
                 print("Query dep list from remote.")
             basic = HTTPBasicAuth(self.user, self.cred)
-            resp = http_get(f"{self.destination}/api", auth=basic)
+            resp = http_get(f"{self.destination}{self.api_url}", auth=basic)
             if resp.status_code != 200:
                 self.valid_shape = False
                 print(
@@ -87,8 +122,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
             )
             return
 
-    @staticmethod
-    def dep_to_code(dep: Dependency):
+    def dep_to_code(self, dep: Dependency):
         """
 
         :param dep:
@@ -128,14 +162,30 @@ class RemoteDatabaseServer(__RemoteDatabase):
         if dep.properties.kind.lower() == "any":
             data["kind"] = "a"
         # abi
-        if dep.properties.abi.lower() == "gnu":
-            data["abi"] = "g"
-        elif dep.properties.abi.lower() == "llvm":
-            data["abi"] = "l"
-        elif dep.properties.abi.lower() == "msvc":
-            data["abi"] = "m"
-        elif dep.properties.abi.lower() == "any":
-            data["abi"] = "a"
+        if self.api_version == "1.0.0":
+            if dep.properties.abi.lower() == "gnu":
+                data["abi"] = "g"
+            elif dep.properties.abi.lower() == "msvc":
+                data["abi"] = "m"
+            elif dep.properties.abi.lower() == "any":
+                data["abi"] = "a"
+            else:
+                print(
+                    f"WARNING: Unsupported ABI type {dep.properties.abi}.", file=stderr
+                )
+        else:
+            if dep.properties.abi.lower() == "gnu":
+                data["abi"] = "g"
+            elif dep.properties.abi.lower() == "llvm":
+                data["abi"] = "l"
+            elif dep.properties.abi.lower() == "msvc":
+                data["abi"] = "m"
+            elif dep.properties.abi.lower() == "any":
+                data["abi"] = "a"
+            else:
+                print(
+                    f"WARNING: Unsupported ABI type {dep.properties.abi}.", file=stderr
+                )
         return data
 
     def pull(self, dep: Dependency, destination: Path):
@@ -144,6 +194,9 @@ class RemoteDatabaseServer(__RemoteDatabase):
         :param dep: Dependency information.
         :param destination: Destination directory
         """
+        self.connect()
+        if not self.valid_shape:
+            return
         if destination.exists() and not destination.is_dir():
             return
         deps = self.query(dep)
@@ -153,8 +206,9 @@ class RemoteDatabaseServer(__RemoteDatabase):
         try:
             basic = HTTPBasicAuth(self.user, self.cred)
             post_data = {"action": "pull"} | self.dep_to_code(dep)
-            resp = http_post(f"{self.destination}/api", auth=basic, data=post_data)
-
+            resp = http_post(
+                f"{self.destination}{self.api_url}", auth=basic, data=post_data
+            )
             if resp.status_code != 200:
                 self.valid_shape = False
                 print(
@@ -182,7 +236,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 return
             with open(file_name, "wb") as fp:
                 fp.write(resp.content)
-            return filename
+            return
         except Exception as err:
             print(
                 f"ERROR Exception during server pull: {self.destination}: {err}",
@@ -194,9 +248,9 @@ class RemoteDatabaseServer(__RemoteDatabase):
         """
         Create a callback for the given encoder.
         :param encoder: The encoder.
-        :return: A monitor call back.
+        :return: A monitor callback.
         """
-        from api.internal.common import pretty_size_print
+        from depmanager.api.internal.common import pretty_size_print
 
         encoder_len = encoder.len
         if self.verbosity > 0:
@@ -225,8 +279,9 @@ class RemoteDatabaseServer(__RemoteDatabase):
         Push a dependency to the remote.
         :param dep: Dependency's description.
         :param file: Dependency archive file.
-        :param force: If true re-upload a file that already exists.
+        :param force: If true, re-upload a file that already exists.
         """
+        self.connect()
         if not self.valid_shape:
             return
         if not file.exists():
@@ -248,19 +303,24 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 "application/octet-stream",
             )
             encoder = MultipartEncoder(fields=post_data)
+            dest_url = f"{self.destination}{self.api_url}"
             if file.stat().st_size < 1:
                 monitor = MultipartEncoderMonitor(encoder)
                 headers = {"Content-Type": monitor.content_type}
                 resp = http_post(
-                    f"{self.destination}/api", auth=basic, data=monitor, headers=headers
+                    dest_url,
+                    auth=basic,
+                    data=monitor,
+                    headers=headers,
                 )
             else:
                 monitor = MultipartEncoderMonitor(
                     encoder, callback=self.create_callback(encoder)
                 )
                 headers = {"Content-Type": monitor.content_type}
+                dest_url = f"{self.destination}{self.upload_url}"
                 resp = http_post(
-                    f"{self.destination}/upload",
+                    dest_url,
                     auth=basic,
                     data=monitor,
                     headers=headers,
@@ -270,7 +330,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
 
             if resp.status_code == 201:
                 print(
-                    f"WARNING coming from server: {self.destination}: {resp.status_code}: {resp.reason}",
+                    f"WARNING coming from server: {dest_url}: {resp.status_code}: {resp.reason}",
                     file=stderr,
                 )
                 print(f"response: {resp.content.decode('utf8')}", file=stderr)
@@ -278,12 +338,15 @@ class RemoteDatabaseServer(__RemoteDatabase):
             if resp.status_code != 200:
                 self.valid_shape = False
                 print(
-                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}, see error.log",
+                    f"ERROR connecting to server: {dest_url}: {resp.status_code}: {resp.reason}, see error.log",
                     file=stderr,
                 )
                 with open("error.log", "ab") as fp:
                     fp.write(f"---- ERROR: {datetime.now()} ---- \n".encode("utf8"))
                     fp.write(resp.content)
+                    fp.write("\n".encode("utf8"))
+                    fp.write(str(post_data).encode("utf8"))
+                    fp.write("\n".encode("utf8"))
                 return
         except Exception as err:
             print(
@@ -298,25 +361,28 @@ class RemoteDatabaseServer(__RemoteDatabase):
         :param dep: Dependency information.
         :return: True if success.
         """
+        self.connect()
         if not self.valid_shape:
-            return
+            return False
         result = self.query(dep)
         if len(result) == 0:
             print(
                 f"WARNING: Cannot suppress dependency {dep.properties.name}: not on server.",
                 file=stderr,
             )
-            return
+            return False
         if len(result) > 1:
             print(
                 f"WARNING: Cannot suppress dependency {dep.properties.name}: multiple dependencies match on server.",
                 file=stderr,
             )
-            return
+            return False
         try:
             basic = HTTPBasicAuth(self.user, self.cred)
             post_data = {"action": "delete"} | self.dep_to_code(dep)
-            resp = http_post(f"{self.destination}/api", auth=basic, data=post_data)
+            resp = http_post(
+                f"{self.destination}{self.api_url}", auth=basic, data=post_data
+            )
 
             if resp.status_code != 200:
                 self.valid_shape = False
@@ -378,24 +444,23 @@ class RemoteDatabaseServer(__RemoteDatabase):
         Get the version running on the server.
         :return: Server's version number.
         """
-        try:
-            basic = HTTPBasicAuth(self.user, self.cred)
-            post_data = {"action": "version"}
-            resp = http_post(f"{self.destination}/api", auth=basic, data=post_data)
+        self.connect()
+        if not self.valid_shape:
+            return "0.0.0"
+        return self.version
 
-            if resp.status_code != 200:
-                self.valid_shape = False
-                print(
-                    f"ERROR connecting to server: {self.destination}: {resp.status_code}: {resp.reason}",
-                    file=stderr,
-                )
-                print(f"      Server Data: {resp.text}", file=stderr)
-                return "unknown"
-            data = resp.text.strip().split("version:")[-1].strip()
-            return data
-        except Exception as err:
-            print(
-                f"ERROR Exception during server pull: {self.destination}: {err}",
-                file=stderr,
-            )
-            return "unknown"
+    def get_remote_info(self) -> dict:
+        """
+        Get information about the remote.
+        :return: Dictionary with remote information.
+        """
+        self.connect()
+        return {
+            "destination": str(self.destination),
+            "default": self.default,
+            "user": self.user,
+            "kind": self.kind,
+            "remote_type": self.remote_type,
+            "version": self.version,
+            "api_version": self.api_version,
+        }

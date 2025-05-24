@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Simple Dependency manager"
 readme = "README.md"
-license = { file = "LICENSE" }
+license-files = ["LICENSE"]
 requires-python = ">=3.9"
 classifiers = [
     # How mature is this project? Common values are
@@ -16,7 +16,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Build Tools",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
 keywords = ["dependency", "development", "cmake", "C++"]

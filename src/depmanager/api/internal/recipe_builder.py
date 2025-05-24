@@ -127,7 +127,7 @@ class RecipeBuilder:
         if self.toolset is not None:
             out += f" -DCMAKE_CXX_COMPILER={self.toolset.compiler_path}"
             if "clang" in self.toolset.compiler_path:
-                out += f" -DCMAKE_C_COMPILER={self.toolset.compiler_path}"
+                out += f" -DCMAKE_C_COMPILER={self.toolset.compiler_path.replace('++', '')}"
                 if self.toolset.abi == "gnu":
                     out += ' -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libstdc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libstdc++"'
                 elif self.toolset.abi == "llvm":
