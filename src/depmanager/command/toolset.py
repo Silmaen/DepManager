@@ -5,6 +5,7 @@ Manage the toolsets
 from sys import stderr
 
 possible_toolset = ["list", "ls", "add", "del", "rm"]
+deprecated = {"list": "ls", "del": "rm"}
 
 
 class ToolsetCommand:
@@ -28,7 +29,9 @@ class ToolsetCommand:
             if self.verbosity == 0:
                 print(f" {default} {key}")
             else:
-                to_print = f" {default} [ {key} ] {value.compiler_path} - {value.abi} - "
+                to_print = (
+                    f" {default} [ {key} ] {value.compiler_path} - {value.abi} - "
+                )
                 if value.autofill:
                     to_print += "native"
                 else:
@@ -89,6 +92,11 @@ def toolset(args, system=None):
     if args.what not in possible_toolset:
         return
     rem = ToolsetCommand(args.verbose, system)
+    if args.what in deprecated.keys():
+        print(
+            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead.",
+            file=stderr,
+        )
     if args.what in ["list", "ls"]:
         rem.list()
     elif args.what == "add":

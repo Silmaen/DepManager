@@ -7,6 +7,7 @@ from pathlib import Path
 from sys import stderr
 
 possible_info = ["pull", "push", "add", "del", "rm", "query", "ls", "clean"]
+deprecated = {"del": "rm", "query": "ls"}
 
 
 def pack(args, system=None):
@@ -21,6 +22,11 @@ def pack(args, system=None):
     pacman = PackageManager(system, args.verbose)
     if args.what not in possible_info:
         return
+    if args.what in deprecated.keys():
+        print(
+            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead.",
+            file=stderr,
+        )
     remote_name = pacman.remote_name(args)
     # --- parameters check ----
     if args.default and args.name not in [None, ""]:
@@ -164,7 +170,7 @@ def add_pack_parameters(sub_parsers):
         help="The information you want about the program",
     )
     add_common_arguments(pack_parser)  # add -v
-    add_query_arguments(pack_parser)  # add -p -k -o -a -c
+    add_query_arguments(pack_parser)  # add -p -k -o -a -b
     add_remote_selection_arguments(pack_parser)  # add -n, -d
     pack_parser.add_argument(
         "--source",
