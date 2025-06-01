@@ -32,12 +32,12 @@ class ToolsetCommand:
                 to_print = (
                     f" {default} [ {key} ] {value.compiler_path} - {value.abi} - "
                 )
-                if value.autofill:
-                    to_print += "native"
-                else:
-                    to_print += f"{value.os}/{value.arch}"
-                if value.glibc not in [None, ""]:
-                    to_print += f" glibc {value.glibc}"
+                # if value.autofill:
+                #    to_print += "native"
+                # else:
+                #    to_print += f"{value.os}/{value.arch}"
+                # if value.glibc not in [None, ""]:
+                #    to_print += f" glibc {value.glibc}"
                 print(to_print)
 
     def add(
@@ -104,9 +104,9 @@ def toolset(args, system=None):
             args.name,
             args.compiler,
             args.abi,
-            args.os,
-            args.arch,
-            args.glibc,
+            #  args.os,
+            #  args.arch,
+            #  args.glibc,
             args.default,
         )
     elif args.what in ["del", "rm"]:

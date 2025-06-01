@@ -107,8 +107,10 @@ class Builder:
             self.local = local.get_sys()
         else:
             self.local = LocalSystem()
-
-        self.toolset = self.local.get_toolset(toolset)
+        if toolset in [None, ""]:
+            self.toolset = None
+        else:
+            self.toolset = self.local.get_toolset(toolset)
         self.pacman = PackageManager(self.local, verbosity=self.local.verbosity)
         self.source_path = source
         if temp is None:
@@ -232,7 +234,9 @@ class Builder:
                 query_result = self.pacman.query(self.query_from_recipe(recipe, mac))
                 if len(query_result):
                     if self.local.verbosity > 0:
-                        print(f"Package {recipe.to_str()} found locally, no build.")
+                        print(
+                            f"Package {recipe.to_str()} found locally for {mac}, no build."
+                        )
                     continue
                 query_result = self.pacman.query(
                     self.query_from_recipe(recipe, mac), remote_name="default"
@@ -240,7 +244,7 @@ class Builder:
                 if len(query_result) > 0:
                     if self.local.verbosity > 0:
                         print(
-                            f"Package {recipe.to_str()} found on remote, pulling, no build."
+                            f"Package {recipe.to_str()} found on remote for {mac}, pulling, no build."
                         )
                     if not self.dry_run:
                         self.pacman.add_from_remote(query_result[0], "default")
@@ -254,14 +258,14 @@ class Builder:
             print(f"{nb} recipe{['', 's'][nb > 1]} needs to be build.")
             if self.local.verbosity > 2:
                 for recipe in recipe_to_build:
-                    print(f" --- Need to build: {recipe.to_str()}...")
+                    print(f" --- Need to build: {recipe.to_str()} for {mac}...")
         #
         # do the builds
         #
         error = 0
         for recipe in recipe_to_build:
             if self.local.verbosity > 1:
-                print(f"Building: {recipe.to_str()}...")
+                print(f"Building: {recipe.to_str()} for {mac}...")
             if self.dry_run:
                 continue
             # clear the static cache variables, in case of previous builds
@@ -291,26 +295,29 @@ class Builder:
                 packs = self.pacman.query(self.query_from_recipe(recipe, mac))
                 if len(packs) == 0:
                     print(
-                        f"ERROR: recipe {recipe.to_str()} should be built", file=stderr
+                        f"ERROR: recipe {recipe.to_str()} should be built for {mac}",
+                        file=stderr,
                     )
                     error += 1
                     continue
                 elif len(packs) > 1:
                     print(
-                        f"warning: recipe {recipe.to_str()} seems to appear more than once",
+                        f"warning: recipe {recipe.to_str()} for {mac} seems to appear more than once",
                         file=stderr,
                     )
                 if self.skip_push and self.local.verbosity > 1:
                     print(
-                        f"SKIP pushing {packs[0].properties.get_as_str()} to te remote!"
+                        f"SKIP pushing {packs[0].properties.get_as_str()} for {mac} to te remote!"
                     )
                 if not self.skip_push:
-                    print(f"Pushing {packs[0].properties.get_as_str()} to te remote!")
+                    print(
+                        f"Pushing {packs[0].properties.get_as_str()} for {mac} to te remote!"
+                    )
                     self.pacman.add_to_remote(packs[0], "default")
             else:
                 if self.local.verbosity > 1:
                     if self.skip_push:
-                        print(f"SKIP pushing {recipe.to_str()} to te remote!")
+                        print(f"SKIP pushing {recipe.to_str()} for {mac} to te remote!")
                     else:
-                        print(f"Pushing {recipe.to_str()} to te remote!")
+                        print(f"Pushing {recipe.to_str()} for {mac} to te remote!")
         return error
