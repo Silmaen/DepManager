@@ -89,6 +89,7 @@ class Builder:
         depth: int = 0,
         local: LocalSystem = None,
         cross_info=None,
+        toolset: str = "",
         server_name: str = "",
         dry_run: bool = False,
         skip_pull: bool = False,
@@ -106,6 +107,8 @@ class Builder:
             self.local = local.get_sys()
         else:
             self.local = LocalSystem()
+
+        self.toolset = self.local.get_toolset(toolset)
         self.pacman = PackageManager(self.local, verbosity=self.local.verbosity)
         self.source_path = source
         if temp is None:
@@ -126,7 +129,7 @@ class Builder:
         if recipe.kind == "header":
             arch = "any"
             os = "any"
-            compiler = "any"
+            abi = "any"
         else:
             if "CROSS_ARCH" in self.cross_info:
                 arch = self.cross_info["CROSS_ARCH"]
@@ -136,7 +139,7 @@ class Builder:
                 os = self.cross_info["CROSS_OS"]
             else:
                 os = machine.os
-            compiler = machine.default_compiler
+            abi = machine.default_abi
             glibc = machine.glibc
         return {
             "name": recipe.name,
@@ -144,7 +147,7 @@ class Builder:
             "os": os,
             "arch": arch,
             "kind": recipe.kind,
-            "compiler": compiler,
+            "abi": abi,
             "glibc": glibc,
         }
 
@@ -214,7 +217,7 @@ class Builder:
         rmtree(self.temp, ignore_errors=True)
         self.temp.mkdir(parents=True, exist_ok=True)
 
-        mac = Machine(True)
+        mac = Machine(True, self.toolset)
         #
         # Reorder Recipes
         self.reorder_recipes()
@@ -267,7 +270,9 @@ class Builder:
             if self.temp.exists():
                 rmtree(self.temp, ignore_errors=True)
             self.temp.mkdir(parents=True, exist_ok=True)
-            builder = RecipeBuilder(recipe, self.temp, self.local, self.cross_info)
+            builder = RecipeBuilder(
+                recipe, self.temp, self.local, self.cross_info, self.toolset
+            )
             if not builder.has_recipes():
                 print("WARNING Something gone wrong with the recipe!", file=stderr)
                 continue
@@ -295,9 +300,17 @@ class Builder:
                         f"warning: recipe {recipe.to_str()} seems to appear more than once",
                         file=stderr,
                     )
-                print(f"Pushing {packs[0].properties.get_as_str()} to te remote!")
+                if self.skip_push and self.local.verbosity > 1:
+                    print(
+                        f"SKIP pushing {packs[0].properties.get_as_str()} to te remote!"
+                    )
                 if not self.skip_push:
+                    print(f"Pushing {packs[0].properties.get_as_str()} to te remote!")
                     self.pacman.add_to_remote(packs[0], "default")
             else:
-                print(f"Pushing {recipe.to_str()} to te remote!")
+                if self.local.verbosity > 1:
+                    if self.skip_push:
+                        print(f"SKIP pushing {recipe.to_str()} to te remote!")
+                    else:
+                        print(f"Pushing {recipe.to_str()} to te remote!")
         return error

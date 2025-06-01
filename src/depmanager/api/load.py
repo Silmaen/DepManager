@@ -1,6 +1,7 @@
 """
 Function for loading a full environment
 """
+
 from pathlib import Path
 
 from depmanager.api.internal.config_file import ConfigFile
@@ -10,7 +11,7 @@ from depmanager.api.package import PackageManager
 
 
 def load_environment(
-    system, config: Path, kind: str, os: str, arch: str, compiler: str, glibc: str
+    system, config: Path, kind: str, os: str, arch: str, abi: str, glibc: str
 ):
     """
     Do work on environment.
@@ -74,7 +75,7 @@ def load_environment(
         if platform_dependent:
             query["os"] = os
             query["arch"] = arch
-            query["compiler"] = compiler
+            query["abi"] = abi
             query["kind"] = kind
             if glibc not in ["", None]:
                 query["glibc"] = glibc
@@ -87,7 +88,7 @@ def load_environment(
                 query["version"] = constrains["version"]
             if "kind" in constrains:
                 query["kind"] = constrains["kind"]
-            for key in ["os", "arch", "compiler"]:
+            for key in ["os", "arch", "abi"]:
                 if key in constrains:
                     restrained = []
                     if type(constrains[key]) is str:
@@ -98,7 +99,7 @@ def load_environment(
                         to_skip = True
                     if key == "arch" and arch not in restrained:
                         to_skip = True
-                    if key == "compiler" and compiler not in restrained:
+                    if key == "abi" and abi not in restrained:
                         to_skip = True
         if to_skip:
             if verbosity > 2:

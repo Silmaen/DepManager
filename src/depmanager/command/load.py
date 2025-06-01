@@ -1,6 +1,7 @@
 """
 The load subcommand
 """
+
 from pathlib import Path
 from sys import stderr
 
@@ -55,16 +56,16 @@ def load(args, system=None):
                 file=stderr,
             )
             arg_check = False
-        if args.compiler not in ["gnu", "msvc"]:
+        if args.abi not in ["gnu", "llvm", "msvc"]:
             print(
-                f"Error in loading environment: compiler unsupported, valid are 'gnu', 'msvc'.",
+                f"Error in loading environment: abi unsupported, valid are 'gnu', 'llvm', 'msvc'.",
                 file=stderr,
             )
             arg_check = False
         if not arg_check:
             exit(22)
         err_code, result = load_environment(
-            system, config, args.kind, args.os, args.arch, args.compiler, args.glibc
+            system, config, args.kind, args.os, args.arch, args.abi, args.glibc
         )
         # finding everything
         print(result)
@@ -117,11 +118,11 @@ def add_load_parameters(sub_parsers):
         default="",
     )
     load_parser.add_argument(
-        "--compiler",
+        "--abi",
         "-c",
         type=str,
-        choices=["gnu", "msvc"],
-        help="Compiler of the packet to search, use * as wildcard",
+        choices=["gnu", "llvm", "msvc"],
+        help="Abi of the packet to search, use * as wildcard",
         default="",
     )
     load_parser.add_argument(

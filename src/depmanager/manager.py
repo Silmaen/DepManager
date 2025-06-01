@@ -40,6 +40,10 @@ def main():
     from depmanager.command.load import add_load_parameters
 
     add_load_parameters(sub_parsers)
+    # ============================ TOOLSET ==============================================
+    from depmanager.command.toolset import add_toolset_parameters
+
+    add_toolset_parameters(sub_parsers)
 
     args = parser.parse_args()
     if args.command in ["", None]:

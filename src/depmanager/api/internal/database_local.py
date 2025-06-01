@@ -1,6 +1,7 @@
 """
 Local database object.
 """
+
 from pathlib import Path
 
 from depmanager.api.internal.database_common import __DataBase, Dependency

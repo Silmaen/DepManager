@@ -1,6 +1,7 @@
 """
 Add the command for getting information.
 """
+
 possible_info = ["basedir", "cmakedir", "version"]
 
 

@@ -1,15 +1,17 @@
 """
 Remote FTP database
 """
+
 from datetime import datetime
 from pathlib import Path
 from sys import stderr
 
-from depmanager.api.internal.database_common import __RemoteDatabase
-from depmanager.api.internal.dependency import Dependency
 from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
+
+from depmanager.api.internal.database_common import __RemoteDatabase
+from depmanager.api.internal.dependency import Dependency
 
 
 class RemoteDatabaseServer(__RemoteDatabase):
@@ -125,13 +127,15 @@ class RemoteDatabaseServer(__RemoteDatabase):
             data["kind"] = "h"
         if dep.properties.kind.lower() == "any":
             data["kind"] = "a"
-        # compiler
-        if dep.properties.compiler.lower() == "gnu":
-            data["compiler"] = "g"
-        if dep.properties.compiler.lower() == "msvc":
-            data["compiler"] = "m"
-        if dep.properties.compiler.lower() == "any":
-            data["compiler"] = "a"
+        # abi
+        if dep.properties.abi.lower() == "gnu":
+            data["abi"] = "g"
+        elif dep.properties.abi.lower() == "llvm":
+            data["abi"] = "l"
+        elif dep.properties.abi.lower() == "msvc":
+            data["abi"] = "m"
+        elif dep.properties.abi.lower() == "any":
+            data["abi"] = "a"
         return data
 
     def pull(self, dep: Dependency, destination: Path):
@@ -192,7 +196,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
         :param encoder: The encoder.
         :return: A monitor call back.
         """
-        from depmanager.api.internal.common import pretty_size_print
+        from api.internal.common import pretty_size_print
 
         encoder_len = encoder.len
         if self.verbosity > 0:

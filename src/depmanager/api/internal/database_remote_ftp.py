@@ -1,6 +1,7 @@
 """
 Remote FTP database
 """
+
 import ftplib
 from pathlib import Path
 from sys import stderr

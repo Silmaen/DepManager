@@ -1,10 +1,12 @@
 """
 Machine identification.
 """
+
 import platform
 from sys import stderr
+from depmanager.api.internal.toolset import Toolset
 
-compilers = ["gnu", "msvc"]
+abi = ["gnu", "llvm", "msvc"]
 oses = ["Windows", "Linux"]
 arches = ["x86_64", "aarch64"]
 
@@ -38,19 +40,20 @@ class Machine:
     Class holding machine information
     """
 
-    def __init__(self, do_init: bool = False):
-        self.default_compiler = ""
+    def __init__(self, do_init: bool = False, toolset:Toolset = None):
+        self.default_abi = ""
         self.glibc = ""
         self.os = ""
         self.arch = ""
         self.os_version = ""
         self.initiated = False
+        self.toolset = toolset
         if do_init:
             self.__introspection()
 
     def __repr__(self):
         self.__introspection()
-        sys_info = f"{self.os}, {self.os_version}, {self.arch}, {self.default_compiler}"
+        sys_info = f"{self.os}, {self.os_version}, {self.arch}, {self.default_abi}"
         if self.os == "Linux":
             sys_info += f", {self.glibc}"
         return sys_info
@@ -60,7 +63,9 @@ class Machine:
             return
         self.os = format_os(platform.system())
         self.arch = format_arch(platform.machine())
-        self.default_compiler = "gnu"
+        self.default_abi = "gnu"
+        if self.toolset not in [None, ""]:
+            self.default_abi = self.toolset.abi
         if self.os == "Linux":
             self.glibc = platform.libc_ver()[1]
             try:
