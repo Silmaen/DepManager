@@ -5,6 +5,7 @@ Manage the remotes
 from sys import stderr
 
 possible_remote = ["list", "ls", "add", "del", "rm", "sync", "info"]
+deprecated = {"list": "ls", "del": "rm"}
 
 
 class RemoteCommand:
@@ -138,6 +139,11 @@ def remote(args, system=None):
     if args.what not in possible_remote:
         return
     rem = RemoteCommand(args.verbose, system)
+    if args.what in deprecated.keys():
+        print(
+            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead.",
+            file=stderr,
+        )
     if args.what in ["list", "ls"]:
         rem.list()
     elif args.what == "add":

@@ -119,7 +119,7 @@ def add_load_parameters(sub_parsers):
     )
     load_parser.add_argument(
         "--abi",
-        "-c",
+        "-b",
         type=str,
         choices=["gnu", "llvm", "msvc"],
         help="Abi of the packet to search, use * as wildcard",

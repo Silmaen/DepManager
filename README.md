@@ -45,14 +45,14 @@ on parameters or usage.
 
 In the base command you can find:
 
-| command | subcommands                         | description                        |
-|---------|-------------------------------------|------------------------------------|
-| info    | basedir, cmakedir, version          | info on local instance             |
-| get     |                                     | Get the config package             |
-| pack    | pull, push, add, del, rm, query, ls | Manage packages                    |
-| remote  | list, ls, add, del, rm, info        | Manage the list of distant servers |
-| build   |                                     | Build a new package                |
-| toolset | list, ls, add, del,rm               | Manage toolsets                    |
+| command | subcommands                | description                        |
+|---------|----------------------------|------------------------------------|
+| info    | basedir, cmakedir, version | info on local instance             |
+| get     |                            | Get the config package             |
+| pack    | pull, push, add, rm, ls    | Manage packages                    |
+| remote  | list, ls, add, rm, info    | Manage the list of distant servers |
+| build   |                            | Build a new package                |
+| toolset | list, ls, add, rm          | Manage toolsets                    |
 
 In the following, `<query>` designate something representing the dependency's description.
 The syntax reads:  `--predicate(-p) <name>:<version> --type(-t)
@@ -101,20 +101,20 @@ cmake integration.
 
 Actions on packages.
 
-#### query or ls
+#### ls
 
-`depmanager pack query|ls <query> [--transitive(-t)] <remote>` Simply do a search in the given remote (in local if
+`depmanager pack ls <query> [--transitive(-t)] <remote>` Simply do a search in the given remote (in local if
 nothing given) and print the result.
 
 The `--transitive(-t)` flag will allow to use transitive query, meaning to search for local then remote.
 
-#### add, del or rm
+#### add, rm
 
 `depmanager pack add <location>` Will add a package to the local database. `<location>` can be a
 folder, then it must contain a properly formatted `edp.info` file. Or an archive (.zip, .tgz or .tar.gz
 file format allowed). The uncompressed archive must contain a properly formatted `edp.info` file.
 
-`depmanager pack del|rm <query> <remote> [-r]` Will remove from local cache all package matching the query.
+`depmanager pack rm <query> <remote> [-r]` Will remove from local cache all package matching the query.
 
 The `-r` option allows operation on multiple packages (local only), else the command will return an error if multiple
 package matches the query.
@@ -154,7 +154,7 @@ subcommands:
         * `srv` a dedicated server see [gitHub](https://github.com/Silmaen/DepManagerServer)
         * `srvs` a dedicated server with secure connexion see [gitHub](https://github.com/Silmaen/DepManagerServer)
     * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
-* `del|rm <remote>` remove the designated remote if exists.
+* `rm <remote>` remove the designated remote if exists.
 * `sync <remote> [--push-only|--pull-only] [--dry-run]` push to remote all local package that does not already
   exist on remote. Pull local package that have a newer version on the remote. If no remote given, it will use the
   default one.
@@ -167,7 +167,7 @@ Manage the toolset list.
 * `list` or `ls` for listing the toolsets.
 * `add` add a new toolset to the list
     * `--name(-n) <name> --compiler(-c) <compiler_path> [--abi(-b) <abi>`
-* `del|rm --name(-n) <name>` remove a toolset
+* `rm --name(-n) <name>` remove a toolset
 
 ### build
 
