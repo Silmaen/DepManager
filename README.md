@@ -429,14 +429,15 @@ Among things:
         * [ ] Possibility to store the recipes in remote
         * [ ] Auto build recipe if neither local nor remote found.
 * version 0.5.x
-    * [ ] Add a sorting order for remotes.
-        * [ ] Searching across remotes with final package sorting.
-        * [ ] Allow auto-pull best-fitting package
     * [ ] Add more cmake commands
         * [ ] Check for package updates
         * [ ] Allow to retrieve specific package
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
+* version 0.4.x
+    * [ ] Add a sorting order for remotes.
+        * [ ] Searching across remotes with final package sorting.
+        * [ ] Allow auto-pull best-fitting package
     * [ ] Add concept of package dependencies
         * [ ] Add dependency list in built packages.
             * [ ] Construct dependency based on build.
@@ -445,10 +446,9 @@ Among things:
         * [ ] Allow pull package with dependencies.
         * [ ] Dependency checks during load.
         * [ ] Recursive load of package.
-* version 0.4.x
+* version 0.4.0 -- 2025-06-16
     * [X] Add concept of toolset.
         * [X] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
-        * [ ] Allow to define toolset in recipe.
         * [X] Add concept of ABi for the compilers.
         * [X] Use toolset in build.
         * [X] Use toolset in queries.

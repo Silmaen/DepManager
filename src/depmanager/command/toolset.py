@@ -109,9 +109,9 @@ def toolset(args, system=None):
             args.name,
             args.compiler,
             args.abi,
-            args.os,
-            args.arch,
-            args.glibc,
+            #  args.os,
+            #  args.arch,
+            #  args.glibc,
             args.default,
         )
     elif args.what in ["del", "rm"]:

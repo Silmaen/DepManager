@@ -423,8 +423,10 @@ class LocalSystem:
         """
         if len(self.toolsets) == 0:
             return None
+        if name in [None, ""]:
+            self.toolsets[self.default_toolset]
         if name in self.toolsets:
             return self.toolsets[name]
-        return self.toolsets[self.default_toolset]
+        return None
 
     #
