@@ -32,12 +32,12 @@ class ToolsetCommand:
                 to_print = (
                     f" {default} [ {key} ] {value.compiler_path} - {value.abi} - "
                 )
-                if value.autofill:
-                    to_print += "native"
-                else:
-                    to_print += f"{value.os}/{value.arch}"
-                if value.glibc not in [None, ""]:
-                    to_print += f" glibc {value.glibc}"
+                # if value.autofill:
+                #    to_print += "native"
+                # else:
+                #    to_print += f"{value.os}/{value.arch}"
+                # if value.glibc not in [None, ""]:
+                #    to_print += f" glibc {value.glibc}"
                 print(to_print)
 
     def add(
@@ -68,6 +68,11 @@ class ToolsetCommand:
                 f"ERROR please give a compiler_path for adding a toolset.", file=stderr
             )
             exit(-666)
+        if self.verbosity > 3:
+            print(
+                f"Adding toolset {name} with compiler {compiler_path}, abi {abi}, "
+                f"os {os}, arch {arch}, glibc {glibc}, default {default}"
+            )
         self.toolset_instance.add_toolset(
             name, compiler_path, abi, os, arch, glibc, default
         )

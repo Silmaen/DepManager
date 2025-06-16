@@ -126,7 +126,11 @@ def add_build_parameters(sub_parsers):
         help="Disable the push after successful build.",
     )
     build_parser.add_argument(
-        "--toolset", "-t", type=str, default="", help="Define the toolset if not default."
+        "--toolset",
+        "-t",
+        type=str,
+        default="",
+        help="Define the toolset if not default.",
     )
     build_parser.add_argument(
         "--cross-c", type=str, default="", help="Define the cross compiler for C."

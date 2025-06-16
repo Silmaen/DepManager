@@ -381,8 +381,10 @@ class LocalSystem:
             self.toolsets[name].from_dict(info)
             if default or self.default_toolset in [None, ""]:
                 if self.default_toolset not in [None, ""]:
-                    self.toolsets[self.default_toolset].default =False
-                    self.config["toolsets"][self.default_toolset] = self.toolsets[self.default_toolset].to_dict()
+                    self.toolsets[self.default_toolset].default = False
+                    self.config["toolsets"][self.default_toolset] = self.toolsets[
+                        self.default_toolset
+                    ].to_dict()
                 self.default_toolset = name
                 self.toolsets[name].default = True
             self.config["toolsets"][name] = self.toolsets[name].to_dict()
@@ -402,11 +404,14 @@ class LocalSystem:
         if name not in self.toolsets:
             return False
         self.toolsets.pop(name)
+        self.config["toolsets"].pop(name)
         if name == self.default_toolset:
             if len(self.toolsets) == 0:
                 self.default_toolset = ""
             else:
                 self.default_toolset = list(self.toolsets.keys())[0]
+                self.config["toolsets"][self.default_toolset]["default"] = True
+                self.toolsets[self.default_toolset].default = True
         self.write_config_file()
         return True
 

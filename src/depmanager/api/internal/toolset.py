@@ -8,11 +8,11 @@ from sys import stderr
 class Toolset:
 
     def __init__(
-            self,
-            name: str,
-            abi: str = "",
-            compiler_path: str = "",
-            default: bool = False,
+        self,
+        name: str,
+        abi: str = "",
+        compiler_path: str = "",
+        default: bool = False,
     ):
         self.name = name
         self.abi = abi
