@@ -131,7 +131,7 @@ class RecipeBuilder:
                 if self.toolset.abi == "gnu":
                     out += ' -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libstdc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libstdc++"'
                 elif self.toolset.abi == "llvm":
-                    out += ' -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++"'
+                    out += ' -DCMAKE_CXX_FLAGS_INIT="-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++"'
                 else:
                     print(
                         f"ERROR: unknown Clang ABI: {self.toolset.abi}.",
@@ -211,6 +211,8 @@ class RecipeBuilder:
                 dep["os"] = self.os
             if "arch" not in dep:
                 dep["arch"] = self.arch
+            if "abi" not in dep:
+                dep["abi"] = self.abi
             result = self.local.local_database.query(dep)
             if len(result) == 0:
                 print(
@@ -219,6 +221,10 @@ class RecipeBuilder:
                 )
                 ok = False
                 break
+            if self.local.verbosity > 2:
+                print(
+                    f"package {self.recipe.to_str()}: dependency {dep['name']} found: {result[0].properties.get_as_str()}",
+                )
             dep_list.append(str(result[0].get_cmake_config_dir()).replace("\\", "/"))
         return ok, dep_list
 
