@@ -400,8 +400,14 @@ class LocalSystem:
         :param name: Name of the toolset to remove.
         """
         if name in [None, str]:
+            if self.verbosity > 0:
+                print("WARNING: Empty toolset name.")
             return False
         if name not in self.toolsets:
+            if self.verbosity > 0:
+                print(
+                    f"WARNING: no toolset {name} found in database: {list(self.toolsets.keys())}."
+                )
             return False
         self.toolsets.pop(name)
         self.config["toolsets"].pop(name)

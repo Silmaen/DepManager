@@ -44,7 +44,7 @@ class ToolsetCommand:
         self,
         name: str,
         compiler_path: str,
-        abi: str,
+        abi: str = "",
         os: str = "",
         arch: str = "",
         glibc: str = "",
@@ -106,13 +106,13 @@ def toolset(args, system=None):
         rem.list()
     elif args.what == "add":
         rem.add(
-            args.name,
-            args.compiler,
-            args.abi,
+            name=args.name,
+            compiler_path=args.compiler,
+            abi=args.abi,
             #  args.os,
             #  args.arch,
             #  args.glibc,
-            args.default,
+            default=args.default,
         )
     elif args.what in ["del", "rm"]:
         rem.delete(args.name)
