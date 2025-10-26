@@ -121,7 +121,7 @@ def pack(args, system=None):
                     if args.verbose > 0:
                         print(f"Keeping package {dep.properties.get_as_str()}")
         return
-    if args.what in ["ls", "del", "pull", "push"]:
+    if args.what in ["rm", "del", "pull", "push"]:
         if len(deps) == 0:
             print("WARNING: No package matching the query.", file=stderr)
             return
