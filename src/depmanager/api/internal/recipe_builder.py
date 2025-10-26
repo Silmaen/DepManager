@@ -90,12 +90,6 @@ class RecipeBuilder:
                 file=stderr,
             )
             return None
-        if not (source_dir / "CMakeLists.txt").exists():
-            print(
-                f"Cannot build {self.recipe.to_str()}: could not find CMakeLists.txt in dir {source_dir}",
-                file=stderr,
-            )
-            return None
         if not access(source_dir, R_OK | W_OK):
             if self.local.verbosity > 0:
                 print(
@@ -282,6 +276,12 @@ class RecipeBuilder:
         if source_dir is None:
             return False
         self.recipe.source()
+        if not (source_dir / "CMakeLists.txt").exists():
+            print(
+                f"Cannot build {self.recipe.to_str()}: could not find CMakeLists.txt in dir {source_dir}",
+                file=stderr,
+            )
+            return None
 
         #
         #

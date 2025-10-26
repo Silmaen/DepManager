@@ -107,6 +107,9 @@ def load_environment(
             continue
         #
         # search package
+
+        if verbosity > 2:
+            print(f"    Real query: {query}.")
         res1 = pacman.query(query, transitive=False)
         new_path = ""
         check_newer = conf.do_pull_newer()
@@ -123,12 +126,12 @@ def load_environment(
                 continue
             if conf.do_pull():
                 if verbosity > 2:
-                    print(f"    Trying to pull")
+                    print(f"    Trying to pull {query}")
                 res = pacman.query(query, "default", transitive=False)
                 if len(res) == 0:
                     err_code = 1
                     if verbosity > 2:
-                        print(f"    Not Found on server!")
+                        print(f"    {query} Not Found on server!")
                     continue
                 pacman.add_from_remote(res[0], "default")
                 res = pacman.query(query, transitive=False)
