@@ -446,10 +446,12 @@ Among things:
         * [ ] Allow pull package with dependencies.
         * [ ] Dependency checks during load.
         * [ ] Recursive load of package.
+* version 0.4.2 -- 2025-10-26
+    * [X] allow to introduce a missing CMakelists.txt file in recipe source step.
 * version 0.4.1 -- 2025-07-01
     * [X] Bugfixes
         * [X] Fix toolset management command.
-        * [X] Better Handling of llvm abi iin ecipe builder.
+        * [X] Better Handling of llvm abi in recipe builder.
 * version 0.4.0 -- 2025-06-16
     * [X] Add concept of toolset.
         * [X] Tool set defines arch, os and compilers; stored in config.ini; with a default one.
