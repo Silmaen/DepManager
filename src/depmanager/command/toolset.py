@@ -4,7 +4,7 @@ Manage the toolsets
 
 from sys import stderr
 
-from depmanager.api.internal.messaging import log
+from depmanager.api.internal.messaging import log, message
 
 possible_toolset = ["list", "ls", "add", "del", "rm"]
 deprecated = {"list": "ls", "del": "rm"}
@@ -25,9 +25,13 @@ class ToolsetCommand:
         Lists the defined remotes.
         """
         toolsets = self.toolset_instance.get_toolset_list()
+        if len(toolsets) == 0:
+            log.warn("No toolset defined.")
+            return
+        message("List of toolsets:")
         for key, value in toolsets.items():
             default = [" ", "*"][value.default]
-            log.info(f" {default} [ {key} ] {value.compiler_path} - {value.abi} - ")
+            message(f" {default} [ {key} ] {value.compiler_path} - {value.abi} - ")
 
     def add(
         self,
@@ -94,9 +98,6 @@ def toolset(args, system=None):
             name=args.name,
             compiler_path=args.compiler,
             abi=args.abi,
-            #  args.os,
-            #  args.arch,
-            #  args.glibc,
             default=args.default,
         )
     elif args.what in ["del", "rm"]:

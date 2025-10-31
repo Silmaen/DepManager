@@ -23,6 +23,10 @@ class RemoteCommand:
         Lists the defined remotes.
         """
         remotes = self.remote_instance.get_remote_list()
+        if len(remotes) == 0:
+            log.warn("No remotes defined.")
+            return
+        message("List of remotes:")
         for key, value in remotes.items():
             info = value.get_remote_info()
             default = [" ", "*"][info["default"]]

@@ -86,6 +86,9 @@ def pack(args, system=None):
     else:
         deps = pacman.query(query, remote_name, transitivity)
     if args.what in ["query", "ls"]:
+        if len(deps) == 0:
+            log.warn("No package matching the query.")
+            return
         message("List of matching packages:")
         pacman.get_default_remote()
         for dep in deps:
