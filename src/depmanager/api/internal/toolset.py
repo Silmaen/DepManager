@@ -2,7 +2,7 @@
 Toolset defining tools, abi and environment.
 """
 
-from sys import stderr
+from depmanager.api.internal.messaging import log
 
 
 class Toolset:
@@ -23,12 +23,14 @@ class Toolset:
         if "compiler_path" in data:
             self.compiler_path = data["compiler_path"]
         else:
-            print(f"Bad toolchain {self.name}: no compiler_path defined.", file=stderr)
+            log.warn(
+                f"Bad toolchain {self.name}: no compiler_path defined.",
+            )
             return
         if "abi" in data:
             self.abi = data["abi"]
         else:
-            print(f"Bad toolchain {self.name}: no abi defined.", file=stderr)
+            log.warn(f"Bad toolchain {self.name}: no abi defined.")
             return
         if "default" in data:
             self.default = data["default"]

@@ -3,9 +3,9 @@ Database Object.
 """
 
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.internal.dependency import Dependency, Props
+from depmanager.api.internal.messaging import log
 
 
 class __DataBase:
@@ -13,8 +13,7 @@ class __DataBase:
     Abstract class describing database.
     """
 
-    def __init__(self, verbosity: int = 0):
-        self.verbosity = verbosity
+    def __init__(self):
         self.valid_shape = True
         self.dependencies = []
 
@@ -77,9 +76,8 @@ class __RemoteDatabase(__DataBase):
         user: str = "",
         cred: str = "",
         kind: str = "invalid",
-        verbosity: int = 0,
     ):
-        super().__init__(verbosity)
+        super().__init__()
         self.destination = destination
         self.default = default
         self.kind = kind
@@ -164,9 +162,8 @@ class __RemoteDatabase(__DataBase):
             return
         result = self.query(dep)
         if len(result) != 0 and not force:
-            print(
-                f"WARNING: Cannot push dependency {dep.properties.name}: already on server.",
-                file=stderr,
+            log.warn(
+                f"WARNING: Cannot push dependency {dep.properties.name}: already on server."
             )
             return
         destination = f"{dep.properties.name}/{dep.properties.hash()}.tgz"
@@ -201,15 +198,13 @@ class __RemoteDatabase(__DataBase):
             return
         result = self.query(dep)
         if len(result) == 0:
-            print(
-                f"WARNING: Cannot suppress dependency {dep.properties.name}: not on server.",
-                file=stderr,
+            log.warn(
+                f"Cannot suppress dependency {dep.properties.name}: not on server."
             )
             return
         if len(result) > 1:
-            print(
-                f"WARNING: Cannot suppress dependency {dep.properties.name}: multiple dependencies match on server.",
-                file=stderr,
+            log.warn(
+                f"Cannot suppress dependency {dep.properties.name}: multiple dependencies match on server."
             )
             return
         self.suppress(dep)
@@ -232,7 +227,7 @@ class __RemoteDatabase(__DataBase):
         TO IMPLEMENT IN DERIVED CLASS.
         """
         self.valid_shape = False
-        print("WARNING: __RemoteDatabase::__connect() not implemented.", file=stderr)
+        log.warn("WARNING: __RemoteDatabase::__connect() not implemented.")
 
     def get_file(self, distant_name: str, destination: Path):
         """
@@ -242,9 +237,8 @@ class __RemoteDatabase(__DataBase):
         :param destination: Destination path.
         """
         self.valid_shape = False
-        print(
-            f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented.",
-            file=stderr,
+        log.warn(
+            f"WARNING: __RemoteDatabase::get_file({distant_name},{destination}) not implemented."
         )
 
     def send_file(self, source: Path, distant_name: str):
@@ -255,9 +249,8 @@ class __RemoteDatabase(__DataBase):
         :param distant_name: Name in the distant location.
         """
         self.valid_shape = False
-        print(
-            f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented.",
-            file=stderr,
+        log.warn(
+            f"WARNING: __RemoteDatabase::send_file({source}, {distant_name}) not implemented."
         )
 
     def get_server_version(self):
@@ -266,10 +259,7 @@ class __RemoteDatabase(__DataBase):
         :return: Server version.
         """
         self.valid_shape = False
-        print(
-            f"WARNING: __RemoteDatabase::get_server_version() not implemented.",
-            file=stderr,
-        )
+        log.warn(f"WARNING: __RemoteDatabase::get_server_version() not implemented.")
 
     def suppress(self, dep: Dependency) -> bool:
         """
@@ -279,7 +269,7 @@ class __RemoteDatabase(__DataBase):
         :return: True if success.
         """
         self.valid_shape = False
-        print(f"WARNING: __RemoteDatabase::delete({dep}) not implemented.", file=stderr)
+        log.warn(f"WARNING: __RemoteDatabase::delete({dep}) not implemented.")
         return False
 
     def get_remote_info(self) -> dict:

@@ -6,6 +6,7 @@ from pathlib import Path
 from sys import stderr
 
 from depmanager.api.builder import Builder
+from depmanager.api.internal.messaging import log
 from depmanager.api.package import PackageManager
 
 
@@ -18,10 +19,10 @@ def build(args, system=None):
 
     location = Path(args.location).resolve()
     if not location.exists():
-        print(f"ERROR location {location} does not exists.", file=stderr)
+        log.fatal(f"location {location} does not exists.", file=stderr)
         exit(-666)
     if not location.is_dir():
-        print(f"ERROR location {location} must be a folder.", file=stderr)
+        log.fatal(f"location {location} must be a folder.", file=stderr)
         exit(-666)
     #
     # Cross infos
@@ -36,7 +37,7 @@ def build(args, system=None):
         cross_info["CROSS_OS"] = args.cross_os
     cross_info["SINGLE_THREAD"] = args.single_thread
 
-    pacman = PackageManager(system=system, verbosity=system.verbosity)
+    pacman = PackageManager(system=system)
     #
     # check for version in server
     remote_name = pacman.remote_name(args)
@@ -45,7 +46,7 @@ def build(args, system=None):
     depth = args.recursive_depth
     if args.recursive:
         depth = -1
-    print(f"Search recursive until {depth}")
+    log.info(f"Search recursive until {depth}")
     builder = Builder(
         location,
         local=system,
@@ -59,14 +60,13 @@ def build(args, system=None):
         skip_push=args.no_push,
     )
     if not builder.has_recipes():
-        print(f"ERROR: no recipe found in {location}", file=stderr)
+        log.fatal(f"no recipe found in {location}", file=stderr)
         exit(-666)
-    print(f"found {len(builder.recipes)} in the given source folder")
+    log.info(f"found {len(builder.recipes)} in the given source folder")
 
     # recipe build
-    if pacman.verbosity > 2:
-        for rep in builder.recipes:
-            print(f" - {rep.to_str()}")
+    for rep in builder.recipes:
+        log.info(f" - {rep.to_str()}")
     error_count = builder.build_all()
     if error_count > 0:
         exit(-666)

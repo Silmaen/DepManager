@@ -3,7 +3,8 @@ Instance of toolsets manager.
 """
 
 from pathlib import Path
-from sys import stderr
+
+from depmanager.api.internal.messaging import log
 
 
 class ToolsetsManager:
@@ -11,17 +12,16 @@ class ToolsetsManager:
     Toolset manager.
     """
 
-    def __init__(self, system=None, verbosity: int = 0):
+    def __init__(self, system=None):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
 
-        self.verbosity = verbosity
         if type(system) is LocalSystem:
             self.__sys = system
         elif type(system) is LocalManager:
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem(verbosity=verbosity)
+            self.__sys = LocalSystem()
 
     def get_toolset_list(self):
         """
@@ -83,7 +83,7 @@ class ToolsetsManager:
         if self.check(data):
             self.__sys.add_toolset(name, data, default)
         else:
-            print(f"Could not add tool set.", file=stderr)
+            log.error(f"Could not add tool set.")
 
     def remove_toolset(self, name: str):
         """
@@ -95,9 +95,7 @@ class ToolsetsManager:
     def check(self, data):
         status = True
         if data["abi"] not in ["gnu", "llvm", "msvc"]:
-            print(
-                f"Error: ABI should be one of {['gnu', 'llvm', 'msvc']}.", file=stderr
-            )
+            log.error(f"ABI should be one of {['gnu', 'llvm', 'msvc']}.")
             status = False
         cl = Path(data["compiler_path"]).stem
         if data["abi"] == "gnu":
@@ -106,21 +104,15 @@ class ToolsetsManager:
                 and not cl.startswith("g++")
                 and not cl.startswith("clang")
             ):
-                print(
-                    f"Error: for gnu abi compiler should be either gcc, g++ or clang",
-                    file=stderr,
-                )
+                log.error(f"for gnu abi compiler should be either gcc, g++ or clang")
                 status = False
         elif data["abi"] == "llvm":
             if not cl.startswith("clang"):
-                print(f"Error: for llvm abi compiler should be clang", file=stderr)
+                log.error(f"for llvm abi compiler should be clang")
                 status = False
         elif data["abi"] == "msvc":
             if not cl.endswith("cl"):
-                print(
-                    f"Error: for msvc abi compiler should be either cl or clang-cl",
-                    file=stderr,
-                )
+                log.error(f"for msvc abi compiler should be either cl or clang-cl")
                 status = False
 
         return status

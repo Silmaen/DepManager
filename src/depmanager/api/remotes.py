@@ -3,7 +3,8 @@ Instance of remotes manager.
 """
 
 from copy import deepcopy
-from sys import stderr
+
+from depmanager.api.internal.messaging import log
 
 
 class RemotesManager:
@@ -11,17 +12,16 @@ class RemotesManager:
     Remotes manager.
     """
 
-    def __init__(self, system=None, verbosity: int = 0):
+    def __init__(self, system=None):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
 
-        self.verbosity = verbosity
         if type(system) is LocalSystem:
             self.__sys = system
         elif type(system) is LocalManager:
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem(verbosity=verbosity)
+            self.__sys = LocalSystem()
 
     def get_remote_list(self):
         """
@@ -154,22 +154,20 @@ class RemotesManager:
         """
         from depmanager.api.package import PackageManager
 
-        pkg_mgr = PackageManager(self.__sys, self.verbosity)
+        pkg_mgr = PackageManager(
+            self.__sys,
+        )
         local_db = self.__sys.local_database
         remote_db_name = self.get_safe_remote_name(name, default)
         remote_db = self.get_safe_remote(name, default)
         if remote_db is None:
-            print(f"ERROR remote {name} not found.", file=stderr)
+            log.fatal(f"remote {name} not found.")
             exit(-666)
         if remote_db_name in ["", None]:
-            print(
-                f"ERROR remote {name}({default}) -> {remote_db_name} not found.",
-                file=stderr,
-            )
+            log.fatal(f"remote {name}({default}) -> {remote_db_name} not found.")
             exit(-666)
         all_local = local_db.query()
-        if self.verbosity > 0:
-            print(f"Syncing with server: {remote_db_name}")
+        log.info(f"Syncing with server: {remote_db_name}")
 
         # Compare local and remote
         for single_local in all_local:
@@ -177,8 +175,7 @@ class RemotesManager:
             is_up_to_date = False
             just_pulled = False
             do_pull = True
-            if self.verbosity > 1:
-                print(f"Check Local Package: {single_local.properties.get_as_str()}")
+            log.info(f"Check Local Package: {single_local.properties.get_as_str()}")
             #
             # check locally if there is already a newer version
             #
@@ -195,27 +192,22 @@ class RemotesManager:
             # pull newer version of packages
             #
             if pull_newer and do_pull:
-                if self.verbosity > 3:
-                    print(f"Query to remote: {query_remote}")
+                log.debug(f"Query to remote: {query_remote}")
                 remote_dep_list = remote_db.query(query_remote)
                 if len(remote_dep_list) == 0:
-                    if self.verbosity > 3:
-                        print(f"No Similar Package found on remote.")
+                    log.debug(f"No Similar Package found on remote.")
                 else:
-                    if self.verbosity > 3:
-                        print(
-                            f"found {len(remote_dep_list)} similar package{['','s'][len(remote_dep_list)>0]}"
-                        )
+                    log.debug(
+                        f"found {len(remote_dep_list)} similar package{['','s'][len(remote_dep_list)>0]}"
+                    )
                     # filter to remove older version
                     highest_version = ""
                     for dep in remote_dep_list:
                         if dep.version_greater(highest_version):
                             highest_version = dep.properties.version
-                    if self.verbosity > 3:
-                        print(f"Highest version found: {highest_version}.")
+                    log.debug(f"Highest version found: {highest_version}.")
                     if highest_version == "":
-                        if self.verbosity > 3:
-                            print(f"Remote has only lower version in database.")
+                        log.debug(f"Remote has only lower version in database.")
                     else:
                         # get list of newest
                         filtered_list = []
@@ -227,13 +219,11 @@ class RemotesManager:
                             key=lambda item: item.properties.build_date,
                             reverse=True,
                         )
-                        if self.verbosity > 3:
-                            print(
-                                f"After version filter, remains {len(filtered_list)}."
-                            )
+                        log.debug(
+                            f"After version filter, remains {len(filtered_list)}."
+                        )
                         if len(filtered_list) == 0:
-                            if self.verbosity > 3:
-                                print(f"remote contains only older versions.")
+                            log.debug(f"remote contains only older versions.")
                         else:
                             if highest_version == single_local.properties.version:
                                 # same version, look at build date
@@ -242,56 +232,39 @@ class RemotesManager:
                                     == single_local.properties.build_date
                                 ):
                                     # up-to-date
-                                    if self.verbosity > 1:
-                                        print(
-                                            f" ---- Local Package is already up to date."
-                                        )
+                                    log.info(
+                                        f" ---- Local Package is already up to date."
+                                    )
                                     is_up_to_date = True
                                 elif (
                                     filtered_list[0].properties.build_date
                                     > single_local.properties.build_date
                                 ):
-                                    if self.verbosity > 3:
-                                        print(
-                                            f"suppress [local] {single_local.properties.get_as_str()}"
-                                        )
-                                        print(
-                                            f"pull    [{remote_db_name}] {filtered_list[0].properties.get_as_str()}"
-                                        )
-                                    elif self.verbosity > 1:
-                                        print(
-                                            f" <-X- newer build date found on server PULL and replace local."
-                                        )
-                                    elif self.verbosity > 0:
-                                        print(
-                                            f" <-X- [{single_local.properties.get_as_str()}] force-pull from server: ",
-                                            end="",
-                                        )
+                                    log.debug(
+                                        f"suppress [local] {single_local.properties.get_as_str()}"
+                                    )
+                                    log.debug(
+                                        f"pull    [{remote_db_name}] {filtered_list[0].properties.get_as_str()}"
+                                    )
+                                    log.info(
+                                        f" <-X- [{single_local.properties.get_as_str()}] force-pull from server: "
+                                    )
                                     just_pulled = True
                                     if not dry_run:
                                         pkg_mgr.remove_package(single_local)
                                         pkg_mgr.add_from_remote(
                                             filtered_list[0], remote_db_name
                                         )
-                                    else:
-                                        if self.verbosity == 1:
-                                            print()
                                 else:
-                                    if self.verbosity > 3:
-                                        print(
-                                            f"suppress [{remote_db_name}] {filtered_list[0].properties.get_as_str()}"
-                                        )
-                                        print(
-                                            f"push    [local] {single_local.properties.get_as_str()}"
-                                        )
-                                    elif self.verbosity > 1:
-                                        print(
-                                            f" -X-> older build date found on server PUSH and replace on remote."
-                                        )
-                                    elif self.verbosity > 0:
-                                        print(
-                                            f" -X-> [{single_local.properties.get_as_str()}] force-push to server."
-                                        )
+                                    log.debug(
+                                        f"suppress [{remote_db_name}] {filtered_list[0].properties.get_as_str()}"
+                                    )
+                                    log.debug(
+                                        f"push    [local] {single_local.properties.get_as_str()}"
+                                    )
+                                    log.info(
+                                        f" -X-> [{single_local.properties.get_as_str()}] force-push to server."
+                                    )
                                     just_pulled = True
                                     if not dry_run:
                                         pkg_mgr.remove_package(
@@ -302,16 +275,12 @@ class RemotesManager:
                                         )
                             else:
                                 # newer version found!
-                                if self.verbosity > 3:
-                                    print(
-                                        f"pull    [{remote_db_name}] {filtered_list[0].properties.get_as_str()}"
-                                    )
-                                elif self.verbosity > 1:
-                                    print(f" <--- Newer version: pull from server.")
-                                elif self.verbosity > 0:
-                                    print(
-                                        f" <--- [{single_local.properties.get_as_str()}] pull from server"
-                                    )
+                                log.debug(
+                                    f"pull    [{remote_db_name}] {filtered_list[0].properties.get_as_str()}"
+                                )
+                                log.info(
+                                    f" <--- [{single_local.properties.get_as_str()}] pull from server"
+                                )
                                 just_pulled = True
                                 if not dry_run:
                                     pkg_mgr.add_from_remote(
@@ -325,46 +294,34 @@ class RemotesManager:
                 continue
             query_for_push = deepcopy(single_local.properties)
             query_for_push.build_date = "*"
-            if self.verbosity > 3:
-                print(f"Query for push: {query_for_push.get_as_str()}")
+            log.debug(f"Query for push: {query_for_push.get_as_str()}")
             result = remote_db.query(query_for_push)
             if len(result) > 1:
-                print(
-                    f"ERROR: {single_local.properties.get_as_str()} Too many version date on remote, please correct the remote."
+                log.error(
+                    f"{single_local.properties.get_as_str()} Too many version date on remote, please correct the remote."
                 )
                 continue
             to_del = None
             if len(result) > 0:
                 to_del = result[0]
                 if not single_local.is_newer(to_del.properties.build_date):
-                    if self.verbosity > 2:
-                        print(f"Newer version on the server, not pushing.")
+                    log.info(f"Newer version on the server, not pushing.")
                     continue
-            if self.verbosity > 3:
+            if to_del is not None:
+                log.info(
+                    f"suppress [{remote_db_name}] {to_del.properties.get_as_str()}"
+                )
+                log.info(f"push    [local] {single_local.properties.get_as_str()}")
                 if to_del is not None:
-                    print(
-                        f"suppress [{remote_db_name}] {to_del.properties.get_as_str()}"
-                    )
-                print(f"push    [local] {single_local.properties.get_as_str()}")
-            elif self.verbosity > 1:
-                if to_del is not None:
-                    print(
-                        f" -X-> older build date found on server PUSH and replace on remote."
-                    )
-                else:
-                    print(f" ---> package not found on the server, pushing it.")
-            elif self.verbosity > 0:
-                if to_del is not None:
-                    print(
+                    log.info(
                         f" -X-> [{single_local.properties.get_as_str()}] force-push to server: "
                     )
                 else:
-                    print(
+                    log.info(
                         f" ---> [{single_local.properties.get_as_str()}] push to server: "
                     )
             if not dry_run:
                 if to_del is not None:
                     pkg_mgr.remove_package(to_del, remote_db_name)
                 pkg_mgr.add_to_remote(single_local, remote_db_name)
-        if self.verbosity > 0:
-            print("Syncing done.")
+        log.info("Syncing done.")

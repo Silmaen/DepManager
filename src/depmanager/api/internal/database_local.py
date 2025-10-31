@@ -5,6 +5,7 @@ Local database object.
 from pathlib import Path
 
 from depmanager.api.internal.database_common import __DataBase, Dependency
+from depmanager.api.internal.messaging import log
 
 packing_formats = ["tgz", "zip"]
 
@@ -14,8 +15,8 @@ class LocalDatabase(__DataBase):
     Database stored in the local machine.
     """
 
-    def __init__(self, base_path: Path, verbosity: int = 0):
-        super().__init__(verbosity)
+    def __init__(self, base_path: Path):
+        super().__init__()
         self.base_path = Path()
         if not base_path.exists():
             self.valid_shape = False
@@ -28,11 +29,10 @@ class LocalDatabase(__DataBase):
 
     def reload(self):
         """
-        Reload database by analysing the folder.
+        Reload database by analyzing the folder.
         """
         if self.valid_shape:
-            if self.verbosity > 3:
-                print("Reload local data base.")
+            log.debug("Reload local data base.")
             self.dependencies.clear()
             for depend in self.base_path.iterdir():
                 dep = Dependency(depend)

@@ -2,6 +2,8 @@
 The get subcommand
 """
 
+from depmanager.api.internal.messaging import message
+
 
 def get(args, system=None):
     """
@@ -21,19 +23,19 @@ def get(args, system=None):
             dict_query["glibc"] = f"{mac.glibc}"
     deps = pack_manager.query(dict_query)
     if len(deps) > 0:
-        print(deps[-1].get_cmake_config_dir())
+        message(deps[-1].get_cmake_config_dir())
         return
     # If not found... search and get from remote.
     name = pack_manager.get_default_remote()
     if name in ["", None]:
-        print()
+        message()
         return
     rep = pack_manager.query(dict_query, name)
     if len(rep) != 0:
         pack_manager.add_from_remote(rep[0], name)
         deps = pack_manager.query(dict_query)
         if len(deps) > 0:
-            print(deps[-1].get_cmake_config_dir())
+            message(deps[-1].get_cmake_config_dir())
 
 
 def add_get_parameters(sub_parsers):

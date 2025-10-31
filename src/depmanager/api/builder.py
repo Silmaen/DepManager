@@ -4,10 +4,10 @@ Tools for building packages.
 
 from pathlib import Path
 from shutil import rmtree
-from sys import stderr
 
 from depmanager.api.internal.dependency import version_lt
 from depmanager.api.internal.machine import Machine
+from depmanager.api.internal.messaging import log
 from depmanager.api.internal.recipe_builder import RecipeBuilder
 from depmanager.api.internal.system import LocalSystem
 from depmanager.api.local import LocalManager
@@ -53,7 +53,7 @@ def find_recipes(location: Path, depth: int = -1):
                 search_rep(entry, dep + 1)
 
     search_rep(location, 0)
-    print(f"found {len(all_py)} python files")
+    log.info(f"found {len(all_py)} python files")
     idx = 0
     for file in all_py:
         try:
@@ -68,12 +68,9 @@ def find_recipes(location: Path, depth: int = -1):
             if file_has_recipe:
                 idx += 1
         except Exception as err:
-            print(
-                f"Exception during analysis of file {file}: {err}",
-                file=stderr,
-            )
+            log.error(f"Exception during analysis of file {file}: {err}")
             continue
-    print(f"found {len(recipes)} recipes in {idx} files")
+    log.info(f"found {len(recipes)} recipes in {idx} files")
     return recipes
 
 
@@ -111,14 +108,13 @@ class Builder:
             self.toolset = None
         else:
             self.toolset = self.local.get_toolset(toolset)
-        self.pacman = PackageManager(self.local, verbosity=self.local.verbosity)
+        self.pacman = PackageManager(self.local)
         self.source_path = source
         if temp is None:
             self.temp = self.local.temp_path / "builder"
         else:
             self.temp = temp
-        if self.local.verbosity > 0:
-            print(f"Recipes search ..")
+        log.info(f"Recipes search ..")
         self.recipes = find_recipes(self.source_path, depth)
         self.server_name = server_name
         self.dry_run = dry_run
@@ -202,11 +198,7 @@ class Builder:
         for rec in self.recipes:
             if rec in new_recipe:  # add recipe only once
                 continue
-            if self.local.verbosity > 1:
-                print(
-                    f"WARNING: Added {rec.to_str()} with missing dependency.",
-                    file=stderr,
-                )
+            log.warning(f"WARNING: Added {rec.to_str()} with missing dependency.")
             new_recipe.append(rec)
         # replace the list
         self.recipes = new_recipe
@@ -233,39 +225,35 @@ class Builder:
             for recipe in self.recipes:
                 query_result = self.pacman.query(self.query_from_recipe(recipe, mac))
                 if len(query_result):
-                    if self.local.verbosity > 0:
-                        print(
-                            f"Package {recipe.to_str()} found locally for {mac}, no build."
-                        )
+                    log.info(
+                        f"Package {recipe.to_str()} found locally for {mac}, no build."
+                    )
                     continue
                 query_result = self.pacman.query(
                     self.query_from_recipe(recipe, mac), remote_name="default"
                 )
                 if len(query_result) > 0:
-                    if self.local.verbosity > 0:
-                        print(
-                            f"Package {recipe.to_str()} found on remote for {mac}, pulling, no build."
-                        )
+                    log.info(
+                        f"Package {recipe.to_str()} found on remote for {mac}, pulling, no build."
+                    )
                     if not self.dry_run:
                         self.pacman.add_from_remote(query_result[0], "default")
                     continue
                 recipe_to_build.append(recipe)
         nb = len(recipe_to_build)
         if nb == 0:
-            print("Nothing to build!")
+            log.info("Nothing to build!")
             return 0
         else:
-            print(f"{nb} recipe{['', 's'][nb > 1]} needs to be build.")
-            if self.local.verbosity > 2:
-                for recipe in recipe_to_build:
-                    print(f" --- Need to build: {recipe.to_str()} for {mac}...")
+            log.info(f"{nb} recipe{['', 's'][nb > 1]} needs to be build.")
+            for recipe in recipe_to_build:
+                log.info(f" --- Need to build: {recipe.to_str()} for {mac}...")
         #
         # do the builds
         #
         error = 0
         for recipe in recipe_to_build:
-            if self.local.verbosity > 1:
-                print(f"Building: {recipe.to_str()} for {mac}...")
+            log.info(f"Building: {recipe.to_str()} for {mac}...")
             if self.dry_run:
                 continue
             # clear the static cache variables, in case of previous builds
@@ -278,7 +266,7 @@ class Builder:
                 recipe, self.temp, self.local, self.cross_info, self.toolset
             )
             if not builder.has_recipes():
-                print("WARNING Something gone wrong with the recipe!", file=stderr)
+                log.warn("WARNING Something gone wrong with the recipe!")
                 continue
             # do the build
             if not builder.build(self.forced):
@@ -294,30 +282,25 @@ class Builder:
             if not self.dry_run:
                 packs = self.pacman.query(self.query_from_recipe(recipe, mac))
                 if len(packs) == 0:
-                    print(
-                        f"ERROR: recipe {recipe.to_str()} should be built for {mac}",
-                        file=stderr,
-                    )
+                    log.error(f"recipe {recipe.to_str()} should be built for {mac}")
                     error += 1
                     continue
                 elif len(packs) > 1:
-                    print(
-                        f"warning: recipe {recipe.to_str()} for {mac} seems to appear more than once",
-                        file=stderr,
+                    log.warn(
+                        f"recipe {recipe.to_str()} for {mac} seems to appear more than once"
                     )
-                if self.skip_push and self.local.verbosity > 1:
-                    print(
+                if self.skip_push:
+                    log.info(
                         f"SKIP pushing {packs[0].properties.get_as_str()} for {mac} to te remote!"
                     )
-                if not self.skip_push:
-                    print(
+                else:
+                    log.info(
                         f"Pushing {packs[0].properties.get_as_str()} for {mac} to te remote!"
                     )
                     self.pacman.add_to_remote(packs[0], "default")
             else:
-                if self.local.verbosity > 1:
-                    if self.skip_push:
-                        print(f"SKIP pushing {recipe.to_str()} for {mac} to te remote!")
-                    else:
-                        print(f"Pushing {recipe.to_str()} for {mac} to te remote!")
+                if self.skip_push:
+                    log.info(f"SKIP pushing {recipe.to_str()} for {mac} to te remote!")
+                else:
+                    log.info(f"Pushing {recipe.to_str()} for {mac} to te remote!")
         return error

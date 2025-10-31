@@ -3,7 +3,8 @@ Machine identification.
 """
 
 import platform
-from sys import stderr
+
+from depmanager.api.internal.messaging import log
 from depmanager.api.internal.toolset import Toolset
 
 abi = ["gnu", "llvm", "msvc"]
@@ -40,7 +41,7 @@ class Machine:
     Class holding machine information
     """
 
-    def __init__(self, do_init: bool = False, toolset:Toolset = None):
+    def __init__(self, do_init: bool = False, toolset: Toolset = None):
         self.default_abi = ""
         self.glibc = ""
         self.os = ""
@@ -72,9 +73,8 @@ class Machine:
                 details = platform.freedesktop_os_release()
                 self.os_version = f"{details['PRETTY_NAME']}"
             except Exception as err:
-                print(
-                    f"WARNING: Exception during Linux system introspection: {err}.",
-                    file=stderr,
+                log.warn(
+                    f"WARNING: Exception during Linux system introspection: {err}."
                 )
                 self.os_version = "unknown"
         elif self.os == "Windows":
@@ -88,9 +88,8 @@ class Machine:
                     else:
                         self.os_version = "11"
             except Exception as err:
-                print(
-                    f"WARNING: Exception during Windows system introspection: {err}.",
-                    file=stderr,
+                log.warn(
+                    f"WARNING: Exception during Windows system introspection: {err}."
                 )
                 self.os_version = "unknown"
         else:

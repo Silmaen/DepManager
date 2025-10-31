@@ -103,6 +103,9 @@ def add_common_arguments(parser: ArgumentParser):
     parser.add_argument(
         "--verbose", "-v", action="count", default=0, help="The verbosity level"
     )
+    parser.add_argument(
+        "--quiet", action="store_true", default=False, help="Only error messages"
+    )
 
 
 def add_remote_selection_arguments(parser: ArgumentParser):
