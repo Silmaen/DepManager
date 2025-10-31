@@ -6,6 +6,8 @@ from copy import deepcopy
 from pathlib import Path
 from sys import stderr
 
+from depmanager.api.internal.messaging import log, message
+
 possible_info = ["pull", "push", "add", "del", "rm", "query", "ls", "clean"]
 deprecated = {"del": "rm", "query": "ls"}
 
@@ -19,36 +21,33 @@ def pack(args, system=None):
     from depmanager.api.internal.common import query_argument_to_dict
     from depmanager.api.package import PackageManager
 
-    pacman = PackageManager(system, args.verbose)
+    pacman = PackageManager(system)
     if args.what not in possible_info:
         return
     if args.what in deprecated.keys():
-        print(
-            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead.",
-            file=stderr,
+        log.warn(
+            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead."
         )
     remote_name = pacman.remote_name(args)
     # --- parameters check ----
     if args.default and args.name not in [None, ""]:
-        print("WARNING: No need for name if default set, using default.", file=stderr)
+        log.warn("WARNING: No need for name if default set, using default.")
     if remote_name == "":
         if args.default:
-            print("WARNING: No Remotes defined.", file=stderr)
+            log.warn("WARNING: No Remotes defined.")
         if args.name not in [None, ""]:
-            print(f"WARNING: Remotes '{args.name}' not in remotes lists.", file=stderr)
+            log.warn(f"WARNING: Remotes '{args.name}' not in remotes lists.")
     if args.what in ["add", "clean"] and remote_name != "":
-        print(
-            f"ERROR: {args.what} command only work on local database. please do not defined remote.",
-            file=stderr,
+        log.fatal(
+            f"{args.what} command only work on local database. please do not defined remote."
         )
         exit(-666)
     if args.what in ["push", "pull"] and remote_name == "":
         args.default = True
         remote_name = pacman.remote_name(args)
         if remote_name == "":
-            print(
-                f"ERROR: {args.what} command work by linking to a remote, please define a remote.",
-                file=stderr,
+            log.fatal(
+                f"{args.what} command work by linking to a remote, please define a remote."
             )
             exit(-666)
     transitivity = False
@@ -57,16 +56,15 @@ def pack(args, system=None):
             transitivity = True
     if args.what == "add":
         if args.source in [None, ""]:
-            print(f"ERROR: please provide a source for package adding.", file=stderr)
+            log.fatal(f"please provide a source for package adding.")
             exit(-666)
         source_path = Path(args.source).resolve()
         if not source_path.exists():
-            print(f"ERROR: source path {source_path} does not exists.", file=stderr)
+            log.fatal(f"source path {source_path} does not exists.")
             exit(-666)
         if source_path.is_dir() and not (source_path / "edp.info").exists():
-            print(
-                f"ERROR: source path folder {source_path} does not contains 'edp.info' file.",
-                file=stderr,
+            log.fatal(
+                f"source path folder {source_path} does not contains 'edp.info' file."
             )
             exit(-666)
         if source_path.is_file():
@@ -76,10 +74,7 @@ def pack(args, system=None):
                 if suffixes == [".gz"] and len(source_path.suffixes) > 1:
                     suffixes = [source_path.suffixes[-2], source_path.suffixes[-1]]
             if suffixes not in [[".zip"], [".tgz"], [".tar", ".gz"]]:
-                print(
-                    f"ERROR: source file {source_path} is in unsupported format.",
-                    file=stderr,
-                )
+                log.fatal(f"source file {source_path} is in unsupported format.")
                 exit(-666)
 
         # --- treat command ---
@@ -91,18 +86,19 @@ def pack(args, system=None):
     else:
         deps = pacman.query(query, remote_name, transitivity)
     if args.what in ["query", "ls"]:
+        message("List of matching packages:")
+        pacman.get_default_remote()
         for dep in deps:
-            print(f"[{dep.get_source()}] {dep.properties.get_as_str()}")
+            default_mark = ["", "*"][dep.get_source() == pacman.get_default_remote()]
+            message(f"[{default_mark}{dep.get_source()}] {dep.properties.get_as_str()}")
         return
     if args.what == "clean":
-        if args.verbose > 0:
-            print(
-                f"Do a {['','full '][args.full]} Cleaning of the local package repository."
-            )
+        log.info(
+            f"Do a {['','full '][args.full]} Cleaning of the local package repository."
+        )
         if args.full:
             for dep in deps:
-                if args.verbose > 0:
-                    print(f"Remove package {dep.properties.get_as_str()}")
+                log.info(f"Remove package {dep.properties.get_as_str()}")
                 pacman.remove_package(dep, remote_name)
         else:
             for dep in deps:
@@ -110,28 +106,22 @@ def pack(args, system=None):
                 props.version = "*"
                 result = pacman.query(props, remote_name)
                 if len(result) < 2:
-                    if args.verbose > 0:
-                        print(f"Keeping package {dep.properties.get_as_str()}")
+                    log.info(f"Keeping package {dep.properties.get_as_str()}")
                     continue
                 if result[0].version_greater(dep):
-                    if args.verbose > 0:
-                        print(f"Remove package {dep.properties.get_as_str()}")
+                    log.ingo(f"Remove package {dep.properties.get_as_str()}")
                     pacman.remove_package(dep, remote_name)
                 else:
-                    if args.verbose > 0:
-                        print(f"Keeping package {dep.properties.get_as_str()}")
+                    log.info(f"Keeping package {dep.properties.get_as_str()}")
         return
     if args.what in ["rm", "del", "pull", "push"]:
         if len(deps) == 0:
-            print("WARNING: No package matching the query.", file=stderr)
+            log.warn("WARNING: No package matching the query.", file=stderr)
             return
         if len(deps) > 1 and not args.recurse:
-            print(
-                "WARNING: More than one package match the query, please precise:",
-                file=stderr,
-            )
+            log.warn("WARNING: More than one package match the query, please precise:")
             for dep in deps:
-                print(f"{dep.properties.get_as_str()}")
+                message(f"{dep.properties.get_as_str()}")
             return
         for dep in deps:
             if args.what in ["del", "rm"]:
@@ -147,7 +137,7 @@ def pack(args, system=None):
             elif args.what == "push":
                 pacman.add_to_remote(dep, remote_name)
         return
-    print(f"Command {args.what} is not yet implemented", file=stderr)
+    log.warn(f"Command {args.what} is not yet implemented")
 
 
 def add_pack_parameters(sub_parsers):

@@ -4,7 +4,6 @@ Everything needed for database.
 
 from pathlib import Path
 from shutil import rmtree
-from sys import stderr
 
 from depmanager.api.internal.data_locking import Locker
 from depmanager.api.internal.database_local import LocalDatabase
@@ -12,6 +11,7 @@ from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
 from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
 from depmanager.api.internal.database_remote_server import RemoteDatabaseServer
 from depmanager.api.internal.dependency import Props
+from depmanager.api.internal.messaging import log
 from depmanager.api.internal.toolset import Toolset
 
 
@@ -22,9 +22,8 @@ class LocalSystem:
 
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(self, config_file: Path = None, verbosity: int = 0):
+    def __init__(self, config_file: Path = None):
         self.config = {}
-        self.verbosity = verbosity
         if config_file is None:
             self.base_path = Path.home() / ".edm"
             self.file = self.base_path / "config.ini"
@@ -37,9 +36,9 @@ class LocalSystem:
             self.temp_path = self.base_path / "tmp"
         #
         # request data lock
-        self.locker = Locker(base_path=self.base_path, verbosity=verbosity)
+        self.locker = Locker(base_path=self.base_path)
         if not self.locker.request_lock():
-            print(f"Locking system reach deadlock - exit.", file=stderr)
+            log.fatal(f"Locking system reach deadlock - exit.")
             exit(1)
         self.released = False
         # in case of first initialization
@@ -52,14 +51,14 @@ class LocalSystem:
         #
         # Manage databases
         #
-        self.local_database = LocalDatabase(self.data_path, verbosity=self.verbosity)
+        self.local_database = LocalDatabase(self.data_path)
         self.remote_database = {}
         self.default_remote = ""
         if "remotes" not in self.config.keys():
             self.config["remotes"] = {}
         for name, info in self.config["remotes"].items():
             if "url" not in info:
-                print(f"Missing urls in remote.", file=stderr)
+                log.error(f"Missing urls in remote.")
                 continue
             url = info["url"]
             if "kind" in info:
@@ -67,7 +66,7 @@ class LocalSystem:
             else:
                 kind = self.supported_remote[0]
             if kind not in self.supported_remote:
-                print(f"Unsupported kind: {kind}.", file=stderr)
+                log.error(f"Unsupported kind: {kind}.")
                 continue
             if "login" in info:
                 login = info["login"]
@@ -88,7 +87,7 @@ class LocalSystem:
                 else:
                     port = -1
                 self.remote_database[name] = RemoteDatabaseServer(
-                    url, port, False, default, login, passwd, verbosity=self.verbosity
+                    url, port, False, default, login, passwd
                 )
             if kind == "srvs":
                 if "port" in info:
@@ -96,7 +95,7 @@ class LocalSystem:
                 else:
                     port = -1
                 self.remote_database[name] = RemoteDatabaseServer(
-                    url, port, True, default, login, passwd, verbosity=self.verbosity
+                    url, port, True, default, login, passwd
                 )
             elif kind == "ftp":
                 if "port" in info:
@@ -104,12 +103,10 @@ class LocalSystem:
                 else:
                     port = 21
                 self.remote_database[name] = RemoteDatabaseFtp(
-                    url, port, default, login, passwd, verbosity=self.verbosity
+                    url, port, default, login, passwd
                 )
             elif kind == "folder":
-                self.remote_database[name] = RemoteDatabaseFolder(
-                    url, default, verbosity=self.verbosity
-                )
+                self.remote_database[name] = RemoteDatabaseFolder(url, default)
         #
         # Manage toolsets
         #
@@ -188,7 +185,7 @@ class LocalSystem:
             with open(self.file, "w") as fp:
                 fp.write(json.dumps(self.config, indent=2))
         except Exception as err:
-            print(f"Exception during config writing: {err}", file=stderr)
+            log.fatal(f"Exception during config writing: {err}")
 
     def clear_tmp(self):
         """
@@ -212,8 +209,7 @@ class LocalSystem:
             or "default" not in data
             or "kind" not in data
         ):
-            if self.verbosity > 3:
-                print("ERROR: cannot add remote: missing required fields")
+            log.debug("ERROR: cannot add remote: missing required fields")
             return False
         name = data["name"]
         url = data["url"]
@@ -226,18 +222,15 @@ class LocalSystem:
             or type(url) is not str
             or kind not in self.supported_remote
         ):
-            if self.verbosity > 3:
-                print("ERROR: cannot add remote: wrong type in required fields")
+            log.debug("ERROR: cannot add remote: wrong type in required fields")
             return False
         if name in [None, ""]:
-            if self.verbosity > 3:
-                print("ERROR: cannot add remote: empty name")
+            log.debug("ERROR: cannot add remote: empty name")
             return False
         if "://" in url:
             url = str(url).split("://")[-1]
         if url in [None, ""]:
-            if self.verbosity > 3:
-                print("ERROR: cannot add remote: empty url")
+            log.debug("ERROR: cannot add remote: empty url")
             return False
         if default and self.default_remote != "":
             self.remote_database[self.default_remote].default = False
@@ -271,7 +264,7 @@ class LocalSystem:
                 cred=passwd,
             )
             if not self.remote_database[name].valid_shape:
-                print("Error: cannot add the remote!", file=stderr)
+                log.error("cannot add the remote!")
                 return False
             self.config["remotes"][name] = {
                 "url": url,
@@ -389,8 +382,7 @@ class LocalSystem:
                 self.toolsets[name].default = True
             self.config["toolsets"][name] = self.toolsets[name].to_dict()
         else:
-            if self.verbosity > 0:
-                print("WARNING: cannot add toolset: already exists.")
+            log.warn("WARNING: cannot add toolset: already exists.")
         self.write_config_file()
         return True
 
@@ -400,14 +392,12 @@ class LocalSystem:
         :param name: Name of the toolset to remove.
         """
         if name in [None, str]:
-            if self.verbosity > 0:
-                print("WARNING: Empty toolset name.")
+            log.warn("WARNING: Empty toolset name.")
             return False
         if name not in self.toolsets:
-            if self.verbosity > 0:
-                print(
-                    f"WARNING: no toolset {name} found in database: {list(self.toolsets.keys())}."
-                )
+            log.warn(
+                f"WARNING: no toolset {name} found in database: {list(self.toolsets.keys())}."
+            )
             return False
         self.toolsets.pop(name)
         self.config["toolsets"].pop(name)

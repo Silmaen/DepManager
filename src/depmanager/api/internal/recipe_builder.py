@@ -5,9 +5,9 @@ Tools for building single recipe.
 from datetime import datetime
 from os import access, R_OK, W_OK
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.internal.machine import Machine
+from depmanager.api.internal.messaging import log
 from depmanager.api.internal.system import LocalSystem, Props
 from depmanager.api.internal.toolset import Toolset
 from depmanager.api.local import LocalManager
@@ -24,10 +24,10 @@ def try_run(cmd):
     try:
         ret = run(cmd, shell=True, bufsize=0)
         if ret.returncode != 0:
-            print(f"ERROR '{cmd}' \n bad exit code ({ret.returncode})", file=stderr)
+            log.error(f"'{cmd}' \n bad exit code ({ret.returncode})")
             return False
     except Exception as err:
-        print(f"ERROR '{cmd}' \n exception during run {err}", file=stderr)
+        log.error(f"'{cmd}' \n exception during run {err}")
         return False
     return True
 
@@ -76,7 +76,7 @@ class RecipeBuilder:
         from pathlib import Path
 
         if self.recipe.path is None:
-            print(
+            log.warn(
                 "warning: it may be better to setup recipe path for automated builder."
             )
             source_dir = Path(self.recipe.source_dir).resolve()
@@ -85,17 +85,14 @@ class RecipeBuilder:
                 Path(self.recipe.path) / Path(self.recipe.source_dir)
             ).resolve()
         if not source_dir.exists():
-            print(
-                f"Cannot build {self.recipe.to_str()}: could not find source dir {source_dir}",
-                file=stderr,
+            log.error(
+                f"Cannot build {self.recipe.to_str()}: could not find source dir {source_dir}"
             )
             return None
         if not access(source_dir, R_OK | W_OK):
-            if self.local.verbosity > 0:
-                print(
-                    f"Cannot build {self.recipe.to_str()}: source directory {source_dir} not enough permissions",
-                    file=stderr,
-                )
+            log.error(
+                f"Cannot build {self.recipe.to_str()}: source directory {source_dir} not enough permissions"
+            )
             return None
         return source_dir
 
@@ -127,10 +124,7 @@ class RecipeBuilder:
                 elif self.toolset.abi == "llvm":
                     out += ' -DCMAKE_CXX_FLAGS_INIT="-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld -stdlib=libc++"'
                 else:
-                    print(
-                        f"ERROR: unknown Clang ABI: {self.toolset.abi}.",
-                        file=stderr,
-                    )
+                    log.error(f"unknown Clang ABI: {self.toolset.abi}.")
                     self.recipe.clean()
                     return False
         else:
@@ -175,13 +169,9 @@ class RecipeBuilder:
         )
 
     def _check_dependencies(self):
-        if self.local.verbosity > 2:
-            print(f"package {self.recipe.to_str()}: Checking dependencies...")
+        log.info(f"package {self.recipe.to_str()}: Checking dependencies...")
         if type(self.recipe.dependencies) is not list:
-            print(
-                f"ERROR: package {self.recipe.to_str()}: dependencies must be a list.",
-                file=stderr,
-            )
+            log.error(f"package {self.recipe.to_str()}: dependencies must be a list.")
             self.recipe.clean()
             return False
         ok = True
@@ -189,15 +179,13 @@ class RecipeBuilder:
         for dep in self.recipe.dependencies:
             if type(dep) is not dict:
                 ok = False
-                print(
-                    f"ERROR: package {self.recipe.to_str()}: dependencies must be a list of dict.",
-                    file=stderr,
+                log.error(
+                    f"package {self.recipe.to_str()}: dependencies must be a list of dict."
                 )
                 break
             if "name" not in dep:
-                print(
-                    f"ERROR: package {self.recipe.to_str()}: dependencies {dep} must be a contain a name.",
-                    file=stderr,
+                log.error(
+                    f"package {self.recipe.to_str()}: dependencies {dep} must be a contain a name."
                 )
                 ok = False
                 break
@@ -209,16 +197,14 @@ class RecipeBuilder:
                 dep["abi"] = self.abi
             result = self.local.local_database.query(dep)
             if len(result) == 0:
-                print(
-                    f"ERROR: package {self.recipe.to_str()}: dependency {dep['name']} Not found:\n{dep}",
-                    file=stderr,
+                log.error(
+                    f"package {self.recipe.to_str()}: dependency {dep['name']} Not found:\n{dep}"
                 )
                 ok = False
                 break
-            if self.local.verbosity > 2:
-                print(
-                    f"package {self.recipe.to_str()}: dependency {dep['name']} found: {result[0].properties.get_as_str()}",
-                )
+            log.info(
+                f"package {self.recipe.to_str()}: dependency {dep['name']} found: {result[0].properties.get_as_str()}",
+            )
             dep_list.append(str(result[0].get_cmake_config_dir()).replace("\\", "/"))
         return ok, dep_list
 
@@ -228,27 +214,22 @@ class RecipeBuilder:
         """
         # check output folder
         if not self.temp.exists():
-            if self.local.verbosity > 0:
-                print(
-                    f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not exists",
-                    file=stderr,
-                )
+            log.warn(
+                f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not exists"
+            )
             return False
         # check read write permissions
         if not access(self.temp, R_OK | W_OK):
-            if self.local.verbosity > 0:
-                print(
-                    f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not have enough permissions",
-                    file=stderr,
-                )
+            log.error(
+                f"Cannot build {self.recipe.to_str()}: temp directory {self.temp} does not have enough permissions"
+            )
             return False
 
         self._make_define()
 
         #
         # Check for existing
-        if self.local.verbosity > 2:
-            print(f"package {self.recipe.to_str()}: Checking existing...")
+        log.info(f"package {self.recipe.to_str()}: Checking existing...")
         p = Props(
             {
                 "name": self.recipe.name,
@@ -263,9 +244,13 @@ class RecipeBuilder:
         search = self.local.local_database.query(p)
         if len(search) > 0:
             if forced:
-                print(f"package {self.recipe.to_str()}: already exists, overriding it.")
+                log.info(
+                    f"package {self.recipe.to_str()}: already exists, overriding it."
+                )
             else:
-                print(f"package {self.recipe.to_str()}: already exists, skipping it.")
+                log.info(
+                    f"package {self.recipe.to_str()}: already exists, skipping it."
+                )
                 return True
         p.build_date = self.creation_date
 
@@ -277,9 +262,8 @@ class RecipeBuilder:
             return False
         self.recipe.source()
         if not (source_dir / "CMakeLists.txt").exists():
-            print(
-                f"Cannot build {self.recipe.to_str()}: could not find CMakeLists.txt in dir {source_dir}",
-                file=stderr,
+            log.error(
+                f"Cannot build {self.recipe.to_str()}: could not find CMakeLists.txt in dir {source_dir}"
             )
             return None
 
@@ -294,8 +278,7 @@ class RecipeBuilder:
         #
         #
         # configure
-        if self.local.verbosity > 2:
-            print(f"package {self.recipe.to_str()}: Configure...")
+        log.info(f"package {self.recipe.to_str()}: Configure...")
         if self.recipe.kind not in ["shared", "static"]:
             self.recipe.config = ["Release"]
         self.recipe.configure()
@@ -306,32 +289,23 @@ class RecipeBuilder:
             cmd += f' -DCMAKE_PREFIX_PATH="{";".join(dep_list)}"'
         cmd += self._get_options_str()
         if not try_run(cmd):
-            if self.local.verbosity > 0:
-                print(
-                    f"ERROR: package {self.recipe.to_str()}: Configuration fail.",
-                    file=stderr,
-                )
+            log.error(f"package {self.recipe.to_str()}: Configuration fail.")
             self.recipe.clean()
             return False
         #
         #
         # build & install
-        if self.local.verbosity > 2:
-            print(f"package {self.recipe.to_str()}: Build and install...")
+        log.info(f"package {self.recipe.to_str()}: Build and install...")
         has_fail = False
         for conf in self.recipe.config:
-            if self.local.verbosity > 2:
-                print(f"package {self.recipe.to_str()}: Build config {conf}...")
+            log.info(f"package {self.recipe.to_str()}: Build config {conf}...")
             cmd = f"cmake --build {self.temp / 'build'} --target install"
             if len(self.recipe.config):
                 cmd += f" --config {conf}"
             if self.cross_info["SINGLE_THREAD"]:
                 cmd += f" -j 1"
             if not try_run(cmd):
-                print(
-                    f"ERROR: package {self.recipe.to_str()}, ({conf}): install Fail.",
-                    file=stderr,
-                )
+                log.error(f"package {self.recipe.to_str()}, ({conf}): install Fail.")
                 has_fail = True
                 break
         if has_fail:
@@ -340,8 +314,7 @@ class RecipeBuilder:
         #
         #
         # create the info file
-        if self.local.verbosity > 2:
-            print(f"package {self.recipe.to_str()}: Create package...")
+        log.info(f"package {self.recipe.to_str()}: Create package...")
         self.recipe.install()
         p.to_edp_file(self.temp / "install" / "edp.info")
         # copy to repository

@@ -2,7 +2,7 @@
 Manage the remotes
 """
 
-from sys import stderr
+from depmanager.api.internal.messaging import log, message
 
 possible_remote = ["list", "ls", "add", "del", "rm", "sync", "info"]
 deprecated = {"list": "ls", "del": "rm"}
@@ -13,11 +13,10 @@ class RemoteCommand:
     Managing remotes
     """
 
-    def __init__(self, verbosity=0, system=None):
+    def __init__(self, system=None):
         from depmanager.api.remotes import RemotesManager
 
-        self.remote_instance = RemotesManager(system, verbosity)
-        self.verbosity = verbosity
+        self.remote_instance = RemotesManager(system)
 
     def list(self):
         """
@@ -27,22 +26,14 @@ class RemoteCommand:
         for key, value in remotes.items():
             info = value.get_remote_info()
             default = [" ", "*"][info["default"]]
-            if self.verbosity == 0:
-                print(f" {default} {key}")
-            elif self.verbosity == 1:
-                status = ["OFFLINE", "ONLINE "][value.valid_shape]
-                print(
-                    f" {default} [ {status} ] {key} - {info['kind']}, {info['destination']}"
-                )
-            else:
-                status = ["OFFLINE", "ONLINE "][value.valid_shape]
-                api = ""
-                if "api_version" in info.keys():
-                    api = f", API: {info['api_version']}"
-                print(
-                    f" {default} [ {status} ] {key} - {info['kind']}, {info['destination']}, "
-                    f"version: {info['version']}{api}"
-                )
+            status = ["OFFLINE", "ONLINE "][value.valid_shape]
+            api = ""
+            if "api_version" in info.keys():
+                api = f", API: {info['api_version']}"
+            message(
+                f" {default} [ {status} ] {key} - {info['kind']}, {info['destination']}, "
+                f"version: {info['version']}{api}"
+            )
 
     def add(
         self,
@@ -61,20 +52,14 @@ class RemoteCommand:
         :param passwd: Password for connexion.
         """
         if type(name) is not str or name in ["", None]:
-            print(
-                f"ERROR please give a name for adding/modifying a remote.", file=stderr
-            )
+            log.fatal(f"please give a name for adding/modifying a remote.")
             exit(-666)
         if url in [None, ""]:
-            print(
-                f"ERROR please give an url for adding/modifying a remote.", file=stderr
-            )
+            log.fatal(f"please give an url for adding/modifying a remote.")
             exit(-666)
         if "://" not in url:
-            print(f"ERROR '{url}' is not a valid url.", file=stderr)
-            print(
-                f"  Valid input are in the form: <kind>://<url>/<folder>.", file=stderr
-            )
+            log.fatal(f"'{url}' is not a valid url.")
+            log.fatal(f"  Valid input are in the form: <kind>://<url>/<folder>.")
             exit(-666)
         kind, pure_url = url.split("://", 1)
         if ":" in pure_url:
@@ -83,10 +68,9 @@ class RemoteCommand:
         else:
             port = -1
         if kind not in self.remote_instance.get_supported_remotes():
-            print(f"ERROR '{kind}' is not a valid type of url.", file=stderr)
-            print(
-                f"  Valid types are {self.remote_instance.get_supported_remotes()}.",
-                file=stderr,
+            log.fatal(f"'{kind}' is not a valid type of url.")
+            log.fatal(
+                f"  Valid types are {self.remote_instance.get_supported_remotes()}."
             )
             exit(-666)
         self.remote_instance.add_remote(
@@ -99,7 +83,7 @@ class RemoteCommand:
         :param name: Remote's name.
         """
         if type(name) is not str or name in ["", None]:
-            print(f"ERROR please give a name for removing a remote.", file=stderr)
+            log.fatal(f"please give a name for removing a remote.")
             exit(-666)
         self.remote_instance.remove_remote(name)
 
@@ -130,14 +114,11 @@ class RemoteCommand:
         remote_srv = self.remote_instance.get_safe_remote(name, default)
         name = self.remote_instance.get_safe_remote_name(name, default)
         if remote_srv is None:
-            print(
-                f"ERROR the information provided does not designate a remote.",
-                file=stderr,
-            )
+            log.fatal(f"the information provided does not designate a remote.")
             exit(-666)
         version = remote_srv.get_server_version()
         r_type = remote_srv.get_server_type()
-        print(f"Remote server: {name}, type: {r_type}, version: {version}.")
+        message(f"Remote server: {name}, type: {r_type}, version: {version}.")
 
 
 def remote(args, system=None):
@@ -148,11 +129,10 @@ def remote(args, system=None):
     """
     if args.what not in possible_remote:
         return
-    rem = RemoteCommand(args.verbose, system)
+    rem = RemoteCommand(system)
     if args.what in deprecated.keys():
-        print(
-            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead.",
-            file=stderr,
+        log.warn(
+            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead."
         )
     if args.what in ["list", "ls"]:
         rem.list()
@@ -171,7 +151,7 @@ def remote(args, system=None):
         if args.dry_run:
             dry_run = True
         if not (do_push or do_pull):
-            print("ERROR: push-only & pull-only are mutually exclusive.", file=stderr)
+            log.fatal("push-only & pull-only are mutually exclusive.")
             exit(1)
         rem.sync(args.name, args.default, do_pull, do_push, dry_run)
     elif args.what == "info":

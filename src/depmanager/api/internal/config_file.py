@@ -1,9 +1,10 @@
 """
 Definition of config file.
 """
-from pathlib import Path
-from sys import stderr
 
+from pathlib import Path
+
+from depmanager.api.internal.messaging import log
 from yaml import full_load
 
 
@@ -26,7 +27,7 @@ class ConfigFile:
             with open(self.path, "r") as file:
                 self.data = full_load(file)
         except Exception as err:
-            print(f"CONFIG FILE: load, {err}", file=stderr)
+            log.fatal(f"CONFIG FILE: load, {err}")
             self.data = None
 
     def has_remote(self):
@@ -43,7 +44,7 @@ class ConfigFile:
                 return False
             return type(self.data["remote"]) is dict
         except Exception as err:
-            print(f"CONFIG FILE: has_remote, {err}", file=stderr)
+            log.fatal(f"CONFIG FILE: has_remote, {err}")
             return False
 
     def has_packages(self):
@@ -60,7 +61,7 @@ class ConfigFile:
                 return False
             return type(self.data["packages"]) is dict
         except Exception as err:
-            print(f"CONFIG FILE: has_packages, {err}", file=stderr)
+            log.fatal(f"CONFIG FILE: has_packages, {err}")
             return False
 
     def server_to_add(self):
@@ -81,7 +82,7 @@ class ConfigFile:
             else:
                 return {}
         except Exception as err:
-            print(f"CONFIG FILE: server_to_add, {err}", file=stderr)
+            log.fatal(f"CONFIG FILE: server_to_add, {err}")
             return {}
 
     def do_pull(self):

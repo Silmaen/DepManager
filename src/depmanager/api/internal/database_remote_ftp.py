@@ -4,9 +4,9 @@ Remote FTP database
 
 import ftplib
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.internal.database_common import __RemoteDatabase
+from depmanager.api.internal.messaging import log
 
 
 class RemoteDatabaseFtp(__RemoteDatabase):
@@ -21,7 +21,6 @@ class RemoteDatabaseFtp(__RemoteDatabase):
         default: bool = False,
         user: str = "",
         cred: str = "",
-        verbosity: int = 0,
     ):
         self.port = port
         self.ftp = ftplib.FTP()
@@ -31,7 +30,6 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             user=user,
             cred=cred,
             kind="ftp",
-            verbosity=verbosity,
         )
         self.remote_type = "FTP"
         self.version = "1.0"
@@ -53,10 +51,7 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             self.valid_shape = True
         except Exception as err:
             self.valid_shape = False
-            print(
-                f"ERROR while connecting to ftp server {self.destination}: {err}.",
-                file=stderr,
-            )
+            log.error(f"while connecting to ftp server {self.destination}: {err}.")
 
     def get_file(self, distant_name: str, destination: Path):
         """
@@ -70,7 +65,7 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             with open(destination / file_name, "wb") as handler:
                 self.ftp.retrbinary(f"RETR {distant_name}", handler.write)
         except Exception as err:
-            print(
+            log.warn(
                 f"WARNING: error getting {distant_name} from FTP {self.destination}: {err}"
             )
 
@@ -84,7 +79,7 @@ class RemoteDatabaseFtp(__RemoteDatabase):
         try:
             self.ftp.delete(destination)
         except Exception as err:
-            print(
+            log.warn(
                 f"WARNING: unable to suppress file {destination} on FTP server: {err}"
             )
             return False
@@ -112,7 +107,7 @@ class RemoteDatabaseFtp(__RemoteDatabase):
             with open(source, "rb") as handler:
                 self.ftp.storbinary(f"STOR {distant_name}", handler)
         except Exception as err:
-            print(
+            log.warn(
                 f"WARNING: error sending {distant_name} to FTP {self.destination}: {err}"
             )
 

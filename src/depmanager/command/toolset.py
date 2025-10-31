@@ -4,6 +4,8 @@ Manage the toolsets
 
 from sys import stderr
 
+from depmanager.api.internal.messaging import log
+
 possible_toolset = ["list", "ls", "add", "del", "rm"]
 deprecated = {"list": "ls", "del": "rm"}
 
@@ -13,11 +15,10 @@ class ToolsetCommand:
     Managing toolsets
     """
 
-    def __init__(self, verbosity=0, system=None):
+    def __init__(self, system=None):
         from depmanager.api.toolsets import ToolsetsManager
 
-        self.toolset_instance = ToolsetsManager(system, verbosity)
-        self.verbosity = verbosity
+        self.toolset_instance = ToolsetsManager(system)
 
     def list(self):
         """
@@ -26,19 +27,7 @@ class ToolsetCommand:
         toolsets = self.toolset_instance.get_toolset_list()
         for key, value in toolsets.items():
             default = [" ", "*"][value.default]
-            if self.verbosity == 0:
-                print(f" {default} {key}")
-            else:
-                to_print = (
-                    f" {default} [ {key} ] {value.compiler_path} - {value.abi} - "
-                )
-                # if value.autofill:
-                #    to_print += "native"
-                # else:
-                #    to_print += f"{value.os}/{value.arch}"
-                # if value.glibc not in [None, ""]:
-                #    to_print += f" glibc {value.glibc}"
-                print(to_print)
+            log.info(f" {default} [ {key} ] {value.compiler_path} - {value.abi} - ")
 
     def add(
         self,
@@ -61,18 +50,15 @@ class ToolsetCommand:
         :param default: If the toolset should be the new default.
         """
         if type(name) is not str or name in ["", None]:
-            print(f"ERROR please give a name for adding a toolset.", file=stderr)
+            log.fatal(f"please give a name for adding a toolset.")
             exit(-666)
         if type(compiler_path) is not str or compiler_path in ["", None]:
-            print(
-                f"ERROR please give a compiler_path for adding a toolset.", file=stderr
-            )
+            log.fatal(f"please give a compiler_path for adding a toolset.")
             exit(-666)
-        if self.verbosity > 3:
-            print(
-                f"Adding toolset {name} with compiler {compiler_path}, abi {abi}, "
-                f"os {os}, arch {arch}, glibc {glibc}, default {default}"
-            )
+        log.debug(
+            f"Adding toolset {name} with compiler {compiler_path}, abi {abi}, "
+            f"os {os}, arch {arch}, glibc {glibc}, default {default}"
+        )
         self.toolset_instance.add_toolset(
             name, compiler_path, abi, os, arch, glibc, default
         )
@@ -83,7 +69,7 @@ class ToolsetCommand:
         :param name: Remote's name.
         """
         if type(name) is not str or name in ["", None]:
-            print(f"ERROR please give a name for removing a toolset.", file=stderr)
+            log.fatal(f"please give a name for removing a toolset.", file=stderr)
             exit(-666)
         self.toolset_instance.remove_toolset(name)
 
@@ -96,11 +82,10 @@ def toolset(args, system=None):
     """
     if args.what not in possible_toolset:
         return
-    rem = ToolsetCommand(args.verbose, system)
+    rem = ToolsetCommand(system)
     if args.what in deprecated.keys():
-        print(
-            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead.",
-            file=stderr,
+        log.warn(
+            f"WARNING {args.what} is deprecated; use {deprecated[args.what]} instead."
         )
     if args.what in ["list", "ls"]:
         rem.list()

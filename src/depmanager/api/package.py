@@ -5,23 +5,24 @@ Manager for package.
 from pathlib import Path
 from sys import stderr
 
+from depmanager.api.internal.messaging import log
+
 
 class PackageManager:
     """
     Manager fo package.
     """
 
-    def __init__(self, system=None, verbosity: int = 0, fast: bool = False):
+    def __init__(self, system=None):
         from depmanager.api.internal.system import LocalSystem
         from depmanager.api.local import LocalManager
 
-        self.verbosity = verbosity
         if type(system) is LocalSystem:
             self.__sys = system
         elif type(system) is LocalManager:
             self.__sys = system.get_sys()
         else:
-            self.__sys = LocalSystem(verbosity=verbosity)
+            self.__sys = LocalSystem()
 
     def query(self, query, remote_name: str = "", transitive: bool = False):
         """
@@ -83,14 +84,11 @@ class PackageManager:
         :return:
         """
         if not source.exists():
-            print(f"WARNING: Location {source} does not exists.", file=stderr)
+            log.warn(f"WARNING: Location {source} does not exists.")
             return
         if source.is_dir():
             if not (source / "edp.info").exists():
-                print(
-                    f"WARNING: Location {source} does not contains edp.info file.",
-                    file=stderr,
-                )
+                log.warn(f"WARNING: Location {source} does not contains edp.info file.")
                 return
             self.__sys.import_folder(source)
             return
@@ -105,10 +103,9 @@ class PackageManager:
 
                 destination_dir = self.__sys.temp_path / "pack"
                 destination_dir.mkdir(parents=True)
-                if self.verbosity > 2:
-                    print(
-                        f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}"
-                    )
+                log.debug(
+                    f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}"
+                )
                 with ZipFile(source) as archive:
                     archive.extractall(destination_dir)
             elif suffixes in [[".tgz"], [".tar", ".gz"]]:
@@ -116,20 +113,17 @@ class PackageManager:
 
                 destination_dir = self.__sys.temp_path / "pack"
                 destination_dir.mkdir(parents=True)
-                if self.verbosity > 2:
-                    print(
-                        f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}"
-                    )
+                log.debug(
+                    f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}"
+                )
                 with tarfile.open(str(source), "r|gz") as archive:
                     archive.extractall(destination_dir)
             else:
-                print(f"WARNING: File {source} has unsupported format.", file=stderr)
+                log.warn(f"WARNING: File {source} has unsupported format.")
                 return
             if destination_dir is not None:
                 if not (destination_dir / "edp.info").exists():
-                    print(
-                        f"WARNING: Archive does not contains package info.", file=stderr
-                    )
+                    log.warn(f"WARNING: Archive does not contains package info.")
                     return
                 self.__sys.import_folder(destination_dir)
 
@@ -145,7 +139,7 @@ class PackageManager:
         if remote_name == "default":
             remote_name = self.__sys.default_remote
         if remote_name not in self.__sys.remote_database:
-            print(f"ERROR: no remote named {remote_name} found.", file=stderr)
+            log.error(f"no remote named {remote_name} found.")
             return
         remote = self.__sys.remote_database[remote_name]
         remote.delete(pack)
@@ -159,21 +153,21 @@ class PackageManager:
         if remote_name == "default":
             remote_name = self.__sys.default_remote
         if remote_name not in self.__sys.remote_database:
-            print(f"ERROR: no remote named {remote_name} found.", file=stderr)
+            log.error(f"no remote named {remote_name} found.")
             return
         remote = self.__sys.remote_database[remote_name]
         finds = remote.query(dep)
         if len(finds) > 1:
-            print("WARNING: more than 1 package matches the request:", file=stderr)
+            log.warn("WARNING: more than 1 package matches the request:")
             for find in finds:
-                print(f"         {find.properties.get_as_str()}")
-            print(
+                log.warn(f"         {find.properties.get_as_str()}")
+            log.warn(
                 "         Precise your request, only one package per pull allowed.",
                 file=stderr,
             )
             return
         if len(finds) == 0:
-            print("ERROR: no package matches the request.", file=stderr)
+            log.error("no package matches the request.")
             return
         res = remote.pull(finds[0], self.__sys.temp_path)
         if res is None:
@@ -191,31 +185,25 @@ class PackageManager:
         if remote_name == "default":
             remote_name = self.__sys.default_remote
         if remote_name not in self.__sys.remote_database:
-            print(f"ERROR: no remote named {remote_name} found.", file=stderr)
+            log.error(f"no remote named {remote_name} found.")
             return
-        if self.verbosity > 1:
-            print(f"Using remote named {remote_name}.")
+        log.info(f"Using remote named {remote_name}.")
         remote = self.__sys.remote_database[remote_name]
         finds = self.__sys.local_database.query(dep)
         if len(finds) > 1:
-            if self.verbosity == 1:
-                print("\n")
-            print("WARNING: more than 1 package matches the request:", file=stderr)
+            log.warn("WARNING: more than 1 package matches the request:")
             for find in finds:
-                print(f"         {find.properties.get_as_str()}")
-            print(
-                "         Precise your request, only one package per push allowed.",
-                file=stderr,
+                log.warn(f"         {find.properties.get_as_str()}")
+            log.warn(
+                "         Precise your request, only one package per push allowed."
             )
             return
         if len(finds) == 0:
-            print("ERROR: no package matches the request.", file=stderr)
+            log.error("no package matches the request.")
             return
 
         dep_path = self.__sys.temp_path / (Path(dep.get_path()).name + ".tgz")
-        if self.verbosity > 1:
-            print(f"Compressing library to file {dep_path}.")
+        log.info(f"Compressing library to file {dep_path}.")
         self.__sys.local_database.pack(finds[0], self.__sys.temp_path, "tgz")
-        if self.verbosity > 1:
-            print(f"Starting upload.")
+        log.info(f"Starting upload.")
         remote.push(finds[0], dep_path)

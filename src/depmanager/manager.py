@@ -2,6 +2,7 @@
 """
 Main entrypoint for library manager
 """
+from depmanager.api.internal.messaging import set_logging_level
 
 
 def main():
@@ -12,7 +13,6 @@ def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser(description="Dependency manager used alongside with cmake")
-    # parser.add_argument("--verbose", "-v", action='count', default=0)
     sub_parsers = parser.add_subparsers(
         title="Sub Commands", help="Sub command Help", dest="command", required=True
     )
@@ -51,7 +51,11 @@ def main():
     else:
         from depmanager.api.local import LocalManager
 
-        local = LocalManager(verbosity=args.verbose)
+        logging_level = args.verbose + 2
+        if args.quiet:
+            logging_level = 0
+        set_logging_level(logging_level)
+        local = LocalManager()
         args.func(args, local)
         local.clean_tmp()
 

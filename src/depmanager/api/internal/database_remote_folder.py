@@ -6,6 +6,7 @@ from pathlib import Path
 from shutil import copyfile
 
 from depmanager.api.internal.database_common import __RemoteDatabase
+from depmanager.api.internal.messaging import log
 
 
 class RemoteDatabaseFolder(__RemoteDatabase):
@@ -13,12 +14,15 @@ class RemoteDatabaseFolder(__RemoteDatabase):
     Remote database using ftp protocol.
     """
 
-    def __init__(self, destination: str, default: bool = False, verbosity: int = 0):
+    def __init__(
+        self,
+        destination: str,
+        default: bool = False,
+    ):
         super().__init__(
             destination=Path(destination).resolve(),
             default=default,
             kind="folder",
-            verbosity=verbosity,
         )
         self.remote_type = "Folder"
         self.version = "1.0"
@@ -45,7 +49,7 @@ class RemoteDatabaseFolder(__RemoteDatabase):
         try:
             destination.unlink()
         except Exception as err:
-            print(
+            log.warn(
                 f"WARNING: unable to suppress file {destination} on FTP server: {err}"
             )
             return False

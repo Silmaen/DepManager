@@ -12,14 +12,13 @@ class LocalManager:
 
     version = "0.4.2"
 
-    def __init__(self, system=None, verbosity: int = 0):
+    def __init__(self, system=None):
         from depmanager.api.internal.system import LocalSystem
 
-        self.verbosity = verbosity
         if type(system) is LocalSystem:
             self.__sys = system
         else:
-            self.__sys = LocalSystem(verbosity=verbosity)
+            self.__sys = LocalSystem()
         self.root_path = Path(__file__).resolve().parent.parent
 
     def get_sys(self):

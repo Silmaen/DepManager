@@ -5,6 +5,7 @@ Function for loading a full environment
 from pathlib import Path
 
 from depmanager.api.internal.config_file import ConfigFile
+from depmanager.api.internal.messaging import log
 from depmanager.api.internal.system import LocalSystem
 from depmanager.api.local import LocalManager
 from depmanager.api.package import PackageManager
@@ -22,40 +23,33 @@ def load_environment(
         internal_system = system.get_sys()
     else:
         internal_system = LocalSystem()
-    verbosity = internal_system.verbosity
 
     pacman = PackageManager(internal_system)
     conf = ConfigFile(config)
     # treat server section:
     srv = conf.server_to_add()
-    if verbosity > 2:
-        print("**Server actions...")
+    log.debug("**Server actions...")
     if srv != {}:
         if "default" not in srv:
             srv["default"] = False
         if "name" in srv:
-            if verbosity > 2:
-                print(f"Adding remote {srv['name']} ({srv})")
+            log.debug(f"Adding remote {srv['name']} ({srv})")
             if srv["name"] not in internal_system.remote_database:
                 internal_system.add_remote(srv)
 
-    if verbosity > 2:
-        print("**Package actions...")
+    log.debug("**Package actions...")
     # treat packages section.
     packs = conf.get_packages()
-    if verbosity > 2:
-        if len(packs) == 0:
-            print("No packages found.")
+    if len(packs) == 0:
+        log.debug("No packages found.")
     output = ""
     err_code = 0
     for pack, constrains in packs.items():
-        if verbosity > 2:
-            print(f"Treat Package {pack}")
+        log.debug(f"Treat Package {pack}")
         # first query: identify if header-only and if there is something somewhere
         res1 = pacman.query({"name": pack}, transitive=True)
         if len(res1) == 0:
-            if verbosity > 2:
-                print(f"    Not Found at all!")
+            log.debug(f"    Not Found at all!")
             # nothing found!!!
             if constrains is None or type(constrains) is not dict:
                 err_code = 1
@@ -102,54 +96,44 @@ def load_environment(
                     if key == "abi" and abi not in restrained:
                         to_skip = True
         if to_skip:
-            if verbosity > 2:
-                print(f"    SKIPPING")
+            log.debug(f"    SKIPPING")
             continue
         #
         # search package
 
-        if verbosity > 2:
-            print(f"    Real query: {query}.")
+        log.debug(f"    Real query: {query}.")
         res1 = pacman.query(query, transitive=False)
         new_path = ""
         check_newer = conf.do_pull_newer()
         if len(res1) > 0:
-            if verbosity > 2:
-                print(f"    FOUND Locally!")
+            log.debug(f"    FOUND Locally!")
             new_path = res1[0].get_cmake_config_dir()
         else:
-            if verbosity > 2:
-                print(f"    Not Found locally.")
+            log.debug(f"    Not Found locally.")
             if is_optional:
-                if verbosity > 2:
-                    print(f"    Optional -> SKIP.")
+                log.debug(f"    Optional -> SKIP.")
                 continue
             if conf.do_pull():
-                if verbosity > 2:
-                    print(f"    Trying to pull {query}")
+                log.debug(f"    Trying to pull {query}")
                 res = pacman.query(query, "default", transitive=False)
                 if len(res) == 0:
                     err_code = 1
-                    if verbosity > 2:
-                        print(f"    {query} Not Found on server!")
+                    log.debug(f"    {query} Not Found on server!")
                     continue
                 pacman.add_from_remote(res[0], "default")
                 res = pacman.query(query, transitive=False)
                 if len(res) == 0:
                     err_code = 1
-                    if verbosity > 2:
-                        print(f"    Pull fail!")
+                    log.debug(f"    Pull fail!")
                     continue
                 new_path = res[0].get_cmake_config_dir()
                 check_newer = False
         if check_newer:
-            if verbosity > 2:
-                print(f"    check newer")
+            log.debug(f"    check newer")
             res = pacman.query(query, "default", transitive=False)
             if len(res) > 0:
                 if res[0].is_newer(res1[0].properties.build_date):
-                    if verbosity > 2:
-                        print(f"    Found newer")
+                    log.debug(f"    Found newer")
                     pacman.add_from_remote(res[0], "default")
                     res = pacman.query(query, transitive=False)
                     if len(res) == 0:
@@ -162,8 +146,7 @@ def load_environment(
             else:
                 output += f";{new_path}"
         else:
-            if verbosity > 2:
-                print(f"    ** empty path **")
+            log.debug(f"    ** empty path **")
             err_code = 1
 
     return err_code, output

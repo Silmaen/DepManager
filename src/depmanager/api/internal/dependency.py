@@ -4,7 +4,8 @@ Dependency object.
 
 from datetime import datetime
 from pathlib import Path
-from sys import stderr
+
+from depmanager.api.internal.messaging import log
 
 from .machine import Machine
 
@@ -93,7 +94,7 @@ def read_date(the_date: str):
                 tz_str = tz_str[0:2] + ":" + tz_str[2:]
         return datetime.fromisoformat(date + "T" + time + "+" + tz_str)
     except Exception as err:
-        print(f"*** Exception during date '{the_date}' decoding: {err}", file=stderr)
+        log.fatal(f"*** Exception during date '{the_date}' decoding: {err}")
         return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
 
 
@@ -317,13 +318,12 @@ class Props:
                 idata.strip()
             items = idata.replace("[", "").replace("]", "").replace(",", "").split()
             if len(items) not in [4, 5]:
-                print(
-                    f"WARNING: Bad Line format: '{data}': '{name}' '{version}' '{date}' {items}",
-                    file=stderr,
+                log.warn(
+                    f"Bad Line format: '{data}': '{name}' '{version}' '{date}' {items}"
                 )
                 return
         except Exception as err:
-            print(f"ERROR: bad line format '{data}' ({err})", file=stderr)
+            log.fatal(f"bad line format '{data}' ({err})")
             return
         self.name = name
         self.version = version
@@ -497,6 +497,15 @@ class Dependency:
             return "local"
         return self.source
 
+    def get_source_formated(self):
+        """
+        Returns where this dependency has been found (local or remote name).
+        :return: Name of the source.
+        """
+        if self.source is None:
+            return "[magenta bold]local[/]"
+        return f"[purple4]{self.source}[/]"
+
     def match(self, other):
         """
         Matching test.
@@ -571,7 +580,7 @@ class Dependency:
         elif type(other) in [str, dict]:
             prop = Props(other)
         else:
-            print("ERROR: Bad reference for check newer.", file=stderr)
+            log.error("ERROR: Bad reference for check newer.")
             return False
         # must have same name, os kind, etc.
         if prop.name != self.properties.name:

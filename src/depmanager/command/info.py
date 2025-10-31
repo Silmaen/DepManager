@@ -2,6 +2,8 @@
 Add the command for getting information.
 """
 
+from depmanager.api.internal.messaging import message
+
 possible_info = ["basedir", "cmakedir", "version"]
 
 
@@ -25,19 +27,19 @@ class InfoCommand:
         """
         Print the actual base dir in the terminal.
         """
-        print(self.local_instance.get_base_path())
+        message(self.local_instance.get_base_path())
 
     def cmakedir(self):
         """
         Print the actual cmake dir in the terminal.
         """
-        print(self.local_instance.get_cmake_dir())
+        message(self.local_instance.get_cmake_dir())
 
     def version(self):
         """
         Print the actual version of the program.
         """
-        print(f"depmanager version {self.local_instance.get_version()}.")
+        message(f"depmanager version {self.local_instance.get_version()}.")
 
 
 def info(args, system=None):
