@@ -25,7 +25,7 @@ See the page on Pypi: [depmanager](https://pypi.org/project/depmanager/).
 
 Prerequisite: python module 'build' install it with `<python> -m pip install build`
 
-Clone the gitHub repository.
+Clone the GitHub repository.
 
 In the source root do:
 
@@ -33,6 +33,16 @@ In the source root do:
 <python> -m build
 <python> -m pip install dist/depmanager-x.y.z-py3-none-any.whl
 ```
+
+## Setup
+
+The first time you run depmanager, it will create its local data folder in your home folder. You can override this
+by setting the environment variable `DEPMANAGER_HOME` to the desired path.
+The local data folder `.edm` contains :
+
+* `config.ini` the configuration file
+* `data/` the local cache of packages
+* `tmp/` the temporary folder for building packages
 
 ## Commandline use
 
@@ -151,8 +161,8 @@ subcommands:
     * Allowed proto are:
         * `ftp` supports login
         * `folder` a folder of your computer (mostly for debug or testing)
-        * `srv` a dedicated server see [gitHub](https://github.com/Silmaen/DepManagerServer)
-        * `srvs` a dedicated server with secure connexion see [gitHub](https://github.com/Silmaen/DepManagerServer)
+        * `srv` a dedicated server see [GitHub](https://github.com/Silmaen/DepManagerServer)
+        * `srvs` a dedicated server with secure connexion see [GitHub](https://github.com/Silmaen/DepManagerServer)
     * Login can be defined with: `--login(-l) <login> --passwd(-p) <passwd>`.
 * `rm <remote>` remove the designated remote if exists.
 * `sync <remote> [--push-only|--pull-only] [--dry-run]` push to remote all local package that does not already
@@ -235,7 +245,7 @@ After call this command, the cmake user has to call for needed `find_package`.
 
 #### Configuration file
 
-The configuration file is a yaml file. Here is an example with explication in comment.
+The configuration file is a YAML file. Here is an example with explication in comment.
 
 ```yaml
 remote:
@@ -435,9 +445,8 @@ Among things:
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
 * version 0.4.x
-    * [ ] Add a sorting order for remotes.
-        * [ ] Searching across remotes with final package sorting.
-        * [ ] Allow auto-pull best-fitting package
+    * [X] Prettier output for commandline
+    * [X] Add DEPMANAGER_HOME environment variable to override to classical search in HOME.
     * [ ] Add concept of package dependencies
         * [ ] Add dependency list in built packages.
             * [ ] Construct dependency based on build.
@@ -491,7 +500,7 @@ Among things:
         * [X] Simplify integration with cmake
         * [X] Python auto generate the Module dir for cmake
         * [X] Allow to load package by batch
-            * [X] use Yaml config file.
+            * [X] use YAML config file.
 * version 0.2.1 -- 2023-12-31
     * [X] Bugfix: allow more date format and don't break if bad format.
 * version 0.2.0 -- 2023-12-12

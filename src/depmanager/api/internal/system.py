@@ -2,6 +2,7 @@
 Everything needed for database.
 """
 
+import os
 from pathlib import Path
 from shutil import rmtree
 
@@ -22,18 +23,17 @@ class LocalSystem:
 
     supported_remote = ["srv", "srvs", "ftp", "folder"]
 
-    def __init__(self, config_file: Path = None):
+    def __init__(self):
         self.config = {}
-        if config_file is None:
-            self.base_path = Path.home() / ".edm"
-            self.file = self.base_path / "config.ini"
-            self.data_path = self.base_path / "data"
-            self.temp_path = self.base_path / "tmp"
+        env = os.environ.get("DEPMANAGER_HOME")
+        if env is not None:
+            env = Path(env)
         else:
-            self.file = config_file
-            self.base_path = self.file.parent
-            self.data_path = self.base_path / "data"
-            self.temp_path = self.base_path / "tmp"
+            env = Path.home()
+        self.base_path = env / ".edm"
+        self.file = self.base_path / "config.ini"
+        self.data_path = self.base_path / "data"
+        self.temp_path = self.base_path / "tmp"
         #
         # request data lock
         self.locker = Locker(base_path=self.base_path)
