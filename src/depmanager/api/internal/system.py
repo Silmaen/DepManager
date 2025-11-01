@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from shutil import rmtree
 
+from depmanager.api.internal.crypto import PasswordManager
 from depmanager.api.internal.data_locking import Locker
 from depmanager.api.internal.database_local import LocalDatabase
 from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
@@ -31,7 +32,8 @@ class LocalSystem:
         else:
             env = Path.home()
         self.base_path = env / ".edm"
-        self.file = self.base_path / "config.ini"
+        self.password_manager = PasswordManager(self.base_path)
+        self.file = self.base_path / "config.yaml"
         self.data_path = self.base_path / "data"
         self.temp_path = self.base_path / "tmp"
         #
@@ -73,7 +75,16 @@ class LocalSystem:
             else:
                 login = ""
             if "passwd" in info:
-                passwd = info["passwd"]
+                passwd = self.password_manager.decrypt(info["passwd"])
+                if not info["passwd"].startswith(
+                    self.password_manager.ENCRYPTED_PREFIX
+                ):
+                    # re-encrypt password
+                    log.warn(
+                        f"Password for {login} is stored unencrypted, updating config with crypted version."
+                    )
+                    encrypted_passwd = self.password_manager.encrypt(passwd)
+                    self.config["remotes"][name]["passwd"] = encrypted_passwd
             else:
                 passwd = ""
             default = False
@@ -155,12 +166,25 @@ class LocalSystem:
         """
         Read configuration file.
         """
-        import json
+        file = self.file
+        if not file.exists():
+            # change file extension for backward compatibility
+            log.warn(f"Configuration file {file} not found, trying JSON format.")
+            file = self.file.with_suffix(".ini")
+            import json
 
-        if not self.file.exists():
-            return
-        with open(self.file, "r") as fp:
-            self.config = json.load(fp)
+            if not file.exists():
+                log.warn(f"Configuration file {file} not found, using default config.")
+                return
+            with open(file, "r") as fp:
+                self.config = json.load(fp)
+            log.info(f"Configuration file loaded.{self.config}")
+        else:
+            import yaml
+
+            with open(file, "r") as fp:
+                self.config = yaml.safe_load(fp)
+        # manage paths
         if "base_path" in self.config.keys():
             self.base_path = Path(self.config["base_path"]).resolve()
             self.data_path = self.base_path / "data"
@@ -174,16 +198,22 @@ class LocalSystem:
         """
         Write actual configuration to file.
         """
-        import json
+        import yaml
 
         # create all directories if not exists
         self.file.parent.mkdir(parents=True, exist_ok=True)
         self.data_path.mkdir(parents=True, exist_ok=True)
         self.temp_path.mkdir(parents=True, exist_ok=True)
 
+        file_old = self.file.with_suffix(".ini")
+        if file_old.exists():
+            try:
+                file_old.unlink()
+            except Exception as err:
+                log.warn(f"Exception during old config removal: {err}")
         try:
             with open(self.file, "w") as fp:
-                fp.write(json.dumps(self.config, indent=2))
+                fp.write(yaml.dump(self.config, indent=2))
         except Exception as err:
             log.fatal(f"Exception during config writing: {err}")
 
@@ -253,8 +283,10 @@ class LocalSystem:
                 login = ""
             if "passwd" in data:
                 passwd = data["passwd"]
+                encrypted_passwd = self.password_manager.encrypt(passwd)
             else:
                 passwd = ""
+                encrypted_passwd = ""
             self.remote_database[name] = RemoteDatabaseServer(
                 destination=url,
                 port=port,
@@ -272,12 +304,12 @@ class LocalSystem:
                 "default": default,
                 "kind": kind,
             }
-            if ("port" != 80 and kind == "srv") or ("port" != 443 and kind == "srvs"):
+            if (port != 80 and kind == "srv") or (port != 443 and kind == "srvs"):
                 self.config["remotes"][name]["port"] = port
-            if "login" != "":
+            if login != "":
                 self.config["remotes"][name]["login"] = login
-            if "passwd" != "":
-                self.config["remotes"][name]["passwd"] = passwd
+            if encrypted_passwd != "":
+                self.config["remotes"][name]["passwd"] = encrypted_passwd
             self.write_config_file()
             return True
         if kind == "ftp":
@@ -291,8 +323,10 @@ class LocalSystem:
                 login = ""
             if "passwd" in data:
                 passwd = data["passwd"]
+                encrypted_passwd = self.password_manager.encrypt(passwd)
             else:
                 passwd = ""
+                encrypted_passwd = ""
             self.remote_database[name] = RemoteDatabaseFtp(
                 url, port, default, login, passwd
             )
@@ -302,12 +336,12 @@ class LocalSystem:
                 "default": default,
                 "kind": kind,
             }
-            if "port" != 21:
+            if port != 21:
                 self.config["remotes"][name]["port"] = port
-            if "login" != "":
+            if login != "":
                 self.config["remotes"][name]["login"] = login
-            if "passwd" != "":
-                self.config["remotes"][name]["passwd"] = passwd
+            if encrypted_passwd != "":
+                self.config["remotes"][name]["passwd"] = encrypted_passwd
             self.write_config_file()
             return True
         if kind == "folder":
