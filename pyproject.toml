@@ -23,7 +23,8 @@ dependencies = [
     "requests",
     "requests-toolbelt",
     "PyYAML",
-    "rich"
+    "rich",
+    "cryptography"
 ]
 
 [project.urls]
