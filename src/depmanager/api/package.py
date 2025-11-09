@@ -42,13 +42,9 @@ class PackageManager:
             slist = self.__sys.get_source_list()
         else:
             slist = [using_name]
-        started = False
+        log.debug(f"PackageManager::query - Searching {transitive} in sources: {slist}")
         db = []
         for s in slist:
-            if s == using_name:
-                started = True
-            if not started:
-                continue
             if s == "local":
                 ldb = self.__sys.local_database.query(query)
             else:
@@ -56,7 +52,8 @@ class PackageManager:
             for dep in ldb:
                 dep.source = s
             db += ldb
-        return db
+
+        return sorted(db)
 
     def get_default_remote(self):
         """

@@ -55,9 +55,10 @@ def read_date(the_date: str):
     :return:
     """
     try:
-        if "T" not in the_date:  # not dte/hour separator: assume not a date
+        normalized_date = the_date.strip().replace(" ", "T")
+        if "T" not in normalized_date:  # not dte/hour separator: assume not a date
             return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
-        date, time = the_date.split("T", 1)
+        date, time = normalized_date.split("T", 1)
         if "-" not in date:
             if len(date) == 8:
                 date = date[0:4] + "-" + date[4:6] + "-" + date[6:]
@@ -103,30 +104,32 @@ class Props:
     Class for the details about items.
     """
 
-    name = "*"
-    version = "*"
-    os = mac.os
-    arch = mac.arch
-    kind = default_kind
-    abi = mac.default_abi
-    query = False
-    build_date = base_date
-    glibc = ""
-
     def __init__(self, data=None, query: bool = False):
         self.name = "*"
         self.version = "*"
-        self.os = mac.os
-        self.arch = mac.arch
-        self.kind = default_kind
-        self.abi = mac.default_abi
         self.query = query
-        self.build_date = base_date
-        self.glibc = ""
+        self.dependencies = []
+        if self.query:
+            self.os = "*"
+            self.arch = "*"
+            self.kind = "*"
+            self.abi = "*"
+            self.glibc = "*"
+            self.build_date = "*"
+        else:
+            self.os = mac.os
+            self.arch = mac.arch
+            self.kind = default_kind
+            self.abi = mac.default_abi
+            self.glibc = mac.glibc
+            self.build_date = base_date
+
         if type(data) is str:
             self.from_str(data)
         elif type(data) is dict:
             self.from_dict(data)
+        elif type(data) is Path:
+            self.from_yaml_file(data)
 
     def __eq__(self, other):
         return (
@@ -202,8 +205,14 @@ class Props:
             self.abi = data["abi"]
         if "glibc" in data:
             self.glibc = data["glibc"]
-        if "build_date" in data:
+        if "build_date" in data and isinstance(data["build_date"], str):
+            self.build_date = read_date(data["build_date"])
+        elif "build_date" in data and isinstance(data["build_date"], datetime):
             self.build_date = data["build_date"]
+        else:
+            self.build_date = base_date
+        if "dependencies" in data:
+            self.dependencies = data["dependencies"]
         # read deprecated component
         if "compiler" in data:
             self.abi = data["compiler"]
@@ -222,6 +231,7 @@ class Props:
             "abi": self.abi,
             "glibc": self.glibc,
             "build_date": self.build_date,
+            "dependencies": self.dependencies,
         }
 
     def match(self, other):
@@ -306,7 +316,12 @@ class Props:
         Do the inverse of get_as_string.
         :param data: The string representing the dependency as in get_as_str.
         """
+        from ast import literal_eval
+
         try:
+            dep_data = None
+            if "|" in data:
+                data, dep_data = data.split("|", 1)
             predicate, idata = data.strip().split(" ", 1)
             predicate.strip()
             idata.strip()
@@ -322,6 +337,17 @@ class Props:
                     f"Bad Line format: '{data}': '{name}' '{version}' '{date}' {items}"
                 )
                 return
+            if dep_data is not None:
+                try:
+                    dep_data = dep_data.replace("deps:", "").strip()
+                    if len(dep_data) == 0:
+                        self.dependencies = []
+                    else:
+                        log.debug(f"evaluating dependencies: '{dep_data}'")
+                        self.dependencies = literal_eval(dep_data)
+                except (ValueError, SyntaxError) as err:
+                    log.warn(f"Invalid dependencies format: {err}")
+                    self.dependencies = []
         except Exception as err:
             log.fatal(f"bad line format '{data}' ({err})")
             return
@@ -405,15 +431,37 @@ class Props:
             fp.write(f"glibc = {self.glibc}\n")
             fp.write(f"build_date = {self.build_date.isoformat()}\n")
 
+    def from_yaml_file(self, file: Path):
+        """
+        Read data from a YAML file.
+        :param file: The file to read.
+        """
+        import yaml
+
+        if not file.exists():
+            return
+        if not file.is_file():
+            return
+        with open(file) as fp:
+            data = yaml.safe_load(fp)
+        self.from_dict(data)
+
+    def to_yaml_file(self, file: Path):
+        """
+        Write data into a YAML file.
+        :param file: Filename to write.
+        """
+        import yaml
+
+        file.parent.mkdir(parents=True, exist_ok=True)
+        with open(file, "w") as fp:
+            yaml.dump(self.to_dict(), fp)
+
 
 class Dependency:
     """
     Class describing an entry of the database.
     """
-
-    properties = Props()
-    base_path = None
-    valid = False
 
     def __init__(self, data=None, source=None):
         self.properties = Props()
@@ -423,13 +471,32 @@ class Dependency:
         self.source = source
         if isinstance(data, Path):
             self.base_path = Path(data)
-            if (
-                not self.base_path.exists()
-                or not (self.base_path / "edp.info").exists()
+            log.debug(f"Loading dependency from path: {self.base_path}")
+            if not self.base_path.exists() or (
+                not (self.base_path / "edp.info").exists()
+                and not (self.base_path / "info.yaml").exists()
             ):
+                log.warn(
+                    f"Dependency at {self.base_path} does not contains edp.info or info.yaml file."
+                )
+                self.base_path = None
+                return
+            if not (self.base_path / "info.yaml").exists():
+                log.warn(
+                    f"Dependency at {self.base_path}: Old format detected, upgrading..."
+                )
+                self.read_edp_file()
+                self.write_edp_info()
+            if not (self.base_path / "info.yaml").exists():
+                log.error(
+                    f"Dependency at {self.base_path}: Cannot read info.yaml file after upgrade."
+                )
                 self.base_path = None
                 return
             self.read_edp_file()
+            log.debug(
+                f"Dependency {self.properties.name}/{self.properties.version}: {self.base_path}"
+            )
             search = list(
                 set([folder.parent for folder in self.base_path.rglob("*onfig.cmake")])
             )
@@ -461,7 +528,8 @@ class Dependency:
             return
         file = self.base_path / "edp.info"
         file.unlink(missing_ok=True)
-        self.properties.to_edp_file(file)
+        file = self.base_path / "info.yaml"
+        self.properties.to_yaml_file(file)
 
     def read_edp_file(self):
         """
@@ -469,6 +537,13 @@ class Dependency:
         """
         if self.base_path is None:
             return
+        file = self.base_path / "info.yaml"
+        if file.exists():
+            self.properties.from_yaml_file(file)
+            return
+        log.warn(
+            f"Dependency at {self.base_path}: Old format detected reading old edp.info file..."
+        )
         file = self.base_path / "edp.info"
         self.properties.from_edp_file(file)
 
@@ -496,15 +571,6 @@ class Dependency:
         if self.source is None:
             return "local"
         return self.source
-
-    def get_source_formated(self):
-        """
-        Returns where this dependency has been found (local or remote name).
-        :return: Name of the source.
-        """
-        if self.source is None:
-            return "[magenta bold]local[/]"
-        return f"[purple4]{self.source}[/]"
 
     def match(self, other):
         """
@@ -658,3 +724,17 @@ class Dependency:
         if version in ["", None]:
             return False
         return not version_lt(self.properties.version, version)
+
+    def has_dependency(self):
+        """
+        Check if this dependency has dependencies.
+        :return: True if has dependencies.
+        """
+        return len(self.properties.dependencies) > 0
+
+    def get_dependency_list(self):
+        """
+        Get the list of dependencies as strings.
+        :return: List of dependencies.
+        """
+        return self.properties.dependencies

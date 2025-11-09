@@ -34,6 +34,24 @@ def set_logging_level(level: int):
         log.setLevel(logging.DEBUG)
 
 
+def align_centered(text: str, width: int) -> str:
+    """Center align a text in a given width.
+
+    Args:
+        text (str): text to align.
+        width (int): total width.
+
+    Returns:
+        str: centered text.
+    """
+    while len(text) < width:
+        if (len(text)) % 2 == 0:
+            text = " " + text
+        else:
+            text = text + " "
+    return text
+
+
 keywords = {
     "linux": "light_sea_green",
     "windows": "dark_cyan",
@@ -54,6 +72,7 @@ keywords = {
     "online": "green",
     "OFFLINE": "red bold",
     "srvs": "purple",
+    "srv": "purple",
 }
 
 
@@ -81,6 +100,10 @@ def formatting(
     for keyword, color in keywords.items():
         pattern = re.compile(re.escape(keyword), re.IGNORECASE)
         msg = pattern.sub(lambda m: f"[{color}]{m.group()}[/]", msg)
+
+    # format 'default' meaning words starting with * and followed by alphanumeric characters
+    default_pattern = re.compile(r"\*(\w+)")
+    msg = default_pattern.sub(lambda m: f"[bold blue]*{m.group(1)}[/]", msg)
 
     # formatting date that can appear in the message as iso format to human-readable format
     date_pattern = re.compile(
