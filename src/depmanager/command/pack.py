@@ -4,9 +4,8 @@ Pack command
 
 from copy import deepcopy
 from pathlib import Path
-from sys import stderr
 
-from depmanager.api.internal.messaging import log, message
+from depmanager.api.internal.messaging import log, message, align_centered
 
 possible_info = ["pull", "push", "add", "del", "rm", "query", "ls", "clean"]
 deprecated = {"del": "rm", "query": "ls"}
@@ -19,6 +18,7 @@ def pack(args, system=None):
     :param system: The local system
     """
     from depmanager.api.internal.common import query_argument_to_dict
+    from depmanager.api.internal.dependency import Props
     from depmanager.api.package import PackageManager
 
     pacman = PackageManager(system)
@@ -51,7 +51,7 @@ def pack(args, system=None):
             )
             exit(-666)
     transitivity = False
-    if args.what == "query":
+    if args.what in ["query", "ls"]:
         if args.transitive:
             transitivity = True
     if args.what == "add":
@@ -84,6 +84,9 @@ def pack(args, system=None):
     if args.what == "push":
         deps = pacman.query(query)
     else:
+        log.debug(
+            f"Packing {args.what} with query {query} on remote {remote_name} transitivity {transitivity}"
+        )
         deps = pacman.query(query, remote_name, transitivity)
     if args.what in ["query", "ls"]:
         if len(deps) == 0:
@@ -91,9 +94,44 @@ def pack(args, system=None):
             return
         message("List of matching packages:")
         pacman.get_default_remote()
+        # get the longest source name
+        max_source_length = 0
+        for dep in deps:
+            source_length = len(dep.get_source())
+            if dep.get_source() == pacman.get_default_remote():
+                source_length += 1  # for the star
+            if source_length > max_source_length:
+                max_source_length = source_length
+        # adapt the print format to the longest source name
         for dep in deps:
             default_mark = ["", "*"][dep.get_source() == pacman.get_default_remote()]
-            message(f"[{default_mark}{dep.get_source()}] {dep.properties.get_as_str()}")
+            source = align_centered(
+                f"{default_mark}{dep.get_source()}", max_source_length + 2
+            )
+            message(f"[{source}] {dep.properties.get_as_str()}")
+            if dep.has_dependency():
+                indent = " " * (max_source_length + 5)
+                for sub_dep in dep.get_dependency_list():
+                    # complete sub dep with parent info
+                    if "kind" not in sub_dep.keys():
+                        sub_dep.kind = dep.properties.kind
+                    if dep.is_platform_dependent():
+                        if "arch" not in sub_dep.keys():
+                            sub_dep["arch"] = dep.properties.arch
+                        if "os" not in sub_dep.keys():
+                            sub_dep["os"] = dep.properties.os
+                        if "abi" not in sub_dep.keys():
+                            sub_dep["abi"] = dep.properties.abi
+                        if dep.has_glibc() and "glibc" not in sub_dep.keys():
+                            sub_dep["glibc"] = dep.properties.glibc
+                    # try to resolve sub dep with same source as parent
+                    sub_deps = pacman.query(sub_dep, remote_name)
+                    if len(sub_deps) == 0:
+                        message(f"{indent}:x:  -> {Props(sub_dep).get_as_str()}")
+                    else:
+                        message(
+                            f"{indent}:white_check_mark:  -> {sub_deps[0].properties.get_as_str()}"
+                        )
         return
     if args.what == "clean":
         log.info(
@@ -119,10 +157,10 @@ def pack(args, system=None):
         return
     if args.what in ["rm", "del", "pull", "push"]:
         if len(deps) == 0:
-            log.warn("WARNING: No package matching the query.", file=stderr)
+            log.warn("No package matching the query.")
             return
         if len(deps) > 1 and not args.recurse:
-            log.warn("WARNING: More than one package match the query, please precise:")
+            log.warn("More than one package match the query, please precise:")
             for dep in deps:
                 message(f"{dep.properties.get_as_str()}")
             return

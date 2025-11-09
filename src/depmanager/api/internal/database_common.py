@@ -4,7 +4,7 @@ Database Object.
 
 from pathlib import Path
 
-from depmanager.api.internal.dependency import Dependency, Props
+from depmanager.api.internal.dependency import Dependency, Props, version_lt
 from depmanager.api.internal.messaging import log
 
 
@@ -47,18 +47,29 @@ class __DataBase:
         """
         if not self.valid_shape:
             return []
+        latest = False
         if data is None:
             props = Props({}, query=True)
         elif type(data) in [str, dict]:
             props = Props(data, query=True)
+            if "latest" in data:
+                latest = True
         elif type(data) is Dependency:
             props = data.properties
         elif type(data) is Props:
             props = data
         else:
             return []
+        deps = [dep for dep in self.dependencies if dep.match(props)]
+        if not latest:
+            return deps
+        # Get the latest version number for each name
+        vers = {}
+        for dep in deps:
+            if dep.properties.name not in vers or version_lt(vers[dep.properties.name],dep.properties.version) :
+                vers[dep.properties.name] = dep.properties.version
         return sorted(
-            [dep for dep in self.dependencies if dep.match(props)], reverse=True
+            [dep for dep in deps if dep.properties.version == vers[dep.properties.name] ], reverse=True
         )
 
 

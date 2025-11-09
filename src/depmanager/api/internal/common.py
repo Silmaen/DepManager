@@ -4,6 +4,8 @@ Common helper function.
 
 from argparse import ArgumentParser
 
+client_api = "2.1.0"
+
 
 def add_common_arguments(parser: ArgumentParser):
     """
@@ -93,6 +95,13 @@ def add_query_arguments(parser: ArgumentParser):
         help="Transitive query",
         default=False,
     )
+    parser.add_argument(
+        "--latest",
+        "-l",
+        action="store_true",
+        help="Get only the latest version",
+        default=False,
+    )
 
 
 def query_argument_to_dict(args):
@@ -115,6 +124,8 @@ def query_argument_to_dict(args):
         "abi": args.abi,
         "glibc": args.glibc,
         "build_date": args.build_date,
+        "transitive": args.transitive,
+        "latest": args.latest,
     }
 
 
