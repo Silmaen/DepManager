@@ -187,18 +187,39 @@ class Builder:
                     stalled = False
                     new_recipe.append(rec)
                 else:
-                    dep_satisfied = True
-                    for dep in rec.dependencies:
-                        if not self._find_recipe(new_recipe, dep):
-                            dep_satisfied = False
-                    if dep_satisfied:
+                    unfulfilled_deps = []
+                    dependencies = [{"dep": d, "from": d} for d in rec.dependencies]
+                    for dep in dependencies:
+                        loc = self.pacman.query(dep["dep"])
+                        if len(loc) > 0:
+                            log.info(
+                                f"Found dependency {dep['dep']} in local DB (needed for {dep['from']})."
+                            )
+                            if loc[0].has_dependency():
+                                for sub_dep in loc[0].get_dependency_list():
+                                    dependencies.append(
+                                        {"dep": sub_dep, "from": dep["dep"]}
+                                    )
+                            continue
+                        if self._find_recipe(new_recipe, dep["dep"]):
+                            log.info(
+                                f"Found dependency {dep['dep']} in new recipe list (needed for {dep['from']})."
+                            )
+                            continue
+                        log.warn(
+                            f"Dependency {dep['dep']} (needed for {dep['from']}) not fulfilled for {rec}."
+                        )
+                        unfulfilled_deps.append(dep["dep"])
+                    if len(unfulfilled_deps) == 0:
                         stalled = False
                         new_recipe.append(rec)
+                    else:
+                        log.warn(f"Recipe {rec} has unfulfill dependencies !!")
         # add unresolved dependency recipes
         for rec in self.recipes:
             if rec in new_recipe:  # add recipe only once
                 continue
-            log.warning(f"WARNING: Added {rec.to_str()} with missing dependency.")
+            log.warning(f"Added {rec.to_str()} with missing dependency.")
             new_recipe.append(rec)
         # replace the list
         self.recipes = new_recipe

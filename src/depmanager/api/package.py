@@ -3,7 +3,6 @@ Manager for package.
 """
 
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.internal.messaging import log
 
@@ -42,7 +41,6 @@ class PackageManager:
             slist = self.__sys.get_source_list()
         else:
             slist = [using_name]
-        log.debug(f"PackageManager::query - Searching {transitive} in sources: {slist}")
         db = []
         for s in slist:
             if s == "local":
@@ -159,8 +157,7 @@ class PackageManager:
             for find in finds:
                 log.warn(f"         {find.properties.get_as_str()}")
             log.warn(
-                "         Precise your request, only one package per pull allowed.",
-                file=stderr,
+                "         Precise your request, only one package per pull allowed."
             )
             return
         if len(finds) == 0:

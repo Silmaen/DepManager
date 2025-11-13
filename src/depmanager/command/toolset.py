@@ -2,8 +2,6 @@
 Manage the toolsets
 """
 
-from sys import stderr
-
 from depmanager.api.internal.messaging import log, message
 
 possible_toolset = ["list", "ls", "add", "del", "rm"]
@@ -73,7 +71,7 @@ class ToolsetCommand:
         :param name: Remote's name.
         """
         if type(name) is not str or name in ["", None]:
-            log.fatal(f"please give a name for removing a toolset.", file=stderr)
+            log.fatal(f"please give a name for removing a toolset.")
             exit(-666)
         self.toolset_instance.remove_toolset(name)
 

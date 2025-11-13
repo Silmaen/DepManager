@@ -222,17 +222,19 @@ class Props:
         Get a dictionary of data.
         :return: Dictionary.
         """
-        return {
+        dict_out = {
             "name": self.name,
             "version": self.version,
             "os": self.os,
             "arch": self.arch,
             "kind": self.kind,
             "abi": self.abi,
-            "glibc": self.glibc,
             "build_date": self.build_date,
             "dependencies": self.dependencies,
         }
+        if self.has_glibc():
+            dict_out["glibc"] = self.glibc
+        return dict_out
 
     def match(self, other):
         """
@@ -306,10 +308,21 @@ class Props:
         else:
             date = f"{self.build_date}"
         output = f"{self.name}/{self.version} ({date}) [{base_info}"
-        if self.glibc not in ["", None]:
+        if self.kind != "header" and self.glibc not in ["", None]:
             output += f", {self.glibc}"
         output += "]"
         return output
+
+    def has_glibc(self):
+        """
+        Check glibc defined.
+        :return: True if defined or irrelevant.
+        """
+        return (
+            self.os == "Linux"
+            and self.glibc not in ["", None]
+            and self.kind != "header"
+        )
 
     def from_str(self, data: str):
         """
@@ -428,7 +441,8 @@ class Props:
             fp.write(f"arch = {self.arch}\n")
             fp.write(f"kind = {self.kind}\n")
             fp.write(f"abi = {self.abi}\n")
-            fp.write(f"glibc = {self.glibc}\n")
+            if self.has_glibc():
+                fp.write(f"glibc = {self.glibc}\n")
             fp.write(f"build_date = {self.build_date.isoformat()}\n")
 
     def from_yaml_file(self, file: Path):
@@ -609,7 +623,7 @@ class Dependency:
         Check glibc defined.
         :return: True if defined or irrelevant.
         """
-        return self.properties.os != "Linux" or self.properties.glibc not in ["", None]
+        return self.properties.has_glibc()
 
     def libc_compatible(self, system_libc_version: str = ""):
         """
@@ -737,4 +751,5 @@ class Dependency:
         Get the list of dependencies as strings.
         :return: List of dependencies.
         """
+        log.debug(f"Dependencies for {self.properties.dependencies}")
         return self.properties.dependencies

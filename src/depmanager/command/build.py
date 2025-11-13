@@ -3,7 +3,6 @@ Build command.
 """
 
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.builder import Builder
 from depmanager.api.internal.messaging import log
@@ -19,10 +18,10 @@ def build(args, system=None):
 
     location = Path(args.location).resolve()
     if not location.exists():
-        log.fatal(f"location {location} does not exists.", file=stderr)
+        log.fatal(f"location {location} does not exists.")
         exit(-666)
     if not location.is_dir():
-        log.fatal(f"location {location} must be a folder.", file=stderr)
+        log.fatal(f"location {location} must be a folder.")
         exit(-666)
     #
     # Cross infos
@@ -60,7 +59,7 @@ def build(args, system=None):
         skip_push=args.no_push,
     )
     if not builder.has_recipes():
-        log.fatal(f"no recipe found in {location}", file=stderr)
+        log.fatal(f"no recipe found in {location}")
         exit(-666)
     log.info(f"found {len(builder.recipes)} in the given source folder")
 

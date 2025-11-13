@@ -12,13 +12,31 @@ class Recipe:
     """
 
     name = ""
+    """Package name."""
+
     version = ""
+    """Package version."""
+
     source_dir = ""
+    """Source directory inside recipe path."""
+
     cache_variables = {}
+    """Variables to cache between builds."""
+
     config = ["Debug", "Release"]
+    """Build configurations."""
+
     kind = "shared"
+    """Package kind: static or shared."""
+
+    public_dependencies = []
+    """List of public dependencies (Should always be exposed to library user)."""
+
     dependencies = []
+    """List of private dependencies."""
+
     settings = {"os": "", "arch": "", "abi": "", "install_path": Path()}
+    """Settings for the package."""
 
     def __init__(self, path: Path = None, possible: bool = True):
         self.possible = possible
