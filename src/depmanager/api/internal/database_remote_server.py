@@ -4,7 +4,6 @@ Remote FTP database
 
 from datetime import datetime
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.internal.common import client_api
 from depmanager.api.internal.database_common import __RemoteDatabase
@@ -420,7 +419,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 log.error(
                     f"connecting to server: {self.destination}: {resp.status_code}: {resp.reason}"
                 )
-                log.error(f"      Server Data: {resp.text}", file=stderr)
+                log.error(f"      Server Data: {resp.text}")
                 return False
             return True
         except Exception as err:

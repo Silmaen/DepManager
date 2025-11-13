@@ -176,37 +176,59 @@ class RecipeBuilder:
             return False
         ok = True
         dep_list = []
-        for dep in self.recipe.dependencies:
-            if type(dep) is not dict:
+        dep_dict_list = []
+        dep_seen = []
+        dependencies = [
+            {"from": "this", "dep": dep} for dep in self.recipe.dependencies
+        ]
+        for dep in dependencies:
+            if type(dep["dep"]) is not dict:
                 ok = False
                 log.error(
                     f"package {self.recipe.to_str()}: dependencies must be a list of dict."
                 )
                 break
-            if "name" not in dep:
+            if "name" not in dep["dep"]:
                 log.error(
-                    f"package {self.recipe.to_str()}: dependencies {dep} must be a contain a name."
+                    f"package {self.recipe.to_str()}: dependencies {dep['dep']} must be a contain a name."
                 )
                 ok = False
                 break
-            if "os" not in dep:
-                dep["os"] = self.os
-            if "arch" not in dep:
-                dep["arch"] = self.arch
-            if "abi" not in dep:
-                dep["abi"] = self.abi
-            result = self.local.local_database.query(dep)
+            if "os" not in dep["dep"]:
+                dep["dep"]["os"] = self.os
+            if "arch" not in dep["dep"]:
+                dep["dep"]["arch"] = self.arch
+            if "abi" not in dep["dep"]:
+                dep["dep"]["abi"] = self.abi
+            result = self.local.local_database.query(dep["dep"])
             if len(result) == 0:
                 log.error(
-                    f"package {self.recipe.to_str()}: dependency {dep['name']} Not found:\n{dep}"
+                    f"package {self.recipe.to_str()}: dependency {dep['dep']['name']} Not found:\n{dep['dep']}"
                 )
                 ok = False
                 break
+            used_dep = result[0]
+            dep_code = used_dep.properties.get_as_str()
+            if dep_code in dep_seen:
+                continue  # already processed
+            dep_seen.append(dep_code)
             log.info(
-                f"package {self.recipe.to_str()}: dependency {dep['name']} found: {result[0].properties.get_as_str()}",
+                f"package {self.recipe.to_str()}: dependency {dep['dep']['name']} found: {used_dep.properties.get_as_str()}",
             )
-            dep_list.append(str(result[0].get_cmake_config_dir()).replace("\\", "/"))
-        return ok, dep_list
+            if used_dep.has_dependency():
+                log.info(
+                    f"package {self.recipe.to_str()}: dependency {dep['dep']['name']} has its own dependencies, checking them..."
+                )
+                dependencies += [
+                    {"from": used_dep.properties.name, "dep": dep}
+                    for dep in used_dep.properties.dependencies
+                ]
+            dep_list.append(str(used_dep.get_cmake_config_dir()).replace("\\", "/"))
+
+            if self.recipe.kind != "shared" or used_dep.properties.kind == "shared":
+                dep_dict_list.append(used_dep.properties.to_dict())
+
+        return ok, dep_list, dep_dict_list
 
     def build(self, forced: bool = False):
         """
@@ -270,10 +292,11 @@ class RecipeBuilder:
         #
         #
         # check dependencies+
-        ok, dep_list = self._check_dependencies()
+        ok, dep_list, dep_dict_list = self._check_dependencies()
         if not ok:
             self.recipe.clean()
             return False
+        p.dependencies = dep_dict_list
 
         #
         #
@@ -317,6 +340,7 @@ class RecipeBuilder:
         log.info(f"package {self.recipe.to_str()}: Create package...")
         self.recipe.install()
         p.to_edp_file(self.temp / "install" / "edp.info")
+        p.to_yaml_file(self.temp / "install" / "info.yaml")
         # copy to repository
         self.local.import_folder(self.temp / "install")
         # clean Temp

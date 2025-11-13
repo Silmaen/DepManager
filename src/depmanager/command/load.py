@@ -3,7 +3,6 @@ The load subcommand
 """
 
 from pathlib import Path
-from sys import stderr
 
 from depmanager.api.internal.messaging import log
 from depmanager.api.load import load_environment
@@ -64,7 +63,7 @@ def load(args, system=None):
         log.info(result)
         return err_code
     except Exception as err:
-        log.fatal(f"in loading environment: {err}", file=stderr)
+        log.fatal(f"in loading environment: {err}")
         exit(23)
 
 
