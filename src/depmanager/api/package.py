@@ -23,12 +23,15 @@ class PackageManager:
         else:
             self.__sys = LocalSystem()
 
-    def query(self, query, remote_name: str = "", transitive: bool = False):
+    def query(
+        self, query, remote_name: str = "", transitive: bool = False, sort: bool = True
+    ):
         """
         Do a query into database.
         :param query: Query's data.
         :param remote_name: Remote's name to search of empty for local.
         :param transitive: Starting from remote_name unroll the lis of source local -> remote
+        :param sort: Sort the result list by name and version.
         :return: List of packages matching the query.
         """
         using_name = "local"
@@ -50,8 +53,20 @@ class PackageManager:
             for dep in ldb:
                 dep.source = s
             db += ldb
-
-        return sorted(db)
+        if sort:
+            db.sort(
+                key=lambda x: (
+                    x.properties.name,
+                    x.properties.version,
+                ),
+                reverse=False,
+            )
+            # stable sort to have versions in order
+            db.sort(
+                key=lambda x: x.properties.version,
+                reverse=True,
+            )
+        return db
 
     def get_default_remote(self):
         """

@@ -448,12 +448,12 @@ Among things:
     * [X] Prettier output for commandline
     * [X] Add DEPMANAGER_HOME environment variable to override to classical search in HOME.
     * [ ] Add concept of package dependencies
-        * [ ] Add dependency list in built packages.
-            * [ ] Construct dependency based on build.
+        * [X] Add dependency list in built packages.
+            * [X] Construct dependency based on build.
             * [X] Use dependency list in query search
-        * [ ] Allow pull package with dependencies.
-        * [ ] Dependency checks during load.
-        * [ ] Recursive load of package.
+        * [ ] Allow push/pull package with dependencies.
+        * [X] Dependency checks during load.
+        * [X] Recursive load of package.
 * version 0.4.2 -- 2025-10-26
     * [X] allow to introduce a missing CMakelists.txt file in recipe source step.
 * version 0.4.1 -- 2025-07-01
