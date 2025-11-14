@@ -178,12 +178,25 @@ class PackageManager:
         if len(finds) == 0:
             log.error("no package matches the request.")
             return
-        res = remote.pull(finds[0], self.__sys.temp_path)
+        depp = finds[0]
+        res = remote.pull(dep, self.__sys.temp_path)
         if res is None:
-            file = self.__sys.temp_path / f"{finds[0].properties.hash()}.tgz"
+            file = self.__sys.temp_path / f"{dep.properties.hash()}.tgz"
         else:
             file = self.__sys.temp_path / f"{res}"
         self.add_from_location(file)
+        if depp.has_dependencies():
+            log.info("Package has dependencies, trying to get them...")
+            for sub_dep in depp.get_dependency_list():
+                if len(self.query(sub_dep, transitive=False)) == 0:
+                    log.info(
+                        f" Getting dependency {sub_dep['name']}/{sub_dep['version']}..."
+                    )
+                    self.add_from_remote(sub_dep, remote_name)
+                else:
+                    log.info(
+                        f" Dependency {sub_dep['name']}/{sub_dep['version']} already present locally."
+                    )
 
     def add_to_remote(self, dep, remote_name):
         """
@@ -210,9 +223,22 @@ class PackageManager:
         if len(finds) == 0:
             log.error("no package matches the request.")
             return
+        depp = finds[0]
 
         dep_path = self.__sys.temp_path / (Path(dep.get_path()).name + ".tgz")
         log.info(f"Compressing library to file {dep_path}.")
-        self.__sys.local_database.pack(finds[0], self.__sys.temp_path, "tgz")
+        self.__sys.local_database.pack(depp, self.__sys.temp_path, "tgz")
         log.info(f"Starting upload.")
-        remote.push(finds[0], dep_path)
+        remote.push(depp, dep_path)
+        if depp.has_dependencies():
+            log.info("Package has dependencies, trying to push them...")
+            for sub_dep in depp.get_dependency_list():
+                if len(remote.query(sub_dep, transitive=False)) == 0:
+                    log.info(
+                        f" Pushing dependency {sub_dep['name']}/{sub_dep['version']}..."
+                    )
+                    self.add_to_remote(sub_dep, remote_name)
+                else:
+                    log.info(
+                        f" Dependency {sub_dep['name']}/{sub_dep['version']} already present on remote."
+                    )
