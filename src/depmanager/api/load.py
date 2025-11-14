@@ -182,7 +182,7 @@ def load_environment(
             continue
         if result[0].source != "local":
             log.debug(f"V Adding package {q['name']} from remote...")
-            pacman.add_from_remote(result[0], pacman.get_default_remote())
+            pacman.add_from_remote(result[0], result[0].source)
         result = pacman.query(q, transitive=False)
         if len(result) == 0:
             log.error(f"X Could not find package {q['name']} after addition.")

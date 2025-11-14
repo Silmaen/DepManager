@@ -447,11 +447,11 @@ Among things:
 * version 0.5.x
     * [X] Prettier output for commandline
     * [X] Add DEPMANAGER_HOME environment variable to override to classical search in HOME.
-    * [ ] Add concept of package dependencies
+    * [X] Add concept of package dependencies
         * [X] Add dependency list in built packages.
             * [X] Construct dependency based on build.
             * [X] Use dependency list in query search
-        * [ ] Allow push/pull package with dependencies.
+        * [X] Allow push/pull package with dependencies.
         * [X] Dependency checks during load.
         * [X] Recursive load of package.
 * version 0.4.2 -- 2025-10-26

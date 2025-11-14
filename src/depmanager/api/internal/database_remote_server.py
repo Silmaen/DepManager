@@ -386,6 +386,8 @@ class RemoteDatabaseServer(__RemoteDatabase):
         except Exception as err:
             log.error(f"Exception during server push: {self.destination}: {err}")
             return
+        # Actualization the list
+        self.get_dep_list()
 
     def delete(self, dep: Dependency):
         """
@@ -459,6 +461,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
         """
         self.valid_shape = False
         log.warn(f"WARNING: RemoteDatabaseServer::suppress({dep}) not implemented.")
+        return False
 
     def get_server_version(self):
         """
