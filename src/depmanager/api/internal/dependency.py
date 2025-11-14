@@ -356,7 +356,6 @@ class Props:
                     if len(dep_data) == 0:
                         self.dependencies = []
                     else:
-                        log.debug(f"evaluating dependencies: '{dep_data}'")
                         self.dependencies = literal_eval(dep_data)
                 except (ValueError, SyntaxError) as err:
                     log.warn(f"Invalid dependencies format: {err}")
@@ -751,5 +750,4 @@ class Dependency:
         Get the list of dependencies as strings.
         :return: List of dependencies.
         """
-        log.debug(f"Dependencies for {self.properties.dependencies}")
         return self.properties.dependencies

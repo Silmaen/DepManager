@@ -4,7 +4,7 @@ The load subcommand
 
 from pathlib import Path
 
-from depmanager.api.internal.messaging import log
+from depmanager.api.internal.messaging import log, message
 from depmanager.api.load import load_environment
 
 
@@ -19,39 +19,39 @@ def load(args, system=None):
         arg_check = True
         config = Path()
         if args.config in ["", None]:
-            log.error(f"in loading environment: Config path is empty.")
+            log.error(f"Loading environment: Config path is empty.")
             arg_check = False
         else:
             config = Path(args.config).resolve()
             if not config.exists():
-                log.error(f"in loading environment: Config path does not exists.")
+                log.error(f"Loading environment: Config path does not exists.")
                 arg_check = False
             if config.is_dir():
                 if (config / "depmanager.yml").exists():
                     config = config / "depmanager.yml"
                 else:
                     log.error(
-                        f"in loading environment: Config path is a folder not containing 'depmanager.yml."
+                        f"Loading environment: Config path is a folder not containing 'depmanager.yml."
                     )
                     arg_check = False
         if args.kind not in ["static", "shared"]:
             log.error(
-                f"in loading environment: default kind must be 'static' or 'shared'."
+                f"Loading environment: default kind must be 'static' or 'shared'."
             )
             arg_check = False
         if args.os not in ["Linux", "Windows"]:
             log.error(
-                f"in loading environment: os unsupported, valid are 'Linux', 'Windows'."
+                f"Loading environment: os unsupported, valid are 'Linux', 'Windows'."
             )
             arg_check = False
         if args.arch not in ["x86_64", "aarch64"]:
             log.error(
-                f"in loading environment: arch unsupported, valid are 'x86_64', 'aarch64'."
+                f"Loading environment: arch unsupported, valid are 'x86_64', 'aarch64'."
             )
             arg_check = False
         if args.abi not in ["gnu", "llvm", "msvc"]:
             log.error(
-                f"in loading environment: abi unsupported, valid are 'gnu', 'llvm', 'msvc'."
+                f"Loading environment: abi unsupported, valid are 'gnu', 'llvm', 'msvc'."
             )
             arg_check = False
         if not arg_check:
@@ -60,10 +60,10 @@ def load(args, system=None):
             system, config, args.kind, args.os, args.arch, args.abi, args.glibc
         )
         # finding everything
-        log.info(result)
+        message(result)
         return err_code
     except Exception as err:
-        log.fatal(f"in loading environment: {err}")
+        log.fatal(f"Loading environment: {err}")
         exit(23)
 
 
