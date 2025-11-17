@@ -458,5 +458,3 @@ class LocalSystem:
         if name in self.toolsets:
             return self.toolsets[name]
         return None
-
-    #

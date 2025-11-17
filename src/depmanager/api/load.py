@@ -49,7 +49,7 @@ def load_environment(
     err_code = 0
     queries = []
     for pack, constrains in packs.items():
-        res = pacman.query({"name": pack}, transitive=False)
+        res = pacman.query({"name": pack})
         not_header = False
         if len(res) > 0:
             if res[0].is_platform_dependent():
@@ -92,7 +92,7 @@ def load_environment(
     for item in queries:
         query = item["query"]
         is_optional = item["optional"]
-        remote_matches = pacman.query(query, transitive=True)
+        remote_matches = pacman.query(query | {"transitive": True})
         if len(remote_matches) > 0:
             found_queries.append(query)
             log.debug(
@@ -112,7 +112,7 @@ def load_environment(
                         sub_query["version"] = d["version"]
                     if glibc not in ["", None]:
                         sub_query["glibc"] = glibc
-                    sub_matches = pacman.query(sub_query, transitive=True)
+                    sub_matches = pacman.query(sub_query | {"transitive": True})
                     if len(sub_matches) == 0:
                         log.error(
                             f"  X Missing dependency {d['name']}/{d['version']} for package {query['name']}/{query['version']}"
@@ -175,7 +175,7 @@ def load_environment(
     packages = []
     for q in unique_queries:
         log.info(f"getting package {q['name']}...")
-        result = pacman.query(q, transitive=True)
+        result = pacman.query(q | {"transitive": True})
         if len(result) == 0:
             log.error(f"X Could not find package {q['name']} after resolution.")
             err_code = 1
@@ -183,7 +183,7 @@ def load_environment(
         if result[0].source != "local":
             log.debug(f"V Adding package {q['name']} from remote...")
             pacman.add_from_remote(result[0], result[0].source)
-        result = pacman.query(q, transitive=False)
+        result = pacman.query(q)
         if len(result) == 0:
             log.error(f"X Could not find package {q['name']} after addition.")
             err_code = 1

@@ -5,6 +5,33 @@ Manager for package.
 from pathlib import Path
 
 from depmanager.api.internal.messaging import log
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    DownloadColumn,
+    TransferSpeedColumn,
+)
+
+
+def get_folder_size(folder_path: Path) -> int:
+    """
+    Calculate total size of all files in a folder recursively.
+
+    :param folder_path: Path to the folder
+    :return: Total size in bytes
+    """
+    total_size = 0
+    try:
+        for item in folder_path.rglob("*"):
+            if item.is_file():
+                total_size += item.stat().st_size
+    except Exception as e:
+        from depmanager.api.internal.messaging import log
+
+        log.warn(f"Error calculating folder size: {e}")
+    return total_size
 
 
 class PackageManager:
@@ -23,14 +50,11 @@ class PackageManager:
         else:
             self.__sys = LocalSystem()
 
-    def query(
-        self, query, remote_name: str = "", transitive: bool = False, sort: bool = True
-    ):
+    def query(self, query, remote_name: str = "", sort: bool = True):
         """
         Do a query into database.
         :param query: Query's data.
         :param remote_name: Remote's name to search of empty for local.
-        :param transitive: Starting from remote_name unroll the lis of source local -> remote
         :param sort: Sort the result list by name and version.
         :return: List of packages matching the query.
         """
@@ -40,7 +64,7 @@ class PackageManager:
         elif remote_name == "default":
             using_name = self.__sys.default_remote
 
-        if transitive:
+        if type(query) is dict and query.get("transitive", False):
             slist = self.__sys.get_source_list()
         else:
             slist = [using_name]
@@ -117,7 +141,19 @@ class PackageManager:
                     f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}"
                 )
                 with ZipFile(source) as archive:
-                    archive.extractall(destination_dir)
+                    members = archive.infolist()
+                    total = sum(m.file_size for m in members)
+                    with Progress(
+                        SpinnerColumn(),
+                        TextColumn("[progress.description]{task.description}"),
+                        BarColumn(),
+                        DownloadColumn(),
+                        TransferSpeedColumn(),
+                    ) as progress:
+                        task = progress.add_task("Extracting ZIP...", total=total)
+                        for member in members:
+                            archive.extract(member, destination_dir)
+                            progress.update(task, advance=member.file_size)
             elif suffixes in [[".tgz"], [".tar", ".gz"]]:
                 import tarfile
 
@@ -127,7 +163,20 @@ class PackageManager:
                     f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}"
                 )
                 with tarfile.open(str(source), "r|gz") as archive:
-                    archive.extractall(destination_dir)
+                    members = archive.getmembers()
+                    total = sum(m.size for m in members if m.isfile())
+                    with Progress(
+                        SpinnerColumn(),
+                        TextColumn("[progress.description]{task.description}"),
+                        BarColumn(),
+                        DownloadColumn(),
+                        TransferSpeedColumn(),
+                    ) as progress:
+                        task = progress.add_task("Extracting TGZ...", total=total)
+                        for member in members:
+                            archive.extract(member, destination_dir)
+                            if member.isfile():
+                                progress.update(task, advance=member.size)
             else:
                 log.warn(f"WARNING: File {source} has unsupported format.")
                 return
@@ -185,10 +234,10 @@ class PackageManager:
         else:
             file = self.__sys.temp_path / f"{res}"
         self.add_from_location(file)
-        if depp.has_dependencies():
+        if depp.has_dependency():
             log.info("Package has dependencies, trying to get them...")
             for sub_dep in depp.get_dependency_list():
-                if len(self.query(sub_dep, transitive=False)) == 0:
+                if len(self.query(sub_dep)) == 0:
                     log.info(
                         f" Getting dependency {sub_dep['name']}/{sub_dep['version']}..."
                     )
@@ -201,6 +250,7 @@ class PackageManager:
     def add_to_remote(self, dep, remote_name):
         """
         Get a package from local to remote.
+
         :param dep: The dependency to send.
         :param remote_name: The remote server to use.
         """
@@ -225,15 +275,57 @@ class PackageManager:
             return
         depp = finds[0]
 
-        dep_path = self.__sys.temp_path / (Path(dep.get_path()).name + ".tgz")
+        dep_path = self.__sys.temp_path / (Path(depp.get_path()).name + ".tgz")
         log.info(f"Compressing library to file {dep_path}.")
-        self.__sys.local_database.pack(depp, self.__sys.temp_path, "tgz")
+
+        try:
+            folder_path = Path(depp.get_path())
+            total_size = get_folder_size(folder_path)
+
+            if total_size > 0:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    DownloadColumn(),
+                    TransferSpeedColumn(),
+                ) as progress:
+                    task = progress.add_task("Compressing...", total=total_size)
+
+                    def progress_callback(bytes_processed: int) -> None:
+                        """
+                        Update progress bar with compressed bytes.
+
+                        :param bytes_processed: Number of bytes just processed
+                        """
+                        progress.advance(task, bytes_processed)
+
+                    self.__sys.local_database.pack(
+                        depp,
+                        self.__sys.temp_path,
+                        "tgz",
+                        progress_callback=progress_callback,
+                    )
+            else:
+                # Fallback without progress bar
+                self.__sys.local_database.pack(depp, self.__sys.temp_path, "tgz")
+
+        except TypeError:
+            # pack() doesn't support progress_callback parameter
+            log.debug(
+                "Pack method doesn't support progress callback, using without progress bar"
+            )
+            self.__sys.local_database.pack(depp, self.__sys.temp_path, "tgz")
+        except Exception as e:
+            log.error(f"Compression failed: {e}")
+            return
+
         log.info(f"Starting upload.")
         remote.push(depp, dep_path)
-        if depp.has_dependencies():
+        if depp.has_dependency():
             log.info("Package has dependencies, trying to push them...")
             for sub_dep in depp.get_dependency_list():
-                if len(remote.query(sub_dep, transitive=False)) == 0:
+                if len(remote.query(sub_dep)) == 0:
                     log.info(
                         f" Pushing dependency {sub_dep['name']}/{sub_dep['version']}..."
                     )
