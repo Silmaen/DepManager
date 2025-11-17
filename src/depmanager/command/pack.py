@@ -50,10 +50,6 @@ def pack(args, system=None):
                 f"{args.what} command work by linking to a remote, please define a remote."
             )
             exit(-666)
-    transitivity = False
-    if args.what in ["query", "ls"]:
-        if args.transitive:
-            transitivity = True
     if args.what == "add":
         if args.source in [None, ""]:
             log.fatal(f"please provide a source for package adding.")
@@ -84,10 +80,8 @@ def pack(args, system=None):
     if args.what == "push":
         deps = pacman.query(query)
     else:
-        log.debug(
-            f"Packing {args.what} with query {query} on remote {remote_name} transitivity {transitivity}"
-        )
-        deps = pacman.query(query, remote_name, transitivity)
+        log.debug(f">> pack {args.what} with query {query} on remote {remote_name}")
+        deps = pacman.query(query, remote_name)
     if args.what in ["query", "ls"]:
         if len(deps) == 0:
             log.warn("No package matching the query.")

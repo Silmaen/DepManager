@@ -51,12 +51,20 @@ class LocalDatabase(__DataBase):
             path = self.base_path / dep.get_path()
             rmtree(path)
 
-    def pack(self, deps, destination: Path, archive_format: str = packing_formats[0]):
+    def pack(
+        self,
+        deps,
+        destination: Path,
+        archive_format: str = packing_formats[0],
+        progress_callback=None,
+    ):
         """
         Compress the Dependencies.
+
         :param deps: Query for deletion.
         :param destination: Folder where to put the files.
         :param archive_format: Archive's type.
+        :param progress_callback: Optional callback function(bytes_processed: int).
         """
         from zipfile import ZipFile, ZIP_DEFLATED
         import tarfile
@@ -70,7 +78,15 @@ class LocalDatabase(__DataBase):
             if archive_format == "zip":
                 with ZipFile(archive_name, "w", ZIP_DEFLATED) as zip_file:
                     for content in dep_path.rglob("*"):
-                        zip_file.write(content, content.relative_to(dep_path))
+                        if content.is_file():
+                            zip_file.write(content, content.relative_to(dep_path))
+                            if progress_callback:
+                                progress_callback(content.stat().st_size)
             elif archive_format == "tgz":
-                with tarfile.open(str(archive_name), "w|gz") as tar_file:
-                    tar_file.add(dep_path, dep_path.relative_to(dep_path))
+                with tarfile.open(str(archive_name), "w:gz") as tar_file:
+                    for content in dep_path.rglob("*"):
+                        if content.is_file():
+                            arcname = content.relative_to(dep_path)
+                            tar_file.add(content, arcname=arcname)
+                            if progress_callback:
+                                progress_callback(content.stat().st_size)

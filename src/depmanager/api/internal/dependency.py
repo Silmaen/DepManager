@@ -2,7 +2,7 @@
 Dependency object.
 """
 
-from datetime import datetime
+import datetime
 from pathlib import Path
 
 from depmanager.api.internal.messaging import log
@@ -13,7 +13,7 @@ kinds = ["shared", "static", "header", "any"]
 
 default_kind = kinds[0]
 mac = Machine(True)
-base_date = datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+base_date = datetime.datetime.fromisoformat("2000-01-01T00:00:00+00:00")
 
 
 def safe_to_int(vers: str):
@@ -57,7 +57,7 @@ def read_date(the_date: str):
     try:
         normalized_date = the_date.strip().replace(" ", "T")
         if "T" not in normalized_date:  # not dte/hour separator: assume not a date
-            return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+            return datetime.datetime.fromisoformat("2000-01-01T00:00:00+00:00")
         date, time = normalized_date.split("T", 1)
         if "-" not in date:
             if len(date) == 8:
@@ -65,12 +65,12 @@ def read_date(the_date: str):
             elif len(date) == 6:
                 date = "20" + date[0:2] + "-" + date[2:4] + "-" + date[4:]
             else:  # assume not a real date
-                return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+                return datetime.datetime.fromisoformat("2000-01-01T00:00:00+00:00")
         else:
             if len(date) == 8:
                 date = "20" + date
             if len(date) != 10:  # not real date
-                return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+                return datetime.datetime.fromisoformat("2000-01-01T00:00:00+00:00")
         tz_str = "00:00"
         if "+" in time:
             time, tz_str = time.split("+", 1)
@@ -93,10 +93,10 @@ def read_date(the_date: str):
                 tz_str = "00:00"
             else:
                 tz_str = tz_str[0:2] + ":" + tz_str[2:]
-        return datetime.fromisoformat(date + "T" + time + "+" + tz_str)
+        return datetime.datetime.fromisoformat(date + "T" + time + "+" + tz_str)
     except Exception as err:
         log.fatal(f"*** Exception during date '{the_date}' decoding: {err}")
-        return datetime.fromisoformat("2000-01-01T00:00:00+00:00")
+        return datetime.datetime.fromisoformat("2000-01-01T00:00:00+00:00")
 
 
 class Props:
@@ -207,7 +207,7 @@ class Props:
             self.glibc = data["glibc"]
         if "build_date" in data and isinstance(data["build_date"], str):
             self.build_date = read_date(data["build_date"])
-        elif "build_date" in data and isinstance(data["build_date"], datetime):
+        elif "build_date" in data and isinstance(data["build_date"], datetime.datetime):
             self.build_date = data["build_date"]
         else:
             self.build_date = base_date
@@ -303,7 +303,7 @@ class Props:
         :return: A string.
         """
         base_info = f"{self.arch}, {self.kind}, {self.os}, {self.abi}"
-        if type(self.build_date) is datetime:
+        if type(self.build_date) is datetime.datetime:
             date = self.build_date.isoformat()
         else:
             date = f"{self.build_date}"
@@ -329,7 +329,6 @@ class Props:
         Do the inverse of get_as_string.
         :param data: The string representing the dependency as in get_as_str.
         """
-        from ast import literal_eval
 
         try:
             dep_data = None
@@ -356,9 +355,9 @@ class Props:
                     if len(dep_data) == 0:
                         self.dependencies = []
                     else:
-                        self.dependencies = literal_eval(dep_data)
-                except (ValueError, SyntaxError) as err:
-                    log.warn(f"Invalid dependencies format: {err}")
+                        self.dependencies = eval(dep_data)
+                except Exception as err:
+                    log.warn(f"Invalid dependencies format: {err} in {dep_data}")
                     self.dependencies = []
         except Exception as err:
             log.fatal(f"bad line format '{data}' ({err})")
@@ -484,7 +483,6 @@ class Dependency:
         self.source = source
         if isinstance(data, Path):
             self.base_path = Path(data)
-            log.debug(f"Loading dependency from path: {self.base_path}")
             if not self.base_path.exists() or (
                 not (self.base_path / "edp.info").exists()
                 and not (self.base_path / "info.yaml").exists()
@@ -507,9 +505,6 @@ class Dependency:
                 self.base_path = None
                 return
             self.read_edp_file()
-            log.debug(
-                f"Dependency {self.properties.name}/{self.properties.version}: {self.base_path}"
-            )
             search = list(
                 set([folder.parent for folder in self.base_path.rglob("*onfig.cmake")])
             )

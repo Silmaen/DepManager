@@ -52,8 +52,7 @@ class __DataBase:
             props = Props({}, query=True)
         elif type(data) in [str, dict]:
             props = Props(data, query=True)
-            if "latest" in data:
-                latest = True
+            latest = data.get("latest", False)
         elif type(data) is Dependency:
             props = data.properties
         elif type(data) is Props:
@@ -66,11 +65,19 @@ class __DataBase:
         # Get the latest version number for each name
         vers = {}
         for dep in deps:
-            if dep.properties.name not in vers or version_lt(vers[dep.properties.name],dep.properties.version) :
+            if dep.properties.name not in vers or version_lt(
+                vers[dep.properties.name], dep.properties.version
+            ):
                 vers[dep.properties.name] = dep.properties.version
-        return sorted(
-            [dep for dep in deps if dep.properties.version == vers[dep.properties.name] ], reverse=True
+        deps_latest = sorted(
+            [
+                dep
+                for dep in deps
+                if dep.properties.version == vers[dep.properties.name]
+            ],
+            reverse=True,
         )
+        return deps_latest
 
 
 class __RemoteDatabase(__DataBase):

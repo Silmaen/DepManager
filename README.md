@@ -434,17 +434,15 @@ Among things:
         * [ ] Can view, edit, suppress local package.
         * [ ] Can add, remove, explore remotes.
         * [ ] Can push, pull packages.
-* version 0.7.x
+* version 0.6.x
     * [ ] Add recipe library
         * [ ] Possibility to store the recipes in remote
         * [ ] Auto build recipe if neither local nor remote found.
-* version 0.6.x
     * [ ] Add more cmake commands
         * [ ] Check for package updates
-        * [ ] Allow to retrieve specific package
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
-* version 0.5.x
+* version 0.5.0 -- coming soon
     * [X] Prettier output for commandline
     * [X] Add DEPMANAGER_HOME environment variable to override to classical search in HOME.
     * [X] Add concept of package dependencies
