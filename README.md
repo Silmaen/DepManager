@@ -383,6 +383,8 @@ The builder will use the provided recipe in the following workflow:
 
 * Init recipe
 * Call `recipe.source()`
+* Check for dependencies
+* Call `recipe.make_description()`
 * Call `recipe.configure()`
 * Initialize options based on recipe data
 * Run cmake configure
@@ -393,6 +395,8 @@ The builder will use the provided recipe in the following workflow:
 * Import into local cache
 * Call `recipe.clean()`
 * Clean Temporary
+
+Note: if any step fails, the process stops and calls `recipe.clean()` before exiting.
 
 Here is a small example
 
@@ -423,6 +427,95 @@ class AnotherAwesomeLib(MyAwesomeLib):
 As many python file may exist in the source you want to build, python file using shebang will be ignored to avoid errors
 when parsing them. Do not add shebang in your recipe files.
 
+#### Recipe attributes
+
+A recipe can define the following attributes:
+
+* `name` (str): the package name
+* `version` (str): the package version
+* `source_dir` (str): the folder where to find the sources (and CMakeLists.txt)
+* `cache_variables` (dict): dictionary of cmake cache variables to set prior to configure
+  example:
+    ```python
+    cache_variables = {
+        'BUILD_SHARED_LIBS': 'ON',
+        'BUILD_TESTS': 'OFF'
+    }
+    ```
+* `config` (list of str): list of build configurations to build
+  default:
+    ```python
+    config = ['Debug', 'Release']
+    ```
+* `kind` (str): the library kind: `shared`, `static`, `header`
+* `public_dependencies` (list of dict): list of public dependencies with keys'
+* `dependencies` (list of dict): list of dependencies with keys:
+    * `name` (str): dependency name
+    * `version` (str): dependency version requirement
+    * `kind` (str): dependency kind requirement
+    * `os` (str): dependency os requirement
+    * `arch` (str): dependency architecture requirement
+    * `abi` (str): dependency abi requirement
+      example:
+    ```python
+    dependencies = [
+        {'name': 'fmt', 'version': '>=10.0.0', 'kind': 'shared'},
+        {'name': 'spdlog', 'version': '1.12.0'}
+    ]
+    ```
+* `description` (str): description of the package in Markdown format
+* `settings` (dict): dictionary of settings to store in the package
+  default:
+    ```python
+    settings = {
+        'os': '',
+        'arch': '',
+        'abi': '',
+        'install_path': Path()
+    }
+    ```
+    * `os` (str): target os: `Linux`, `Windows`
+    * `arch` (str): target architecture: `x86_64`, `aarch64`
+    * `abi` (str): target abi: `gnu`, `llvm`, `msvc`
+    * `install_path` (Path): path to install the package (by default, depmanager will use its own layout)
+
+#### Recipe methods
+
+A recipe can override the following methods (by default, they do nothing):
+
+* `source(self)`: method called to get the sources.
+
+  by default, it does nothing, thus assuming the sources are already in place in `source_dir`.
+  this method can de used to dynamically modify or download the sources prior to build.
+
+* `make_description(self)`: method called to generate the description
+
+  by default, description is only the given property string; but with this method, the property text can be filled
+  dynamically.
+
+* `configure(self)`: method called prior to cmake configure. By default, do nothing.
+
+  In this method, the recipe can modify the cmake options by using `self.cache_variable` dictionary.
+
+  example:
+   ```python
+   def configure(self):
+       # force shared build
+       self.cache_variable['BUILD_SHARED_LIBS'] = 'ON'
+       # disable tests
+       self.cache_variable['BUILD_TESTS'] = 'OFF'
+   ```
+
+* `install(self)`: method called after cmake install. By default, do nothing.
+
+  This method can be used to move files around after installation.
+  Tycally if the recipe has custom installation rules.
+
+* `clean(self)`: method called at the end of the build process. By default,
+
+  do nothing. This method can be used to clean temporary files created
+  during the build process. this method is called even in case of failing build.
+
 ## Roadmap
 
 The First in the roadmap is to use this tool in C++ project to get feedback.
@@ -442,7 +535,7 @@ Among things:
         * [ ] Check for package updates
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
-* version 0.5.0 -- coming soon
+* version 0.5.0 -- 2025-11-18
     * [X] Prettier output for commandline
     * [X] Add DEPMANAGER_HOME environment variable to override to classical search in HOME.
     * [X] Add concept of package dependencies
@@ -452,6 +545,10 @@ Among things:
         * [X] Allow push/pull package with dependencies.
         * [X] Dependency checks during load.
         * [X] Recursive load of package.
+    * [X] Management of package description in Markdown format.
+        * [X] Allow to write description in recipe.
+        * [X] Display description in commandline.
+        * [X] Store description in package.
 * version 0.4.2 -- 2025-10-26
     * [X] allow to introduce a missing CMakelists.txt file in recipe source step.
 * version 0.4.1 -- 2025-07-01

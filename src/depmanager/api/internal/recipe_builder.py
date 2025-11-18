@@ -300,6 +300,11 @@ class RecipeBuilder:
 
         #
         #
+        # make description
+        self.recipe.make_description()
+
+        #
+        #
         # configure
         log.info(f"package {self.recipe.to_str()}: Configure...")
         if self.recipe.kind not in ["shared", "static"]:
@@ -341,6 +346,9 @@ class RecipeBuilder:
         self.recipe.install()
         p.to_edp_file(self.temp / "install" / "edp.info")
         p.to_yaml_file(self.temp / "install" / "info.yaml")
+        if self.recipe.description not in ["", None]:
+            with open(self.temp / "install" / "description.md", "w") as desc_file:
+                desc_file.write(self.recipe.description)
         # copy to repository
         self.local.import_folder(self.temp / "install")
         # clean Temp

@@ -7,8 +7,8 @@ from pathlib import Path
 
 from depmanager.api.internal.messaging import log, message, align_centered
 
-possible_info = ["pull", "push", "add", "del", "rm", "query", "ls", "clean"]
-deprecated = {"del": "rm", "query": "ls"}
+possible_info = ["pull", "push", "add", "rm", "ls", "clean", "info"]
+deprecated = {}
 
 
 def pack(args, system=None):
@@ -82,7 +82,7 @@ def pack(args, system=None):
     else:
         log.debug(f">> pack {args.what} with query {query} on remote {remote_name}")
         deps = pacman.query(query, remote_name)
-    if args.what in ["query", "ls"]:
+    if args.what in ["ls"]:
         if len(deps) == 0:
             log.warn("No package matching the query.")
             return
@@ -149,7 +149,7 @@ def pack(args, system=None):
                 else:
                     log.info(f"Keeping package {dep.properties.get_as_str()}")
         return
-    if args.what in ["rm", "del", "pull", "push"]:
+    if args.what in ["rm", "pull", "push"]:
         if len(deps) == 0:
             log.warn("No package matching the query.")
             return
@@ -159,7 +159,7 @@ def pack(args, system=None):
                 message(f"{dep.properties.get_as_str()}")
             return
         for dep in deps:
-            if args.what in ["del", "rm"]:
+            if args.what in ["rm"]:
                 pacman.remove_package(dep, remote_name)
                 continue
             props = deepcopy(dep.properties)
@@ -171,6 +171,19 @@ def pack(args, system=None):
                 pacman.add_from_remote(dep, remote_name)
             elif args.what == "push":
                 pacman.add_to_remote(dep, remote_name)
+        return
+    if args.what in ["info"]:
+        if len(deps) == 0:
+            log.warn("No package matching the query.")
+            return
+        if len(deps) > 1 and not args.recurse:
+            log.warn("More than one package match the query, please precise:")
+            for dep in deps:
+                message(f"{dep.properties.get_as_str()}")
+            return
+        for dep in deps:
+            message(f"Information for package {dep.properties.get_as_str()}:")
+            message(dep.get_detailed_info())
         return
     log.warn(f"Command {args.what} is not yet implemented")
 
