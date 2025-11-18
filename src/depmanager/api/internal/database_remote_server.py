@@ -190,6 +190,8 @@ class RemoteDatabaseServer(__RemoteDatabase):
                 log.warn(f"WARNING: Unsupported ABI type {dep.properties.abi}.")
         if version_lt("2.0.0", self.server_api_version):
             data["dependencies"] = f"{dep.properties.dependencies}"
+            if dep.description not in ["", None]:
+                data["description"] = f"{dep.description}"
         return data
 
     def pull(self, dep: Dependency, destination: Path):

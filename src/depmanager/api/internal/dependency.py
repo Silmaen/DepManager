@@ -481,6 +481,7 @@ class Dependency:
         self.base_path = None
         self.cmake_config_path = None
         self.source = source
+        self.description = ""
         if isinstance(data, Path):
             self.base_path = Path(data)
             if not self.base_path.exists() or (
@@ -496,15 +497,15 @@ class Dependency:
                 log.warn(
                     f"Dependency at {self.base_path}: Old format detected, upgrading..."
                 )
-                self.read_edp_file()
-                self.write_edp_info()
+                self.read_file_info()
+                self.write_file_info()
             if not (self.base_path / "info.yaml").exists():
                 log.error(
                     f"Dependency at {self.base_path}: Cannot read info.yaml file after upgrade."
                 )
                 self.base_path = None
                 return
-            self.read_edp_file()
+            self.read_file_info()
             search = list(
                 set([folder.parent for folder in self.base_path.rglob("*onfig.cmake")])
             )
@@ -528,7 +529,7 @@ class Dependency:
     def __ge__(self, other):
         return self.properties >= other.properties
 
-    def write_edp_info(self):
+    def write_file_info(self):
         """
         Save dependency info into file.
         """
@@ -538,8 +539,12 @@ class Dependency:
         file.unlink(missing_ok=True)
         file = self.base_path / "info.yaml"
         self.properties.to_yaml_file(file)
+        if self.description not in [None, ""]:
+            desc_file = self.base_path / "description.md"
+            with open(desc_file, "w") as fp:
+                fp.write(self.description)
 
-    def read_edp_file(self):
+    def read_file_info(self):
         """
         Read info from file in path.
         """
@@ -548,12 +553,16 @@ class Dependency:
         file = self.base_path / "info.yaml"
         if file.exists():
             self.properties.from_yaml_file(file)
-            return
-        log.warn(
-            f"Dependency at {self.base_path}: Old format detected reading old edp.info file..."
-        )
-        file = self.base_path / "edp.info"
-        self.properties.from_edp_file(file)
+        else:
+            log.warn(
+                f"Dependency at {self.base_path}: Old format detected reading old edp.info file..."
+            )
+            file = self.base_path / "edp.info"
+            self.properties.from_edp_file(file)
+        desc_file = self.base_path / "description.md"
+        if desc_file.exists():
+            with open(desc_file) as fp:
+                self.description = fp.read()
 
     def get_path(self):
         """
@@ -746,3 +755,12 @@ class Dependency:
         :return: List of dependencies.
         """
         return self.properties.dependencies
+
+    def get_detailed_info(self):
+        """
+        Get detailed information about this dependency.
+        :return: Dictionary with detailed info.
+        """
+        if self.description in ["", None]:
+            return "No description available."
+        return self.description

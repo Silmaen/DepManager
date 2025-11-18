@@ -35,6 +35,9 @@ class Recipe:
     dependencies = []
     """List of private dependencies."""
 
+    description = ""
+    """Package description."""
+
     settings = {"os": "", "arch": "", "abi": "", "install_path": Path()}
     """Settings for the package."""
 
@@ -82,6 +85,12 @@ class Recipe:
             ).replace(microsecond=0)
         else:
             self.settings["build_date"] = creation_date
+
+    def make_description(self):
+        """
+        Method executed to make the description.
+        """
+        pass
 
     def source(self):
         """
