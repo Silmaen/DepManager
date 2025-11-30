@@ -85,7 +85,7 @@ function(dm_load_package PACKAGE)
     else ()
         dm_to_std_abi(${CMAKE_CXX_COMPILER_ID} TRUE_ABI)
     endif ()
-    set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -c ${TRUE_ABI}")
+    set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -b ${TRUE_ABI}")
 
     if (FP_GLIBC)
         set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -g ${FP_GLIBC}")
