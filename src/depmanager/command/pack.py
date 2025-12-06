@@ -149,10 +149,10 @@ def pack(args, system=None):
                 else:
                     log.info(f"Keeping package {dep.properties.get_as_str()}")
         return
+    if len(deps) == 0:
+        log.warn("No package matching the query.")
+        return
     if args.what in ["rm", "pull", "push"]:
-        if len(deps) == 0:
-            log.warn("No package matching the query.")
-            return
         if len(deps) > 1 and not args.recurse:
             log.warn("More than one package match the query, please precise:")
             for dep in deps:
@@ -173,9 +173,6 @@ def pack(args, system=None):
                 pacman.add_to_remote(dep, remote_name)
         return
     if args.what in ["info"]:
-        if len(deps) == 0:
-            log.warn("No package matching the query.")
-            return
         if len(deps) > 1 and not args.recurse:
             log.warn("More than one package match the query, please precise:")
             for dep in deps:

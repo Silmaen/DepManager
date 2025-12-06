@@ -34,10 +34,14 @@ For a package installation, in the source root do:
 <python> -m build
 <python> -m pip install dist/depmanager-x.y.z-py3-none-any.whl
 ```
-For a development install:
-
+For a non-packaged installation, in the source root do:
 ```bash
 <python> -m pip install .
+```
+
+for a development installation, in the source root do (python files will be symlinked to source):
+```bash
+<python> -m pip install -e .
 ```
 
 In this second case the actual source are directly used by your python installation or your venv.
@@ -554,6 +558,12 @@ Among things:
         * [ ] Check for package updates
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
+* version 0.5.1 -- 2025-12-06
+    * [X] Bugfixes
+        * [X] Fix dm_load_package that was still using old compiler options.
+        * [X] Fix creation of folder .edm in new installations.
+        * [X] Fix untar extraction during pull
+        * [X] Fix messaging of folders
 * version 0.5.0 -- 2025-11-18
     * [X] Prettier output for commandline
     * [X] Add DEPMANAGER_HOME environment variable to override to classical search in HOME.
