@@ -2,7 +2,7 @@
 """
 Main entrypoint for library manager
 """
-from depmanager.api.internal.messaging import set_logging_level
+from depmanager.api.internal.messaging import set_logging_level, set_raw_output
 
 
 def main():
@@ -55,6 +55,7 @@ def main():
         if args.quiet:
             logging_level = 0
         set_logging_level(logging_level)
+        set_raw_output(args.raw)
         local = LocalManager()
         args.func(args, local)
         local.clean_tmp()

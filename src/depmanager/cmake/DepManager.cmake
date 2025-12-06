@@ -34,7 +34,7 @@ function(dm_to_std_abi INPUT OUTPUT)
 endfunction()
 
 function(dm_get_data_path OUTPUT)
-    execute_process(COMMAND ${DM_INTERNAL_COMMAND} info basedir
+    execute_process(COMMAND ${DM_INTERNAL_COMMAND} info --raw basedir
             OUTPUT_VARIABLE RESULT)
     string(STRIP "${RESULT}" RESULT)
     set(${OUTPUT} ${RESULT} PARENT_SCOPE)
@@ -96,7 +96,7 @@ function(dm_load_package PACKAGE)
         endif ()
     endif ()
 
-    set(CMD "${DM_INTERNAL_COMMAND} get -p ${PREDICATE} ${SEARCH_OPTIONS}")
+    set(CMD "${DM_INTERNAL_COMMAND} get --raw -p ${PREDICATE} ${SEARCH_OPTIONS}")
     if (FP_TRACE)
         message(STATUS "QUERY: ${CMD}")
     endif()
@@ -174,7 +174,7 @@ function(dm_load_environment)
             set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -g ${O_GLIGC}")
         endif ()
     endif ()
-    set(CMD "${DM_INTERNAL_COMMAND} load ${SEARCH_OPTIONS}")
+    set(CMD "${DM_INTERNAL_COMMAND} load --raw ${SEARCH_OPTIONS}")
     STRING(REPLACE " " ";" CMD ${CMD})
     execute_process(COMMAND ${CMD}
             RESULT_VARIABLE RES
