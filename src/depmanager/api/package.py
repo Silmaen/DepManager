@@ -3,6 +3,7 @@ Manager for package.
 """
 
 from pathlib import Path
+from shutil import rmtree
 
 from depmanager.api.internal.messaging import log
 from rich.progress import (
@@ -132,11 +133,13 @@ class PackageManager:
                 suffixes = [source.suffixes[-1]]
                 if suffixes == [".gz"] and len(source.suffixes) > 1:
                     suffixes = [source.suffixes[-2], source.suffixes[-1]]
+            destination_dir = self.__sys.temp_path / "pack"
+            if destination_dir.exists():
+                rmtree(destination_dir, ignore_errors=True)
+            destination_dir.mkdir(parents=True)
             if suffixes == ["zip"]:
                 from zipfile import ZipFile
 
-                destination_dir = self.__sys.temp_path / "pack"
-                destination_dir.mkdir(parents=True)
                 log.debug(
                     f"PackageManager::add_from_location - Extract ZIP from {source} to {destination_dir}"
                 )
@@ -157,32 +160,37 @@ class PackageManager:
             elif suffixes in [[".tgz"], [".tar", ".gz"]]:
                 import tarfile
 
-                destination_dir = self.__sys.temp_path / "pack"
-                destination_dir.mkdir(parents=True)
                 log.debug(
                     f"PackageManager::add_from_location - Extract TGZ from {source} to {destination_dir}"
                 )
-                with tarfile.open(str(source), "r|gz") as archive:
-                    members = archive.getmembers()
-                    total = sum(m.size for m in members if m.isfile())
-                    with Progress(
-                        SpinnerColumn(),
-                        TextColumn("[progress.description]{task.description}"),
-                        BarColumn(),
-                        DownloadColumn(),
-                        TransferSpeedColumn(),
-                    ) as progress:
-                        task = progress.add_task("Extracting TGZ...", total=total)
-                        for member in members:
-                            archive.extract(member, destination_dir)
-                            if member.isfile():
-                                progress.update(task, advance=member.size)
+                try:
+                    with tarfile.open(str(source), "r:gz") as archive:
+                        members = archive.getmembers()
+                        total = sum(m.size for m in members if m.isfile())
+                        with Progress(
+                            SpinnerColumn(),
+                            TextColumn("[progress.description]{task.description}"),
+                            BarColumn(),
+                            DownloadColumn(),
+                            TransferSpeedColumn(),
+                        ) as progress:
+                            task = progress.add_task("Extracting TGZ...", total=total)
+                            for member in members:
+                                archive.extract(member, destination_dir)
+                                if member.isfile():
+                                    progress.update(task, advance=member.size)
+                except Exception as e:
+                    log.warn(f"WARNING: Error extracting {source}: {e}")
+                    self.__sys.clear_tmp()
+                    return
             else:
                 log.warn(f"WARNING: File {source} has unsupported format.")
+                self.__sys.clear_tmp()
                 return
             if destination_dir is not None:
                 if not (destination_dir / "edp.info").exists():
                     log.warn(f"WARNING: Archive does not contains package info.")
+                    self.__sys.clear_tmp()
                     return
                 self.__sys.import_folder(destination_dir)
 

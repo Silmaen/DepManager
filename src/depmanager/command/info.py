@@ -27,13 +27,13 @@ class InfoCommand:
         """
         Print the actual base dir in the terminal.
         """
-        message(self.local_instance.get_base_path())
+        message(f"{self.local_instance.get_base_path()}")
 
     def cmakedir(self):
         """
         Print the actual cmake dir in the terminal.
         """
-        message(self.local_instance.get_cmake_dir())
+        message(f"{self.local_instance.get_cmake_dir()}")
 
     def version(self):
         """
