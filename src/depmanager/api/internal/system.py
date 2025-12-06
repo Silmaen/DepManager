@@ -32,6 +32,7 @@ class LocalSystem:
         else:
             env = Path.home()
         self.base_path = env / ".edm"
+        self.base_path.mkdir(parents=True, exist_ok=True)
         self.password_manager = PasswordManager(self.base_path)
         self.file = self.base_path / "config.yaml"
         self.data_path = self.base_path / "data"

@@ -17,6 +17,7 @@ working python installation designated as `<python>` with `pip` installed.
 
 ### pip
 
+On systems that only rely on pip (in venv, for example)
 To install dep manager simply use `<python> -m pip  install depmanager`
 
 See the page on Pypi: [depmanager](https://pypi.org/project/depmanager/).
@@ -27,11 +28,28 @@ Prerequisite: python module 'build' install it with `<python> -m pip install bui
 
 Clone the GitHub repository.
 
-In the source root do:
+For a package installation, in the source root do:
 
 ```powershell
 <python> -m build
 <python> -m pip install dist/depmanager-x.y.z-py3-none-any.whl
+```
+For a development install:
+
+```bash
+<python> -m pip install .
+```
+
+In this second case the actual source are directly used by your python installation or your venv.
+
+### ubuntu
+
+In ubuntu, it is not recommended to use pip for python modules because the system also comes with its bundled python 
+modules. DepManager is not bundled with the Ubuntu packages. To install DepManager, with limited impact on your system:
+
+```bash
+sudo apt install python3 python3-yaml python3-requests-toolbelt python3-cryptography python3-pip
+sudo pip install depmanager --no-deps --break-system-packages
 ```
 
 ## Setup
@@ -40,7 +58,8 @@ The first time you run depmanager, it will create its local data folder in your 
 by setting the environment variable `DEPMANAGER_HOME` to the desired path.
 The local data folder `.edm` contains :
 
-* `config.ini` the configuration file
+* `config.ini` the configuration file (old config file)
+* `config.yaml` The configuration file
 * `data/` the local cache of packages
 * `tmp/` the temporary folder for building packages
 
