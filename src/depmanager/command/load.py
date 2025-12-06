@@ -60,7 +60,7 @@ def load(args, system=None):
             system, config, args.kind, args.os, args.arch, args.abi, args.glibc
         )
         # finding everything
-        message(result)
+        message(f"{result}")
         return err_code
     except Exception as err:
         log.fatal(f"Loading environment: {err}")

@@ -18,6 +18,7 @@ def add_common_arguments(parser: ArgumentParser):
     parser.add_argument(
         "--quiet", action="store_true", default=False, help="Only error messages"
     )
+    parser.add_argument("--raw", action="store_true", default=False, help="Raw output")
 
 
 def add_remote_selection_arguments(parser: ArgumentParser):

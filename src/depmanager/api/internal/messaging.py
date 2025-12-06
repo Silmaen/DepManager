@@ -14,6 +14,7 @@ logging.basicConfig(
     handlers=[RichHandler()],
 )
 log.setLevel(logging.INFO)
+raw_output = False
 
 
 def set_logging_level(level: int):
@@ -32,6 +33,16 @@ def set_logging_level(level: int):
         log.setLevel(logging.INFO)
     else:
         log.setLevel(logging.DEBUG)
+
+
+def set_raw_output(raw: bool):
+    """Set raw output.
+
+    Args:
+        raw (bool): raw output.
+    """
+    global raw_output
+    raw_output = raw
 
 
 def align_centered(text: str, width: int) -> str:
@@ -124,6 +135,9 @@ def message(msg: str):
     Args:
         msg (str): message to log.
     """
+    if raw_output:
+        print(msg)
+        return
     from rich.console import Console
 
     console = Console()
