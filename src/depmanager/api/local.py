@@ -10,7 +10,7 @@ class LocalManager:
     Local manager.
     """
 
-    version = "0.5.0"
+    version = "0.5.1"
 
     def __init__(self, system=None):
         from depmanager.api.internal.system import LocalSystem
