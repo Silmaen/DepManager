@@ -68,7 +68,10 @@ class PackageManager:
         if type(query) is dict and query.get("transitive", False):
             slist = self.__sys.get_source_list()
         else:
-            slist = [using_name]
+            if using_name not in ["", None]:
+                slist = [using_name]
+            else:
+                slist = []
         db = []
         for s in slist:
             if s == "local":
