@@ -2,7 +2,7 @@
 Manage the toolsets
 """
 
-from depmanager.api.internal.messaging import log, message
+from api.internal.messaging import log, message
 
 possible_toolset = ["list", "ls", "add", "del", "rm"]
 deprecated = {"list": "ls", "del": "rm"}
@@ -14,7 +14,7 @@ class ToolsetCommand:
     """
 
     def __init__(self, system=None):
-        from depmanager.api.toolsets import ToolsetsManager
+        from api.toolsets import ToolsetsManager
 
         self.toolset_instance = ToolsetsManager(system)
 
@@ -107,7 +107,7 @@ def add_toolset_parameters(sub_parsers):
     Definition of toolset parameters.
     :param sub_parsers: The parent parser.
     """
-    from depmanager.api.internal.common import (
+    from api.internal.common import (
         add_common_arguments,
     )
 

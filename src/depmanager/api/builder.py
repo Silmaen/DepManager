@@ -5,14 +5,14 @@ Tools for building packages.
 from pathlib import Path
 from shutil import rmtree
 
-from depmanager.api.internal.dependency import version_lt
-from depmanager.api.internal.machine import Machine
-from depmanager.api.internal.messaging import log
-from depmanager.api.internal.recipe_builder import RecipeBuilder
-from depmanager.api.internal.system import LocalSystem
-from depmanager.api.local import LocalManager
-from depmanager.api.package import PackageManager
-from depmanager.api.recipe import Recipe
+from api.internal.dependency import version_lt
+from api.internal.machine import Machine
+from api.internal.messaging import log
+from api.internal.recipe_builder import RecipeBuilder
+from api.internal.system import LocalSystem
+from api.local import LocalManager
+from api.package import PackageManager
+from api.recipe import Recipe
 
 
 def find_recipes(location: Path, depth: int = -1):

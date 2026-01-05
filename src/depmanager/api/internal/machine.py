@@ -4,8 +4,8 @@ Machine identification.
 
 import platform
 
-from depmanager.api.internal.messaging import log
-from depmanager.api.internal.toolset import Toolset
+from api.internal.messaging import log
+from api.internal.toolset import Toolset
 
 abi = ["gnu", "llvm", "msvc"]
 oses = ["Windows", "Linux"]

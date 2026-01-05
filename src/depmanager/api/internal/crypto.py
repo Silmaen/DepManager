@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from cryptography.fernet import Fernet
-from depmanager.api.internal.messaging import log
+from api.internal.messaging import log
 
 
 class PasswordManager:

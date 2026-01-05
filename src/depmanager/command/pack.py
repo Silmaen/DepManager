@@ -5,7 +5,7 @@ Pack command
 from copy import deepcopy
 from pathlib import Path
 
-from depmanager.api.internal.messaging import log, message, align_centered
+from api.internal.messaging import log, message, align_centered
 
 possible_info = ["pull", "push", "add", "rm", "ls", "clean", "info"]
 deprecated = {}
@@ -17,9 +17,9 @@ def pack(args, system=None):
     :param args: Command Line Arguments.
     :param system: The local system
     """
-    from depmanager.api.internal.common import query_argument_to_dict
-    from depmanager.api.internal.dependency import Props
-    from depmanager.api.package import PackageManager
+    from api.internal.common import query_argument_to_dict
+    from api.internal.dependency import Props
+    from api.package import PackageManager
 
     pacman = PackageManager(system)
     if args.what not in possible_info:
@@ -190,7 +190,7 @@ def add_pack_parameters(sub_parsers):
     Definition of pack parameters.
     :param sub_parsers: The parent parser.
     """
-    from depmanager.api.internal.common import (
+    from api.internal.common import (
         add_query_arguments,
         add_remote_selection_arguments,
         add_common_arguments,

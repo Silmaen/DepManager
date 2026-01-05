@@ -2,7 +2,7 @@
 Manage the remotes
 """
 
-from depmanager.api.internal.messaging import log, message
+from api.internal.messaging import log, message
 
 possible_remote = ["list", "ls", "add", "del", "rm", "sync", "info"]
 deprecated = {"list": "ls", "del": "rm"}
@@ -14,7 +14,7 @@ class RemoteCommand:
     """
 
     def __init__(self, system=None):
-        from depmanager.api.remotes import RemotesManager
+        from api.remotes import RemotesManager
 
         self.remote_instance = RemotesManager(system)
 
@@ -142,7 +142,7 @@ def remote(args, system=None):
         rem.list()
     elif args.what == "add":
         rem.add(args.name, args.url, args.default, args.login, args.passwd)
-    elif args.what == ["del", "rm"]:
+    elif args.what in ["del", "rm"]:
         rem.delete(args.name)
     elif args.what == "sync":
         dry_run = False
@@ -167,7 +167,7 @@ def add_remote_parameters(sub_parsers):
     Definition of remote parameters.
     :param sub_parsers: The parent parser.
     """
-    from depmanager.api.internal.common import (
+    from api.internal.common import (
         add_common_arguments,
         add_remote_selection_arguments,
     )

@@ -6,12 +6,12 @@ from datetime import datetime
 from os import access, R_OK, W_OK
 from pathlib import Path
 
-from depmanager.api.internal.machine import Machine
-from depmanager.api.internal.messaging import log
-from depmanager.api.internal.system import LocalSystem, Props
-from depmanager.api.internal.toolset import Toolset
-from depmanager.api.local import LocalManager
-from depmanager.api.recipe import Recipe
+from api.internal.machine import Machine
+from api.internal.messaging import log
+from api.internal.system import LocalSystem, Props
+from api.internal.toolset import Toolset
+from api.local import LocalManager
+from api.recipe import Recipe
 
 
 def try_run(cmd):

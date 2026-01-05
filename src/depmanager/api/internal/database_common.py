@@ -4,8 +4,8 @@ Database Object.
 
 from pathlib import Path
 
-from depmanager.api.internal.dependency import Dependency, Props, version_lt
-from depmanager.api.internal.messaging import log
+from api.internal.dependency import Dependency, Props, version_lt
+from api.internal.messaging import log
 
 
 class __DataBase:

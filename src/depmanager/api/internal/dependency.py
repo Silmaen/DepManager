@@ -5,7 +5,7 @@ Dependency object.
 import datetime
 from pathlib import Path
 
-from depmanager.api.internal.messaging import log
+from api.internal.messaging import log
 
 from .machine import Machine
 

@@ -4,7 +4,7 @@ Instance of remotes manager.
 
 from copy import deepcopy
 
-from depmanager.api.internal.messaging import log
+from api.internal.messaging import log
 
 
 class RemotesManager:
@@ -13,8 +13,8 @@ class RemotesManager:
     """
 
     def __init__(self, system=None):
-        from depmanager.api.internal.system import LocalSystem
-        from depmanager.api.local import LocalManager
+        from api.internal.system import LocalSystem
+        from api.local import LocalManager
 
         if type(system) is LocalSystem:
             self.__sys = system
@@ -152,7 +152,7 @@ class RemotesManager:
         :param push_newer: Push images if newer version exists
         :param dry_run: Do checks but no transfer.
         """
-        from depmanager.api.package import PackageManager
+        from api.package import PackageManager
 
         pkg_mgr = PackageManager(
             self.__sys,
