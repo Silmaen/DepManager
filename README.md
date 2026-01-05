@@ -34,12 +34,15 @@ For a package installation, in the source root do:
 <python> -m build
 <python> -m pip install dist/depmanager-x.y.z-py3-none-any.whl
 ```
+
 For a non-packaged installation, in the source root do:
+
 ```bash
 <python> -m pip install .
 ```
 
 for a development installation, in the source root do (python files will be symlinked to source):
+
 ```bash
 <python> -m pip install -e .
 ```
@@ -48,7 +51,7 @@ In this second case the actual source are directly used by your python installat
 
 ### ubuntu
 
-In ubuntu, it is not recommended to use pip for python modules because the system also comes with its bundled python 
+In ubuntu, it is not recommended to use pip for python modules because the system also comes with its bundled python
 modules. DepManager is not bundled with the Ubuntu packages. To install DepManager, with limited impact on your system:
 
 ```bash
@@ -558,6 +561,12 @@ Among things:
         * [ ] Check for package updates
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
+* version 0.5.2 -- 2026-01-05
+    * [X] Add more logs during cmake call
+    * [X] Bugfixes
+        * [X] Fix issue with some special characters in package description.
+        * [X] Fix issue with some special characters in cmake cache variable.
+    * [X] better packaging
 * version 0.5.1 -- 2025-12-06
     * [X] Bugfixes
         * [X] Fix dm_load_package that was still using old compiler options.
