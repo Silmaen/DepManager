@@ -4,8 +4,8 @@ The load subcommand
 
 from pathlib import Path
 
-from depmanager.api.internal.messaging import log, message
-from depmanager.api.load import load_environment
+from api.internal.messaging import log, message, set_logging_level
+from api.load import load_environment
 
 
 def load(args, system=None):
@@ -56,11 +56,20 @@ def load(args, system=None):
             arg_check = False
         if not arg_check:
             exit(22)
+        if args.info:
+            set_logging_level(3)
         err_code, result = load_environment(
-            system, config, args.kind, args.os, args.arch, args.abi, args.glibc
+            system,
+            config,
+            args.kind,
+            args.os,
+            args.arch,
+            args.abi,
+            args.glibc,
         )
         # finding everything
-        message(f"{result}")
+        if not args.info:
+            message(f"{result}")
         return err_code
     except Exception as err:
         log.fatal(f"Loading environment: {err}")
@@ -72,13 +81,16 @@ def add_load_parameters(sub_parsers):
     Defines the get arguments
     :param sub_parsers: the parser
     """
-    from depmanager.api.internal.common import add_common_arguments
+    from api.internal.common import add_common_arguments
 
     load_parser = sub_parsers.add_parser("load")
     load_parser.description = "Tool to load cmake config based on config file."
 
     load_parser.set_defaults(func=load)
     add_common_arguments(load_parser)  # add -v
+    load_parser.add_argument(
+        "--info", action="store_true", default=False, help="Print info messages"
+    )
     load_parser.add_argument(
         "--config",
         type=str,

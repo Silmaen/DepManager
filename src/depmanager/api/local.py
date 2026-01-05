@@ -13,7 +13,7 @@ class LocalManager:
     version = "0.5.1"
 
     def __init__(self, system=None):
-        from depmanager.api.internal.system import LocalSystem
+        from api.internal.system import LocalSystem
 
         if type(system) is LocalSystem:
             self.__sys = system

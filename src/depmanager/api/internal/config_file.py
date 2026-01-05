@@ -4,7 +4,7 @@ Definition of config file.
 
 from pathlib import Path
 
-from depmanager.api.internal.messaging import log
+from api.internal.messaging import log
 from yaml import full_load
 
 

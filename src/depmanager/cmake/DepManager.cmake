@@ -174,6 +174,15 @@ function(dm_load_environment)
             set(SEARCH_OPTIONS "${SEARCH_OPTIONS} -g ${O_GLIGC}")
         endif ()
     endif ()
+    set(CMD "${DM_INTERNAL_COMMAND} load --info ${SEARCH_OPTIONS}")
+    STRING(REPLACE " " ";" CMD ${CMD})
+    execute_process(COMMAND ${CMD}
+            RESULT_VARIABLE RES
+    )
+    if (NOT ${RES} EQUAL 0)
+      message(FATAL_ERROR "Depmanager encounter error: ${RES}")
+      return ()
+    endif ()
     set(CMD "${DM_INTERNAL_COMMAND} load --raw ${SEARCH_OPTIONS}")
     STRING(REPLACE " " ";" CMD ${CMD})
     execute_process(COMMAND ${CMD}

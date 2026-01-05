@@ -2,7 +2,7 @@
 """
 Main entrypoint for library manager
 """
-from depmanager.api.internal.messaging import set_logging_level, set_raw_output
+from api.internal.messaging import set_logging_level, set_raw_output
 
 
 def main():
@@ -17,31 +17,31 @@ def main():
         title="Sub Commands", help="Sub command Help", dest="command", required=True
     )
     # ============================= INFO ==============================================
-    from depmanager.command.info import add_info_parameters
+    from command.info import add_info_parameters
 
     add_info_parameters(sub_parsers)
     # ============================ REMOTE =============================================
-    from depmanager.command.remote import add_remote_parameters
+    from command.remote import add_remote_parameters
 
     add_remote_parameters(sub_parsers)
     # ============================== GET ==============================================
-    from depmanager.command.get import add_get_parameters
+    from command.get import add_get_parameters
 
     add_get_parameters(sub_parsers)
     # ============================= PACK ==============================================
-    from depmanager.command.pack import add_pack_parameters
+    from command.pack import add_pack_parameters
 
     add_pack_parameters(sub_parsers)
     # ============================ BUILD ==============================================
-    from depmanager.command.build import add_build_parameters
+    from command.build import add_build_parameters
 
     add_build_parameters(sub_parsers)
     # ============================ LOAD ==============================================
-    from depmanager.command.load import add_load_parameters
+    from command.load import add_load_parameters
 
     add_load_parameters(sub_parsers)
     # ============================ TOOLSET ==============================================
-    from depmanager.command.toolset import add_toolset_parameters
+    from command.toolset import add_toolset_parameters
 
     add_toolset_parameters(sub_parsers)
 
@@ -49,7 +49,7 @@ def main():
     if args.command in ["", None]:
         parser.print_help()
     else:
-        from depmanager.api.local import LocalManager
+        from api.local import LocalManager
 
         logging_level = args.verbose + 2
         if args.quiet:
@@ -57,9 +57,12 @@ def main():
         set_logging_level(logging_level)
         set_raw_output(args.raw)
         local = LocalManager()
-        args.func(args, local)
+        ret = args.func(args, local)
+        if ret is None:
+            ret = 0
         local.clean_tmp()
+        return ret
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())
