@@ -12,8 +12,9 @@ classifiers = [
     "Topic :: Software Development :: Build Tools",
     "Programming Language :: Python :: 3",
 ]
-packages = [{include = "depmanager", from = "src"}]
+packages = [{ include = "depmanager", from = "src" }]
 include = ["src/depmanager/cmake/*.cmake"]
+exclude = ["LICENSE"]
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/Silmaen/DepManager"
@@ -25,6 +26,7 @@ requests-toolbelt = ">=1.0.0"
 PyYAML = "*"
 rich = "*"
 cryptography = "*"
+twine = ">=6.2.0"
 
 [tool.poetry.scripts]
 depmanager = "depmanager:main"
