@@ -1,42 +1,35 @@
-[project]
+[tool.poetry]
 name = "depmanager"
-version = "0.5.2"
-authors = [
-    { name = "Silmaen", email = "genteur.slayer@laposte.net" }
-]
+version = "0.5.3"
 description = "Simple Dependency manager"
+authors = ["Silmaen <genteur.slayer@laposte.net>"]
 readme = "README.md"
-license-files = ["LICENSE"]
-requires-python = ">=3.9"
+license = "MIT"
+keywords = ["dependency", "development", "cmake", "C++"]
 classifiers = [
-    # How mature is this project? Common values are
-    #   3 - Alpha
-    #   4 - Beta
-    #   5 - Production/Stable
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Build Tools",
     "Programming Language :: Python :: 3",
 ]
-keywords = ["dependency", "development", "cmake", "C++"]
-dependencies = [
-    "requests",
-    "requests-toolbelt",
-    "PyYAML",
-    "rich",
-    "cryptography"
-]
+packages = [{include = "depmanager", from = "src"}]
+include = ["src/depmanager/cmake/*.cmake"]
 
-[project.urls]
+[tool.poetry.urls]
 "Homepage" = "https://github.com/Silmaen/DepManager"
 
-[project.scripts]
+[tool.poetry.dependencies]
+python = ">=3.9"
+requests = "*"
+requests-toolbelt = ">=1.0.0"
+PyYAML = "*"
+rich = "*"
+cryptography = "*"
+
+[tool.poetry.scripts]
 depmanager = "depmanager:main"
 dmgr = "depmanager:main"
 
-[tool.setuptools]
-package-data = { "depmanager" = ["cmake/*.cmake"] }
-
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

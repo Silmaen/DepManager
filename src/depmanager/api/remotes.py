@@ -4,7 +4,7 @@ Instance of remotes manager.
 
 from copy import deepcopy
 
-from api.internal.messaging import log
+from depmanager.api.internal.messaging import log
 
 
 class RemotesManager:
@@ -13,8 +13,8 @@ class RemotesManager:
     """
 
     def __init__(self, system=None):
-        from api.internal.system import LocalSystem
-        from api.local import LocalManager
+        from depmanager.api.internal.system import LocalSystem
+        from depmanager.api.local import LocalManager
 
         if type(system) is LocalSystem:
             self.__sys = system

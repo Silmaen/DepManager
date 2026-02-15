@@ -2,7 +2,7 @@
 The get subcommand
 """
 
-from api.internal.messaging import message
+from depmanager.api.internal.messaging import message
 
 
 def get(args, system=None):
@@ -11,9 +11,9 @@ def get(args, system=None):
     :param args: The command line arguments.
     :param system: The local system.
     """
-    from api.internal.common import query_argument_to_dict
-    from api.package import PackageManager
-    from api.internal.machine import Machine
+    from depmanager.api.internal.common import query_argument_to_dict
+    from depmanager.api.package import PackageManager
+    from depmanager.api.internal.machine import Machine
 
     pack_manager = PackageManager(system)
     dict_query = query_argument_to_dict(args)
@@ -43,7 +43,7 @@ def add_get_parameters(sub_parsers):
     Defines the get arguments
     :param sub_parsers: the parser
     """
-    from api.internal.common import add_query_arguments, add_common_arguments
+    from depmanager.api.internal.common import add_query_arguments, add_common_arguments
 
     get_parser = sub_parsers.add_parser("get")
     get_parser.description = (

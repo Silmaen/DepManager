@@ -4,8 +4,8 @@ Local database object.
 
 from pathlib import Path
 
-from api.internal.database_common import __DataBase, Dependency
-from api.internal.messaging import log
+from depmanager.api.internal.database_common import __DataBase, Dependency
+from depmanager.api.internal.messaging import log
 
 packing_formats = ["tgz", "zip"]
 

@@ -5,13 +5,14 @@ Remote FTP database
 from datetime import datetime
 from pathlib import Path
 
-from api.internal.common import client_api
-from api.internal.database_common import __RemoteDatabase
-from api.internal.dependency import Dependency, version_lt
-from api.internal.messaging import log
 from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
+
+from depmanager.api.internal.common import client_api
+from depmanager.api.internal.database_common import __RemoteDatabase
+from depmanager.api.internal.dependency import Dependency, version_lt
+from depmanager.api.internal.messaging import log
 
 
 class RemoteDatabaseServer(__RemoteDatabase):

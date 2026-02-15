@@ -4,8 +4,8 @@ The load subcommand
 
 from pathlib import Path
 
-from api.internal.messaging import log, message, set_logging_level
-from api.load import load_environment
+from depmanager.api.internal.messaging import log, message, set_logging_level
+from depmanager.api.load import load_environment
 
 
 def load(args, system=None):
@@ -81,7 +81,7 @@ def add_load_parameters(sub_parsers):
     Defines the get arguments
     :param sub_parsers: the parser
     """
-    from api.internal.common import add_common_arguments
+    from depmanager.api.internal.common import add_common_arguments
 
     load_parser = sub_parsers.add_parser("load")
     load_parser.description = "Tool to load cmake config based on config file."

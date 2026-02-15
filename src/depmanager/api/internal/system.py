@@ -6,15 +6,15 @@ import os
 from pathlib import Path
 from shutil import rmtree
 
-from api.internal.crypto import PasswordManager
-from api.internal.data_locking import Locker
-from api.internal.database_local import LocalDatabase
-from api.internal.database_remote_folder import RemoteDatabaseFolder
-from api.internal.database_remote_ftp import RemoteDatabaseFtp
-from api.internal.database_remote_server import RemoteDatabaseServer
-from api.internal.dependency import Props
-from api.internal.messaging import log
-from api.internal.toolset import Toolset
+from depmanager.api.internal.crypto import PasswordManager
+from depmanager.api.internal.data_locking import Locker
+from depmanager.api.internal.database_local import LocalDatabase
+from depmanager.api.internal.database_remote_folder import RemoteDatabaseFolder
+from depmanager.api.internal.database_remote_ftp import RemoteDatabaseFtp
+from depmanager.api.internal.database_remote_server import RemoteDatabaseServer
+from depmanager.api.internal.dependency import Props
+from depmanager.api.internal.messaging import log
+from depmanager.api.internal.toolset import Toolset
 
 
 class LocalSystem:
