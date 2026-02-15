@@ -311,15 +311,13 @@ class RemotesManager:
                 log.info(
                     f"suppress [{remote_db_name}] {to_del.properties.get_as_str()}"
                 )
-                log.info(f"push    [local] {single_local.properties.get_as_str()}")
-                if to_del is not None:
-                    log.info(
-                        f" -X-> [{single_local.properties.get_as_str()}] force-push to server: "
-                    )
-                else:
-                    log.info(
-                        f" ---> [{single_local.properties.get_as_str()}] push to server: "
-                    )
+                log.info(
+                    f" -X-> [{single_local.properties.get_as_str()}] force-push to server: "
+                )
+            else:
+                log.info(
+                    f" ---> [{single_local.properties.get_as_str()}] push to server: "
+                )
             if not dry_run:
                 if to_del is not None:
                     pkg_mgr.remove_package(to_del, remote_db_name)

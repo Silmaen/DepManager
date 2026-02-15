@@ -147,7 +147,7 @@ def add_build_parameters(sub_parsers):
         "--single-thread",
         "-s",
         action="store_true",
-        default="",
+        default=False,
         help="Force the use of single thread.",
     )
     build_parser.set_defaults(func=build)

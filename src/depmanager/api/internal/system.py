@@ -101,7 +101,7 @@ class LocalSystem:
                 self.remote_database[name] = RemoteDatabaseServer(
                     url, port, False, default, login, passwd
                 )
-            if kind == "srvs":
+            elif kind == "srvs":
                 if "port" in info:
                     port = info["port"]
                 else:
@@ -191,9 +191,9 @@ class LocalSystem:
             self.data_path = self.base_path / "data"
             self.temp_path = self.base_path / "tmp"
         if "data_path" in self.config.keys():
-            self.base_path = Path(self.config["data_path"]).resolve()
+            self.data_path = Path(self.config["data_path"]).resolve()
         if "temp_path" in self.config.keys():
-            self.base_path = Path(self.config["temp_path"]).resolve()
+            self.temp_path = Path(self.config["temp_path"]).resolve()
 
     def write_config_file(self):
         """
@@ -426,7 +426,7 @@ class LocalSystem:
         Remove the toolset with the given name.
         :param name: Name of the toolset to remove.
         """
-        if name in [None, str]:
+        if name in [None, ""]:
             log.warn("WARNING: Empty toolset name.")
             return False
         if name not in self.toolsets:
@@ -455,7 +455,7 @@ class LocalSystem:
         if len(self.toolsets) == 0:
             return None
         if name in [None, ""]:
-            self.toolsets[self.default_toolset]
+            return self.toolsets[self.default_toolset]
         if name in self.toolsets:
             return self.toolsets[name]
         return None

@@ -25,7 +25,7 @@ def set_logging_level(level: int):
     """
     if level == 0:
         log.setLevel(logging.FATAL)
-    if level == 1:
+    elif level == 1:
         log.setLevel(logging.ERROR)
     elif level == 2:
         log.setLevel(logging.WARNING)
