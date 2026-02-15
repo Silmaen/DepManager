@@ -146,49 +146,30 @@ class RemoteDatabaseServer(__RemoteDatabase):
         if dep.properties.build_date not in ["", None]:
             data["build_date"] = dep.properties.build_date.isoformat()
         # os
-        if dep.properties.os.lower() == "windows":
-            data["os"] = "w"
-        if dep.properties.os.lower() == "linux":
-            data["os"] = "l"
-        if dep.properties.os.lower() == "any":
-            data["os"] = "a"
+        os_map = {"windows": "w", "linux": "l", "any": "a"}
+        os_code = os_map.get(dep.properties.os.lower())
+        if os_code:
+            data["os"] = os_code
         # arch
-        if dep.properties.arch.lower() == "x86_64":
-            data["arch"] = "x"
-        if dep.properties.arch.lower() == "aarch64":
-            data["arch"] = "a"
-        if dep.properties.arch.lower() == "any":
-            data["arch"] = "y"
+        arch_map = {"x86_64": "x", "aarch64": "a", "any": "y"}
+        arch_code = arch_map.get(dep.properties.arch.lower())
+        if arch_code:
+            data["arch"] = arch_code
         # kind
-        if dep.properties.kind.lower() == "shared":
-            data["kind"] = "r"
-        if dep.properties.kind.lower() == "static":
-            data["kind"] = "t"
-        if dep.properties.kind.lower() == "header":
-            data["kind"] = "h"
-        if dep.properties.kind.lower() == "any":
-            data["kind"] = "a"
+        kind_map = {"shared": "r", "static": "t", "header": "h", "any": "a"}
+        kind_code = kind_map.get(dep.properties.kind.lower())
+        if kind_code:
+            data["kind"] = kind_code
         # abi
         if self.server_api_version == "1.0.0":
-            if dep.properties.abi.lower() == "gnu":
-                data["abi"] = "g"
-            elif dep.properties.abi.lower() == "msvc":
-                data["abi"] = "m"
-            elif dep.properties.abi.lower() == "any":
-                data["abi"] = "a"
-            else:
-                log.warn(f"WARNING: Unsupported ABI type {dep.properties.abi}.")
+            abi_map = {"gnu": "g", "msvc": "m", "any": "a"}
         else:
-            if dep.properties.abi.lower() == "gnu":
-                data["abi"] = "g"
-            elif dep.properties.abi.lower() == "llvm":
-                data["abi"] = "l"
-            elif dep.properties.abi.lower() == "msvc":
-                data["abi"] = "m"
-            elif dep.properties.abi.lower() == "any":
-                data["abi"] = "a"
-            else:
-                log.warn(f"WARNING: Unsupported ABI type {dep.properties.abi}.")
+            abi_map = {"gnu": "g", "llvm": "l", "msvc": "m", "any": "a"}
+        abi_code = abi_map.get(dep.properties.abi.lower())
+        if abi_code:
+            data["abi"] = abi_code
+        else:
+            log.warn(f"WARNING: Unsupported ABI type {dep.properties.abi}.")
         if version_lt("2.0.0", self.server_api_version):
             data["dependencies"] = f"{dep.properties.dependencies}"
             if dep.description not in ["", None]:

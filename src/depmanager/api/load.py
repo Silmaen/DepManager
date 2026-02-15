@@ -145,27 +145,23 @@ def load_environment(
     # check found queries
     log.debug(f"**Checking {len(found_queries)} packages...")
     unique_queries = []
+    seen_queries = {}
     for q in found_queries:
         name = q["name"]
-        insert = True
-        for q2 in unique_queries:
-            if q2["name"] != q["name"]:
-                continue
+        if name in seen_queries:
+            q2 = seen_queries[name]
             if q2["version"] != q["version"]:
                 log.error(
                     f"X Conflicting versions for package {name}: {q2['version']} vs. {q['version']}"
                 )
                 err_code = 1
-                insert = False
-                continue
-            if q2["kind"] != q["kind"]:
+            elif q2["kind"] != q["kind"]:
                 log.error(
                     f"X Conflicting kinds for package {name}: {q2['kind']} vs. {q['kind']}"
                 )
                 err_code = 1
-                insert = False
-                continue
-        if insert:
+        else:
+            seen_queries[name] = q
             unique_queries.append(q)
     if err_code != 0:
         return err_code, output
@@ -183,17 +179,16 @@ def load_environment(
         if result[0].source != "local":
             log.debug(f"V Adding package {q['name']} from remote...")
             pacman.add_from_remote(result[0], result[0].source)
-        result = pacman.query(q)
-        if len(result) == 0:
-            log.error(f"X Could not find package {q['name']} after addition.")
-            err_code = 1
-            continue
+            result = pacman.query(q)
+            if len(result) == 0:
+                log.error(f"X Could not find package {q['name']} after addition.")
+                err_code = 1
+                continue
         packages.append(result[0])
 
     # create list of dir
-    for package in packages:
-        output += f"{package.get_cmake_config_dir()};"
-    output = output.replace(";;", ";")
-    output = output.rstrip(";")
+    cmake_dirs = [package.get_cmake_config_dir() for package in packages
+                  if package.get_cmake_config_dir()]
+    output = ";".join(cmake_dirs)
 
     return err_code, output

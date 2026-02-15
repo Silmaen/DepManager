@@ -64,22 +64,15 @@ class __DataBase:
         deps = [dep for dep in self.dependencies if dep.match(props)]
         if not latest:
             return deps
-        # Get the latest version number for each name
-        vers = {}
+        # Get the latest dependency for each name in a single pass
+        latest_by_name = {}
         for dep in deps:
-            if dep.properties.name not in vers or version_lt(
-                vers[dep.properties.name], dep.properties.version
+            name = dep.properties.name
+            if name not in latest_by_name or version_lt(
+                latest_by_name[name].properties.version, dep.properties.version
             ):
-                vers[dep.properties.name] = dep.properties.version
-        deps_latest = sorted(
-            [
-                dep
-                for dep in deps
-                if dep.properties.version == vers[dep.properties.name]
-            ],
-            reverse=True,
-        )
-        return deps_latest
+                latest_by_name[name] = dep
+        return sorted(latest_by_name.values(), reverse=True)
 
 
 class __RemoteDatabase(__DataBase):

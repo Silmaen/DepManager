@@ -2,8 +2,7 @@
 Instance of remotes manager.
 """
 
-from copy import deepcopy
-
+from depmanager.api.internal.dependency import Props
 from depmanager.api.internal.messaging import log
 
 
@@ -292,7 +291,7 @@ class RemotesManager:
             #
             if not push_newer or just_pulled or is_up_to_date:
                 continue
-            query_for_push = deepcopy(single_local.properties)
+            query_for_push = Props(single_local.properties.to_dict(), query=True)
             query_for_push.build_date = "*"
             log.debug(f"Query for push: {query_for_push.get_as_str()}")
             result = remote_db.query(query_for_push)
