@@ -30,7 +30,7 @@ def get_folder_size(folder_path: Path) -> int:
             if item.is_file():
                 total_size += item.stat().st_size
     except Exception as e:
-        from api.internal.messaging import log
+        from depmanager.api.internal.messaging import log
 
         log.warn(f"Error calculating folder size: {e}")
     return total_size
@@ -42,8 +42,8 @@ class PackageManager:
     """
 
     def __init__(self, system=None):
-        from api.internal.system import LocalSystem
-        from api.local import LocalManager
+        from depmanager.api.internal.system import LocalSystem
+        from depmanager.api.local import LocalManager
 
         if type(system) is LocalSystem:
             self.__sys = system

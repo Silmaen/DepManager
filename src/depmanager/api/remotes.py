@@ -151,7 +151,7 @@ class RemotesManager:
         :param push_newer: Push images if newer version exists
         :param dry_run: Do checks but no transfer.
         """
-        from api.package import PackageManager
+        from depmanager.api.package import PackageManager
 
         pkg_mgr = PackageManager(
             self.__sys,
