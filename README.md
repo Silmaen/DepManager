@@ -12,42 +12,32 @@ have a local cache project-independent.
 
 ## Installation
 
-Depmanager is written in python so in the following we assume you have a
-working python installation designated as `<python>` with `pip` installed.
-
 ### pip
 
-On systems that only rely on pip (in venv, for example)
-To install dep manager simply use `<python> -m pip  install depmanager`
+To install depmanager simply use `pip install depmanager`
 
 See the page on Pypi: [depmanager](https://pypi.org/project/depmanager/).
 
 ### From source
 
-Prerequisite: python module 'build' install it with `<python> -m pip install build`
+Prerequisite: [Poetry](https://python-poetry.org/) must be installed.
 
 Clone the GitHub repository.
 
 For a package installation, in the source root do:
 
-```powershell
-<python> -m build
-<python> -m pip install dist/depmanager-x.y.z-py3-none-any.whl
+```bash
+poetry build
+pip install dist/depmanager-x.y.z-py3-none-any.whl
 ```
 
-For a non-packaged installation, in the source root do:
+For a development installation, in the source root do:
 
 ```bash
-<python> -m pip install .
+poetry install
 ```
 
-for a development installation, in the source root do (python files will be symlinked to source):
-
-```bash
-<python> -m pip install -e .
-```
-
-In this second case the actual source are directly used by your python installation or your venv.
+This will create a virtual environment and install the project in editable mode with all dependencies.
 
 ### ubuntu
 

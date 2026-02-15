@@ -63,7 +63,6 @@ class RecipeBuilder:
         self.creation_date = None
         self.os = None
         self.arch = None
-        self.os = None
         self.abi = None
 
     def has_recipes(self):

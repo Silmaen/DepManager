@@ -50,9 +50,11 @@ class __DataBase:
         latest = False
         if data is None:
             props = Props({}, query=True)
-        elif type(data) in [str, dict]:
+        elif type(data) is dict:
             props = Props(data, query=True)
             latest = data.get("latest", False)
+        elif type(data) is str:
+            props = Props(data, query=True)
         elif type(data) is Dependency:
             props = data.properties
         elif type(data) is Props:

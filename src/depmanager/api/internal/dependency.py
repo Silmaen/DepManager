@@ -735,7 +735,7 @@ class Dependency:
         :param version: Reference version.
         :return: True if newer or equal
         """
-        if not type(version) is not str:
+        if type(version) is not str:
             return False
         if version in ["", None]:
             return False

@@ -96,7 +96,7 @@ class RemoteDatabaseServer(__RemoteDatabase):
             )
             self.valid_shape = True
         except Exception as err:
-            log.fata(f"Exception during server connexion: {self.destination}: {err}")
+            log.fatal(f"Exception during server connexion: {self.destination}: {err}")
             self.valid_shape = False
         self.connected = True
 

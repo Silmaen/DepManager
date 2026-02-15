@@ -108,7 +108,7 @@ def pack(args, system=None):
                 for sub_dep in dep.get_dependency_list():
                     # complete sub dep with parent info
                     if "kind" not in sub_dep.keys():
-                        sub_dep.kind = dep.properties.kind
+                        sub_dep["kind"] = dep.properties.kind
                     if dep.is_platform_dependent():
                         if "arch" not in sub_dep.keys():
                             sub_dep["arch"] = dep.properties.arch
@@ -144,7 +144,7 @@ def pack(args, system=None):
                     log.info(f"Keeping package {dep.properties.get_as_str()}")
                     continue
                 if result[0].version_greater(dep):
-                    log.ingo(f"Remove package {dep.properties.get_as_str()}")
+                    log.info(f"Remove package {dep.properties.get_as_str()}")
                     pacman.remove_package(dep, remote_name)
                 else:
                     log.info(f"Keeping package {dep.properties.get_as_str()}")
