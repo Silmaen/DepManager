@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "depmanager"
-version = "0.5.3"
+version = "0.5.4"
 description = "Simple Dependency manager"
 authors = ["Silmaen <genteur.slayer@laposte.net>"]
 readme = "README.md"
@@ -25,7 +25,9 @@ requests = "*"
 requests-toolbelt = ">=1.0.0"
 PyYAML = "*"
 rich = "*"
-cryptography = "*"
+cryptography = "46.0.5"
+
+[tool.poetry.group.dev.dependencies]
 twine = ">=6.2.0"
 
 [tool.poetry.scripts]
