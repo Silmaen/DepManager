@@ -4,9 +4,9 @@ Build command.
 
 from pathlib import Path
 
-from api.builder import Builder
-from api.internal.messaging import log
-from api.package import PackageManager
+from depmanager.api.builder import Builder
+from depmanager.api.internal.messaging import log
+from depmanager.api.package import PackageManager
 
 
 def build(args, system=None):
@@ -79,8 +79,8 @@ def add_build_parameters(sub_parsers):
     Definition of build parameters.
     :param sub_parsers: The parent parser.
     """
-    from api.internal.common import add_common_arguments
-    from api.internal.common import add_remote_selection_arguments
+    from depmanager.api.internal.common import add_common_arguments
+    from depmanager.api.internal.common import add_remote_selection_arguments
 
     build_parser = sub_parsers.add_parser("build")
     build_parser.description = "Tool to build a package from source"

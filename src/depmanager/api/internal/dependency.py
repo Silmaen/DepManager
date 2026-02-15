@@ -5,8 +5,7 @@ Dependency object.
 import datetime
 from pathlib import Path
 
-from api.internal.messaging import log
-
+from depmanager.api.internal.messaging import log
 from .machine import Machine
 
 kinds = ["shared", "static", "header", "any"]

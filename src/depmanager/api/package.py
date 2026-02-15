@@ -5,7 +5,6 @@ Manager for package.
 from pathlib import Path
 from shutil import rmtree
 
-from api.internal.messaging import log
 from rich.progress import (
     Progress,
     SpinnerColumn,
@@ -14,6 +13,8 @@ from rich.progress import (
     DownloadColumn,
     TransferSpeedColumn,
 )
+
+from depmanager.api.internal.messaging import log
 
 
 def get_folder_size(folder_path: Path) -> int:

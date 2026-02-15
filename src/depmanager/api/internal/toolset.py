@@ -2,7 +2,7 @@
 Toolset defining tools, abi and environment.
 """
 
-from api.internal.messaging import log
+from depmanager.api.internal.messaging import log
 
 
 class Toolset:

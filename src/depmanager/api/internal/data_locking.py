@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
 
-from api.internal.messaging import log
+from depmanager.api.internal.messaging import log
 
 
 class Locker:

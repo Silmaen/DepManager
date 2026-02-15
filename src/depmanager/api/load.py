@@ -4,11 +4,11 @@ Function for loading a full environment
 
 from pathlib import Path
 
-from api.internal.config_file import ConfigFile
-from api.internal.messaging import log
-from api.internal.system import LocalSystem
-from api.local import LocalManager
-from api.package import PackageManager
+from depmanager.api.internal.config_file import ConfigFile
+from depmanager.api.internal.messaging import log
+from depmanager.api.internal.system import LocalSystem
+from depmanager.api.local import LocalManager
+from depmanager.api.package import PackageManager
 
 
 def load_environment(

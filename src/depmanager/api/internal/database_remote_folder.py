@@ -5,8 +5,8 @@ Remote Folder database.
 from pathlib import Path
 from shutil import copyfile
 
-from api.internal.database_common import __RemoteDatabase
-from api.internal.messaging import log
+from depmanager.api.internal.database_common import __RemoteDatabase
+from depmanager.api.internal.messaging import log
 
 
 class RemoteDatabaseFolder(__RemoteDatabase):
