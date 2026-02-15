@@ -3,6 +3,7 @@ Messaging system
 """
 
 import logging
+import re
 
 from rich.logging import RichHandler
 
@@ -86,6 +87,18 @@ keywords = {
     "srv": "purple",
 }
 
+# Pre-compiled regex patterns
+_re_bracket_open = re.compile(r"\[(?!\s)")
+_re_bracket_close = re.compile(r"(?<!\s)\]")
+_re_keyword_patterns = {
+    keyword: (re.compile(re.escape(keyword), re.IGNORECASE), color)
+    for keyword, color in keywords.items()
+}
+_re_default = re.compile(r"\*(\w+)")
+_re_date = re.compile(
+    r"\b(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}:\d{2}|Z)?\b"
+)
+
 
 def formatting(
     msg: str,
@@ -98,29 +111,19 @@ def formatting(
     Returns:
         str: formatted message.
     """
-    # if text contains '[' not followed by ' ' add a space after it to avoid rich misinterpretation
-    # e.g. "Package [Linux x86_64 gnu shared]" -> "Package [ Linux x86_64 gnu shared]"
-    import re
+    # avoid rich misinterpretation of brackets
+    msg = _re_bracket_open.sub("[ ", msg)
+    msg = _re_bracket_close.sub(" ]", msg)
 
-    msg = re.sub(r"\[(?!\s)", "[ ", msg)
-    # if text contains ']' not preceded by ' ' add a space before it to avoid rich misinterpretation
-    # e.g. "Package [Linux x86_64 gnu shared]" -> "Package [Linux x86_64 gnu shared ]"
-    msg = re.sub(r"(?<!\s)\]", " ]", msg)
-
-    # color keywords ignoring case when searching for replacements but keeping original case in the message
-    for keyword, color in keywords.items():
-        pattern = re.compile(re.escape(keyword), re.IGNORECASE)
-        msg = pattern.sub(lambda m: f"[{color}]{m.group()}[/]", msg)
+    # color keywords ignoring case
+    for pattern, color in _re_keyword_patterns.values():
+        msg = pattern.sub(lambda m, c=color: f"[{c}]{m.group()}[/]", msg)
 
     # format 'default' meaning words starting with * and followed by alphanumeric characters
-    default_pattern = re.compile(r"\*(\w+)")
-    msg = default_pattern.sub(lambda m: f"[bold blue]*{m.group(1)}[/]", msg)
+    msg = _re_default.sub(lambda m: f"[bold blue]*{m.group(1)}[/]", msg)
 
-    # formatting date that can appear in the message as iso format to human-readable format
-    date_pattern = re.compile(
-        r"\b(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}:\d{2}|Z)?\b"
-    )
-    msg = date_pattern.sub(
+    # formatting date from iso format to human-readable format
+    msg = _re_date.sub(
         lambda m: f"[bold yellow]{m.group(1)}-{m.group(2)}-{m.group(3)}[/] "
         f"[bold green]{m.group(4)}:{m.group(5)}:{m.group(6)}[/]",
         msg,

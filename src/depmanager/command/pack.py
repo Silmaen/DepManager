@@ -5,6 +5,7 @@ Pack command
 from copy import deepcopy
 from pathlib import Path
 
+from depmanager.api.internal.dependency import Props
 from depmanager.api.internal.messaging import log, message, align_centered
 
 possible_info = ["pull", "push", "add", "rm", "ls", "clean", "info"]
@@ -137,7 +138,7 @@ def pack(args, system=None):
                 pacman.remove_package(dep, remote_name)
         else:
             for dep in deps:
-                props = dep.properties
+                props = Props(dep.properties.to_dict(), query=True)
                 props.version = "*"
                 result = pacman.query(props, remote_name)
                 if len(result) < 2:

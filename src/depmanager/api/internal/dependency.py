@@ -3,10 +3,19 @@ Dependency object.
 """
 
 import datetime
+from fnmatch import translate as fnmatch_translate
+from functools import lru_cache
 from pathlib import Path
+from re import compile as re_compile
 
 from depmanager.api.internal.messaging import log
 from .machine import Machine
+
+
+@lru_cache(maxsize=256)
+def _compiled_fnmatch(pattern: str):
+    """Cache compiled fnmatch patterns."""
+    return re_compile(fnmatch_translate(pattern))
 
 kinds = ["shared", "static", "header", "any"]
 
@@ -241,9 +250,6 @@ class Props:
         :param other: The other props to compare.
         :return: True if regexp match.
         """
-        from fnmatch import translate
-        from re import compile
-
         for attr in [
             "name",
             "version",
@@ -272,7 +278,7 @@ class Props:
                 str_other in ["any", "*", ""] or str_self in ["any", "*", ""]
             ):
                 continue
-            if not compile(translate(str_other)).match(str_self):
+            if not _compiled_fnmatch(str_other).match(str_self):
                 return False
         return True
 
