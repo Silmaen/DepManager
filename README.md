@@ -551,7 +551,7 @@ Among things:
         * [ ] Check for package updates
         * [ ] Manage Remotes
         * [ ] Manage Toolsets
-* version 0.5.2 -- 2026-02-15
+* version 0.5.4 -- 2026-02-15
     * [X] Bugfixes
         * [X] Fix issue during build where no recipe found
         * [X] Fix issues in logging messages
