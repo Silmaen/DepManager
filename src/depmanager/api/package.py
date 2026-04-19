@@ -253,7 +253,13 @@ class PackageManager:
                     log.info(
                         f" Getting dependency {sub_dep['name']}/{sub_dep['version']}..."
                     )
-                    self.add_from_remote(sub_dep, remote_name)
+                    sub_matches = remote.query(sub_dep)
+                    if len(sub_matches) == 0:
+                        log.error(
+                            f"Cannot find dependency {sub_dep['name']}/{sub_dep['version']} on remote {remote_name}."
+                        )
+                        continue
+                    self.add_from_remote(sub_matches[0], remote_name)
                 else:
                     log.info(
                         f" Dependency {sub_dep['name']}/{sub_dep['version']} already present locally."
@@ -341,7 +347,13 @@ class PackageManager:
                     log.info(
                         f" Pushing dependency {sub_dep['name']}/{sub_dep['version']}..."
                     )
-                    self.add_to_remote(sub_dep, remote_name)
+                    sub_matches = self.__sys.local_database.query(sub_dep)
+                    if len(sub_matches) == 0:
+                        log.error(
+                            f"Cannot find dependency {sub_dep['name']}/{sub_dep['version']} in local database."
+                        )
+                        continue
+                    self.add_to_remote(sub_matches[0], remote_name)
                 else:
                     log.info(
                         f" Dependency {sub_dep['name']}/{sub_dep['version']} already present on remote."
