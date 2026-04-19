@@ -17,6 +17,7 @@ def _compiled_fnmatch(pattern: str):
     """Cache compiled fnmatch patterns."""
     return re_compile(fnmatch_translate(pattern))
 
+
 kinds = ["shared", "static", "header", "any"]
 
 default_kind = kinds[0]

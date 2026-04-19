@@ -187,8 +187,11 @@ def load_environment(
         packages.append(result[0])
 
     # create list of dir
-    cmake_dirs = [package.get_cmake_config_dir() for package in packages
-                  if package.get_cmake_config_dir()]
+    cmake_dirs = [
+        package.get_cmake_config_dir()
+        for package in packages
+        if package.get_cmake_config_dir()
+    ]
     output = ";".join(cmake_dirs)
 
     return err_code, output

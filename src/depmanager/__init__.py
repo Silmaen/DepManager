@@ -2,6 +2,7 @@
 base
 """
 
+
 def main():
     """
     Main entrypoint for command-line use of manager

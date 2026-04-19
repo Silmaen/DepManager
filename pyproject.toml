@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "depmanager"
-version = "0.5.4"
+version = "0.5.5"
 description = "Simple Dependency manager"
 authors = ["Silmaen <genteur.slayer@laposte.net>"]
 readme = "README.md"
@@ -29,6 +29,14 @@ cryptography = "46.0.5"
 
 [tool.poetry.group.dev.dependencies]
 twine = ">=6.2.0"
+pytest = ">=8.0.0"
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-ra", "--strict-markers"]
 
 [tool.poetry.scripts]
 depmanager = "depmanager:main"
