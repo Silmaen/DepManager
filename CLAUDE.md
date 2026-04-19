@@ -22,7 +22,21 @@ Build system: setuptools via `pyproject.toml`. Python >= 3.9 required.
 
 ## Testing
 
-No test infrastructure exists yet. The `test/` directory is empty.
+Tests live under `test/` and run with pytest:
+
+```bash
+poetry run pytest           # run full suite
+poetry run pytest -k match  # filter by keyword
+poetry run pytest -q test/test_dependency.py
+```
+
+The `test/conftest.py` exposes a `tmp_edm_home` fixture that isolates `DEPMANAGER_HOME` in a tmpdir so tests never touch the user's real `~/.edm/`.
+
+## Documentation
+
+- User-facing doc lives in `README.md` (shipped to PyPI) — keep it concise and install/usage oriented.
+- Developer doc lives in `docs/` — architecture, contributing guide, recipe authoring, extending remotes. Target audience: contributors, not end users.
+- **Diagrams must use Mermaid** (```mermaid fenced blocks). GitHub renders them natively. Prefer diagrams over ASCII art for layer structure, class hierarchy, sequence flows, and lifecycle diagrams.
 
 ## Code Style
 
