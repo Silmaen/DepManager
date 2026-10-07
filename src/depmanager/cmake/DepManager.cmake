@@ -7,6 +7,7 @@ projects.
 #]===================================================]
 get_filename_component(DM_ROOT_PATH ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 find_program(DM_INTERNAL_COMMAND depmanager)
+message(DEPRECATION "DepManager is deprecated and no longer maintained, please migrate to Conan (https://conan.io).")
 set(DM_ACTIVE ON CACHE BOOL "Depmanager is active")
 
 function(dm_to_std_arch INPUT OUTPUT)

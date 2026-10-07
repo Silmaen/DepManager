@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "depmanager"
-version = "0.5.5"
-description = "Simple Dependency manager"
+version = "0.5.6"
+description = "Simple Dependency manager (deprecated, use Conan)"
 authors = ["Silmaen <genteur.slayer@laposte.net>"]
 readme = "README.md"
 license = "MIT"
 keywords = ["dependency", "development", "cmake", "C++"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 7 - Inactive",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Build Tools",
     "Programming Language :: Python :: 3",

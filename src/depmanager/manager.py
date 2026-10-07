@@ -57,6 +57,14 @@ def main():
             logging_level = 0
         set_logging_level(logging_level)
         set_raw_output(args.raw)
+        if logging_level > 0:
+            from sys import stderr
+
+            print(
+                "WARNING: depmanager is deprecated and no longer maintained,"
+                " please migrate to Conan (https://conan.io).",
+                file=stderr,
+            )
         local = LocalManager()
         ret = args.func(args, local)
         if ret is None:
