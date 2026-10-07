@@ -10,6 +10,13 @@ titles; they may be less granular than releases cut under this changelog.
 
 ## [Unreleased]
 
+## [0.5.6] — 2026-10-07
+
+### Deprecated
+
+- The project is deprecated and no longer maintained: 0.5.6 is the final release, migrate to [Conan](https://conan.io).
+- The CLI prints a deprecation warning on stderr and `DepManager.cmake` emits a CMake `DEPRECATION` message.
+
 ## [0.5.5] — 2026-04-19
 
 ### Fixed
@@ -249,7 +256,8 @@ titles; they may be less granular than releases cut under this changelog.
 
 See the full list of tags: <https://github.com/Silmaen/DepManager/tags>.
 
-[Unreleased]: https://github.com/Silmaen/DepManager/compare/0.5.5...HEAD
+[Unreleased]: https://github.com/Silmaen/DepManager/compare/0.5.6...HEAD
+[0.5.6]: https://github.com/Silmaen/DepManager/compare/0.5.5...0.5.6
 [0.5.5]: https://github.com/Silmaen/DepManager/compare/0.5.4...0.5.5
 [0.5.4]: https://github.com/Silmaen/DepManager/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/Silmaen/DepManager/compare/0.5.2...0.5.3

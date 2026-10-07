@@ -4,6 +4,12 @@
 [![Download](https://static.pepy.tech/badge/depmanager)](https://pepy.tech/project/depmanager)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+> [!WARNING]
+> **This project is deprecated and no longer maintained.** 0.5.6 is the final release.
+> Please migrate to [Conan](https://conan.io), which covers the same needs (binary
+> package cache, remote repositories, recipes, CMake integration). The companion
+> [DepManagerServer](https://github.com/Silmaen/DepManagerServer) is deprecated as well.
+
 Depmanager is a minimalistic tool to manage dependencies (also known as third-party
 libraries) of a C++ Project. It works closely with cmake tool.
 
